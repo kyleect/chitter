@@ -1,0 +1,38 @@
+app-name := "rust-web-app"
+
+default:
+    @just --list
+
+# Delete build artifacts for server and client
+clean:
+    rm -rf playwright-report
+    rm -rf test-suites
+
+# Build the code
+build:
+    echo 'No build'
+
+# Build the code for release
+build-release:
+    echo 'No build for release'
+
+# Run the release server for the e2e test to use
+run-server:
+    cp ../target/release/chitter-browser {{ join(cache_directory(), "chitter-e2e") }}
+    cd {{ join(cache_directory(), "chitter-e2e") }} && CHITTER_PROJECT_DIR={{ join(cache_directory(), "chitter-e2e") }} ./chitter-browser --db 'sqlite::memory:' --port=3123 --open false
+
+clean-test-cache-dir:
+    rm -rf {{ join(cache_directory(), "chitter-e2e") }}
+
+create-dotenv-file:
+    mkdir -p {{ join(cache_directory(), "chitter-e2e") }}
+    touch {{ join(cache_directory(), "chitter-e2e") }}/.env
+    echo 'CHITTER_DB_KEY=e2e' > {{ join(cache_directory(), "chitter-e2e") }}/.env
+
+# Run all tests
+test: clean-test-cache-dir create-dotenv-file
+    CHITTER_PROJECT_DIR={{ join(cache_directory(), "chitter-e2e") }} npm run test
+
+# Run all tests using Playwright's UI mode
+test-ui-mode: clean-test-cache-dir create-dotenv-file
+    CHITTER_PROJECT_DIR={{ join(cache_directory(), "chitter-e2e") }} npm run test-ui-mode

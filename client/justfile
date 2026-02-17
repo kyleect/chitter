@@ -1,0 +1,49 @@
+default:
+    @just --list
+
+# Delete build artifacts
+clean:
+    echo 'No cleaning defined'
+
+# Build the code for development
+build: clean
+    npm ci && npm run build
+
+# Build the code for release
+build-release: clean
+    npm ci && npm run build-release
+
+# Build and watch for changes
+watch:
+  #!/usr/bin/env -S parallel --shebang --ungroup --jobs {{ num_cpus() }}
+  npm run watch-routes
+  npx vite
+
+# Check linters against code
+lint:
+    echo 'No lint installed'
+
+# Automatically fix linting errors in code
+lint-fix:
+    echo 'No lint installed'
+
+# Format code
+format:
+    echo 'No formatter installed'
+
+# Check that the code is formatted correctly
+format-check:
+    echo 'No formatter installed'
+
+# Run all non-test checks against code
+check:
+    just format-check
+    just lint
+
+# Run all checks, tests, and build the code
+verify:
+    just build && just check && just test
+
+# Run all tests
+test:
+    npm run test

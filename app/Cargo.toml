@@ -1,0 +1,18 @@
+[package]
+name = "app"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+server = { path = "../server" }
+tokio = { version = "1.0", features = ["macros", "rt-multi-thread"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+clap = { version = "4.5.32", features = ["derive", "env"] }
+tao = "0.34.5"
+wry = "0.52.1"
+dotenv = "0.15.0"
+
+[[bin]]
+name = "chitter"
+path = "src/main.rs"

@@ -1,0 +1,34 @@
+name: pr
+on:
+  pull_request:
+env:
+  CARGO_TERM_COLOR: always
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+          toolchain: 1.85.0
+      - uses: Swatinem/rust-cache@v2
+      - uses: actions/setup-node@v4
+        with:
+          cache: npm
+          cache-dependency-path: |
+            types/package-lock.json
+            client/package-lock.json
+          node-version: 20
+      - name: "Install NPM Deps: types"
+        working-directory: types
+        run: npm ci
+      - name: "Install NPM Deps: client"
+        working-directory: client
+        run: npm ci
+      - name: Install just
+        uses: taiki-e/install-action@v2
+        with:
+          tool: just
+      - name: Verify
+        run: just verify

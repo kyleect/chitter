@@ -1,0 +1,60 @@
+default:
+    @just --list
+
+# Delete build artifacts
+clean:
+    cargo clean
+    rm -rf static
+
+# Build the code
+build:
+    cargo build -F development_mode
+
+# Build the code for release
+build-release:
+    cargo build --release
+
+# Build the code for release
+build-for-e2e-release:
+    cargo build --bin chitter-browser --release
+
+run-dev port open:
+    cargo run -F development_mode -- --port {{ port }} --open {{ open }} --db '../db.sqlite3'
+
+watch:
+    watchexec -r just run-dev 3001 false
+
+# Check linters against code
+lint:
+    cargo clippy --workspace --all-targets --all-features -- -D warnings -W clippy::all
+
+# Automatically fix linting errors in code
+lint-fix:
+    cargo clippy --workspace --all-targets --all-features --fix -- -D warnings -W clippy::all
+
+# Format code
+format:
+    cargo fmt --all
+    just lint-fix
+
+# Check that the code is formatted correctly
+format-check:
+    cargo fmt --all -- --check
+
+# Run all non-test checks against code
+check:
+    cargo check --workspace --all-targets -F development_mode
+    just format-check
+    just lint
+
+# Run all checks, tests, and build the code
+verify:
+    just build && just check && just test
+
+# Run all tests
+test:
+    cargo test --workspace --all-targets --all-features -F development_mode
+
+# Alias for the diesel command
+db *args='help':
+    diesel {{ args }}

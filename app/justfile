@@ -1,0 +1,14 @@
+default:
+    @just --list
+
+# Delete build artifacts
+clean:
+    cargo clean
+
+# Build the code
+build:
+    cargo build
+
+# Build the code for release
+build-release:
+    cargo build --release

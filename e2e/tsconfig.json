@@ -1,0 +1,9 @@
+{
+  "compilerOptions": {
+    "paths": {
+      "@/test": ["./src/index.ts"],
+      "@/test/page_objects": ["./src/page_objects.ts"]
+    }
+  },
+  "include": ["src", "tests"]
+}

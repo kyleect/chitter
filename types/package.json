@@ -1,0 +1,13 @@
+{
+  "name": "server-types",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Typescript types for the server",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc"
+  },
+  "devDependencies": {
+    "typescript": "5.7.2"
+  }
+}

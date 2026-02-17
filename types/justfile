@@ -1,0 +1,65 @@
+default:
+    @just --list
+
+# Delete build artifacts
+clean:
+    git clean -d -x -f bindings/
+    rm -rf dist/
+
+export_bindings: clean
+    npm ci
+    cargo test export_bindings
+
+# Build the code
+build:
+    just export_bindings
+    cargo run --bin bundle_types --features bundle_types
+    npm run build
+
+# Build the code for release
+build-release:
+    npm ci
+    cargo test export_bindings --release
+    cargo run --bin bundle_types --features bundle_types --release
+    npm run build
+
+# Build the code
+[private]
+build-for-watch: clean
+    cargo test export_bindings
+    cargo run --bin bundle_types --features bundle_types
+    npm run build
+
+watch:
+    watchexec -r just build-for-watch
+
+# Check linters against code
+lint:
+    echo 'No linter found'
+
+# Automatically fix linting errors in code
+lint-fix:
+    echo 'No linter found'
+
+# Format code
+format:
+    echo 'No formatter found'
+
+# Check that the code is formatted correctly
+format-check:
+    echo 'No formatter found'
+
+# Run all non-test checks against code
+check:
+    cargo check --workspace --all-targets
+    just format-check
+    just lint
+
+# Run all checks, tests, and build the code
+verify:
+    just build && just check && just test
+
+# Run all tests
+test:
+    echo 'No tests found'
+
