@@ -1,3 +1,4 @@
+import { TemplateBlock } from "@/components/routes/templates.$templateId/TemplateBlock";
 import {
   isEndIf,
   isIfEqItem,
@@ -9,10 +10,10 @@ import {
 } from "@/queries/templates";
 import {
   ActionIcon,
+  Affix,
   Alert,
   Button,
   Card,
-  CloseButton,
   Code,
   Divider,
   Drawer,
@@ -21,9 +22,10 @@ import {
   Menu,
   Stack,
   Text,
-  ThemeIcon,
+  Textarea,
+  Transition,
 } from "@mantine/core";
-import { useDisclosure } from "@mantine/hooks";
+import { useDisclosure, useWindowScroll } from "@mantine/hooks";
 import {
   IconBrain,
   IconCode,
@@ -38,17 +40,53 @@ import {
   IconVariablePlus,
 } from "@tabler/icons-react";
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import {
+  ConversationItem,
+  ConversationTemplate,
+  Message,
+  VariableValue,
+} from "server-types";
+import { produce } from "immer";
 
 export const Route = createFileRoute("/templates/$templateId")({
   component: RouteComponent,
 });
 
+type Unarray<T> = T extends Array<infer U> ? U : T;
+
+const setDraftTemplateImmer =
+  (set: React.Dispatch<React.SetStateAction<ConversationTemplate["items"]>>) =>
+  (
+    draftItemIndex: number,
+    patchFn: (
+      item: Partial<Unarray<ConversationTemplate["items"]>>,
+      patch: Partial<Unarray<ConversationTemplate["items"]>>,
+    ) => void,
+    patch: Partial<Unarray<ConversationTemplate["items"]>>,
+  ) => {
+    set(
+      produce((draftItems) => {
+        const draftItem = draftItems[draftItemIndex];
+
+        patchFn(draftItem, patch);
+      }),
+    );
+  };
+
 function RouteComponent() {
   const params = Route.useParams();
   const getTemplateByIdQuery = useGetTemplateByIdQuery(params.templateId);
   const [opened, { open, close }] = useDisclosure(false);
+  const [scroll] = useWindowScroll();
   const [isEditing, setIsEditing] = useState(false);
+  const [draftTemplate, setDraftTemplate] = useState<
+    ConversationTemplate["items"]
+  >([]);
+
+  useEffect(() => {
+    setDraftTemplate(getTemplateByIdQuery.data?.items ?? []);
+  }, [getTemplateByIdQuery.data]);
 
   if (getTemplateByIdQuery.isLoading) {
     return <Loader />;
@@ -64,47 +102,54 @@ function RouteComponent() {
 
   const template = getTemplateByIdQuery.data;
 
-  if (!template) {
+  if (!template || !draftTemplate) {
     return <Alert color="blue">Template not found</Alert>;
   }
+
+  const patchItem = setDraftTemplateImmer(setDraftTemplate);
 
   const divider = (
     <Divider
       mt={0}
       label={
         <ActionIcon.Group>
-          <Menu shadow="md" width={200} position="right-start">
-            <Menu.Target>
-              <ActionIcon variant="subtle" color="gray">
-                <IconPlus />
-              </ActionIcon>
-            </Menu.Target>
+          {isEditing && (
+            <Menu shadow="md" width={200} position="right-start">
+              <Menu.Target>
+                <ActionIcon variant="subtle" color="gray">
+                  <IconPlus />
+                </ActionIcon>
+              </Menu.Target>
 
-            <Menu.Dropdown>
-              <Menu.Label>New Template Block</Menu.Label>
+              <Menu.Dropdown>
+                <Menu.Label>New Template Block</Menu.Label>
 
-              <Menu.Sub>
-                <Menu.Sub.Target>
-                  <Menu.Sub.Item leftSection={<IconMail />}>
-                    Message
-                  </Menu.Sub.Item>
-                </Menu.Sub.Target>
+                <Menu.Sub>
+                  <Menu.Sub.Target>
+                    <Menu.Sub.Item leftSection={<IconMail />}>
+                      Message
+                    </Menu.Sub.Item>
+                  </Menu.Sub.Target>
 
-                <Menu.Sub.Dropdown>
-                  <Menu.Item leftSection={<IconRobot />}>Assistant</Menu.Item>
-                  <Menu.Item leftSection={<IconUser />}>User</Menu.Item>
-                  <Menu.Item leftSection={<IconCpu />}>System</Menu.Item>
-                </Menu.Sub.Dropdown>
-              </Menu.Sub>
+                  <Menu.Sub.Dropdown>
+                    <Menu.Item leftSection={<IconRobot />}>Assistant</Menu.Item>
+                    <Menu.Item leftSection={<IconUser />}>User</Menu.Item>
+                    <Menu.Item leftSection={<IconCpu />}>System</Menu.Item>
+                  </Menu.Sub.Dropdown>
+                </Menu.Sub>
 
-              <Menu.Item leftSection={<IconVariablePlus />}>
-                Set Variable
-              </Menu.Item>
-              <Menu.Item leftSection={<IconCode />}>If Equals</Menu.Item>
-              <Menu.Item leftSection={<IconCompass />}>OOC</Menu.Item>
-              <Menu.Item leftSection={<IconBrain />}>Inner Thoughts</Menu.Item>
-            </Menu.Dropdown>
-          </Menu>
+                <Menu.Item leftSection={<IconVariablePlus />}>
+                  Set Variable
+                </Menu.Item>
+                <Menu.Item leftSection={<IconCode />}>If Equals</Menu.Item>
+                <Menu.Item leftSection={<IconCompass />}>OOC</Menu.Item>
+                <Menu.Item leftSection={<IconBrain />}>
+                  Inner Thoughts
+                </Menu.Item>
+              </Menu.Dropdown>
+            </Menu>
+          )}
+
           <ActionIcon variant="subtle" color="gray" onClick={open}>
             <IconCodeDots stroke={1.5} />
           </ActionIcon>
@@ -113,31 +158,47 @@ function RouteComponent() {
     />
   );
 
+  const buttons = (
+    <Button.Group>
+      {isEditing && (
+        <>
+          <Button onClick={() => setIsEditing(!isEditing)}>Save</Button>
+          <Button
+            variant="light"
+            onClick={() => {
+              setDraftTemplate(getTemplateByIdQuery.data.items);
+              setIsEditing(false);
+            }}
+          >
+            Cancel
+          </Button>
+        </>
+      )}
+
+      {!isEditing && (
+        <>
+          <Button onClick={() => setIsEditing(!isEditing)}>Edit</Button>
+        </>
+      )}
+
+      <Button variant="outline">Delete</Button>
+    </Button.Group>
+  );
+
   return (
     <>
       <Stack>
         <Card>
           <Group justify="space-between">
-            <Text mb={0}>{template.id}</Text>
-            <Button.Group>
-              <Button
-                variant={isEditing ? undefined : "light"}
-                onClick={() => {
-                  setIsEditing(!isEditing);
-                }}
-              >
-                {isEditing ? "Save" : "Edit"}
-              </Button>
-              <Button variant="gradient">Chat</Button>
-              <Button variant="outline">Delete</Button>
-            </Button.Group>
+            <Button variant="gradient">Chat</Button>
+            {buttons}
           </Group>
         </Card>
 
-        <Divider label={"Template"} mt="md" mb="xl"></Divider>
+        <Divider label={"Template"} mt="md" mb="md"></Divider>
 
         <Stack gap="xs">
-          {template.items.map((item) => {
+          {draftTemplate.map((item, index) => {
             if (isMessageItem(item)) {
               let icon: React.ReactNode = null;
 
@@ -160,7 +221,43 @@ function RouteComponent() {
                     title={item.message.role.kind}
                     isEditing={isEditing}
                   >
-                    <Text>{item.message.message}</Text>
+                    {isEditing ? (
+                      <Textarea
+                        size="md"
+                        minRows={1}
+                        autosize
+                        value={item.message.message ?? ""}
+                        onChange={(e) => {
+                          patchItem(
+                            index,
+                            (draftItem, patch) => {
+                              if (
+                                isMessageItem(
+                                  draftItem as unknown as ConversationItem,
+                                )
+                              ) {
+                                (
+                                  draftItem as {
+                                    message: Message;
+                                  }
+                                // prettier-ignore
+                              ).message.message =
+                                  // @ts-expect-error: TODO: Fix
+                                  patch.message!.message;
+                              }
+                            },
+                            {
+                              // @ts-expect-error: patchItem doesn't recursively apply Partial<T> yet
+                              message: {
+                                message: e.target.value,
+                              },
+                            },
+                          );
+                        }}
+                      />
+                    ) : (
+                      <Text>{item.message.message}</Text>
+                    )}
                   </TemplateBlock>
 
                   {divider}
@@ -177,7 +274,27 @@ function RouteComponent() {
                     level={1}
                     isEditing={isEditing}
                   >
-                    <Text>{item.oOC}</Text>
+                    {isEditing ? (
+                      <Textarea
+                        size="md"
+                        minRows={1}
+                        autosize
+                        value={item.oOC}
+                        onChange={(e) => {
+                          patchItem(
+                            index,
+                            (draft, patch) => {
+                              Object.assign(draft, patch);
+                            },
+                            {
+                              oOC: e.target.value,
+                            },
+                          );
+                        }}
+                      />
+                    ) : (
+                      <Text>{item.oOC}</Text>
+                    )}
                   </TemplateBlock>
 
                   {divider}
@@ -194,7 +311,27 @@ function RouteComponent() {
                     level={1}
                     isEditing={isEditing}
                   >
-                    <Text>{item.innerThoughts}</Text>
+                    {isEditing ? (
+                      <Textarea
+                        size="md"
+                        minRows={1}
+                        autosize
+                        value={item.innerThoughts}
+                        onChange={(e) => {
+                          patchItem(
+                            index,
+                            (draft, patch) => {
+                              Object.assign(draft, patch);
+                            },
+                            {
+                              innerThoughts: e.target.value,
+                            },
+                          );
+                        }}
+                      />
+                    ) : (
+                      <Text>{item.innerThoughts}</Text>
+                    )}
                   </TemplateBlock>
 
                   {divider}
@@ -250,9 +387,76 @@ function RouteComponent() {
                     inline
                     isEditing={isEditing}
                   >
-                    <Code block mt={0} mb={0}>
-                      {key} = {JSON.stringify(value)}
-                    </Code>
+                    {isEditing ? (
+                      <Textarea
+                        size="md"
+                        minRows={1}
+                        autosize
+                        value={`${key} = ${value}`}
+                        onChange={(e) => {
+                          let [draftKey, draftValue] = e.target.value
+                            .split("=")
+                            .map((x) => x.trim());
+                          let draftVarValue: VariableValue | null = null;
+
+                          if (draftVarValue === null) {
+                            return;
+                          }
+
+                          const maybeNumberValue = parseInt(draftValue, 10);
+                          const maybeBoolValue =
+                            draftValue === "true" || draftValue === "false";
+
+                          if (!Number.isNaN(maybeNumberValue)) {
+                            draftVarValue = {
+                              number: maybeNumberValue,
+                            };
+
+                            patchItem(
+                              index,
+                              (draft, patch) => {
+                                Object.assign(draft, patch);
+                              },
+                              {
+                                setVar: [draftKey, draftVarValue],
+                              },
+                            );
+                          } else if (maybeBoolValue) {
+                            draftVarValue = {
+                              boolean: draftValue === "true",
+                            };
+
+                            patchItem(
+                              index,
+                              (draft, patch) => {
+                                Object.assign(draft, patch);
+                              },
+                              {
+                                setVar: [draftKey, draftVarValue],
+                              },
+                            );
+                          } else {
+                            draftVarValue = {
+                              string: draftValue,
+                            };
+
+                            patchItem(
+                              index,
+                              (draft, patch) => {
+                                Object.assign(draft, patch);
+                              },
+                              {
+                                setVar: [draftKey, draftVarValue],
+                              },
+                            );
+                          }
+                        }}
+                      />
+                    ) : (
+                      <Code block mt={0} mb={0}>
+                        {key} = {JSON.stringify(value)}
+                      </Code>
+                    )}
                   </TemplateBlock>
 
                   {divider}
@@ -288,63 +492,16 @@ function RouteComponent() {
       >
         {/* Drawer content */}
       </Drawer>
+
+      <Affix position={{ bottom: 20, right: 20 }}>
+        <Transition transition="slide-up" mounted={scroll.y > 100}>
+          {(transitionStyles) => (
+            <Card p="xs" style={transitionStyles}>
+              {buttons}
+            </Card>
+          )}
+        </Transition>
+      </Affix>
     </>
   );
 }
-
-type TemplateBlockProps = {
-  children?: React.ReactNode;
-  icon: React.ReactNode;
-  title: string;
-  inline?: boolean;
-  level?: number;
-  isEditing: boolean;
-};
-
-const TemplateBlock: React.FC<TemplateBlockProps> = ({
-  icon,
-  title,
-  inline,
-  children,
-  level = 0,
-  isEditing,
-}) => {
-  const levelFactor = 50;
-
-  return inline && !isEditing ? (
-    <Card withBorder shadow="xs" ml={level * levelFactor}>
-      <Stack>
-        <Group justify="space-between">
-          <Group>
-            <ThemeIcon variant="subtle">{icon}</ThemeIcon>
-            <Text mb={0} fw="bold">
-              {title}
-            </Text>
-          </Group>
-
-          <Group>
-            {children}
-            <CloseButton />
-          </Group>
-        </Group>
-      </Stack>
-    </Card>
-  ) : (
-    <Card withBorder shadow="xs" ml={level * levelFactor}>
-      <Stack>
-        <Group justify="space-between">
-          <Group>
-            <ThemeIcon variant="subtle">{icon}</ThemeIcon>
-            <Text mb={0} fw="bold">
-              {title}
-            </Text>
-          </Group>
-
-          <CloseButton />
-        </Group>
-
-        {children}
-      </Stack>
-    </Card>
-  );
-};

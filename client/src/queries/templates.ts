@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   ConversationItem,
   ConversationTemplate,
@@ -28,6 +28,22 @@ export const useGetTemplateByIdQuery = (id: string) =>
     queryKey: TEMPLATE_KEYS.detail(id),
     queryFn: async () => {
       const response = await fetch(`/api/templates/${id}`);
+      const data = (await response.json()) as ConversationTemplate;
+
+      return data ?? null;
+    },
+  });
+
+export const useUpdateTemplateByIdMutation = () =>
+  useMutation({
+    mutationFn: async (template: ConversationTemplate) => {
+      const response = await fetch(`/api/templates/${template.id}`, {
+        method: "PUT",
+        body: JSON.stringify(template),
+        headers: {
+          "content-type": "application/json",
+        },
+      });
       const data = (await response.json()) as ConversationTemplate;
 
       return data ?? null;
