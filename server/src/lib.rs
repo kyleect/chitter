@@ -333,7 +333,10 @@ pub async fn init_server(options: InitServerOptions) -> Result<AppServer, Error>
         .route("/api/achievements", get(get_achievements))
         .route("/api/ws", any(ws_handler))
         .route("/api/templates", get(get_templates))
-        .route("/api/templates/{template_id}", get(get_template))
+        .route(
+            "/api/templates/{template_id}",
+            get(get_template).put(update_template),
+        )
         .route(
             "/api/templates/{template_id}/chat",
             post(start_conversation),
@@ -552,6 +555,30 @@ pub async fn get_template(
             .cloned()
             .expect("should have template by id"),
     )
+}
+
+//
+
+pub async fn update_template(
+    State(state): State<Arc<Mutex<AppState>>>,
+    Path(template_id): Path<String>,
+    Json(body): Json<ConversationTemplate>,
+) {
+    let state = state.clone();
+    let mut state = state.lock().await;
+
+    // What I'd like to do
+    // let conversation_index = todo!() // Find the index in state.conversation_templates that matches body.id
+    // Insert the new conversation_template (body) at the correct index
+
+    let template = state
+        .conversation_templates
+        .iter_mut()
+        .find(|t| t.id == template_id)
+        .ok_or(StatusCode::NOT_FOUND)
+        .unwrap();
+
+    *template = body;
 }
 
 pub async fn get_conversations(

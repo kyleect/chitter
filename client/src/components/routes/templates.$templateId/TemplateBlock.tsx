@@ -14,6 +14,7 @@ type TemplateBlockProps = {
   inline?: boolean;
   level?: number;
   isEditing: boolean;
+  onClose?: () => void;
 };
 
 export const TemplateBlock: React.FC<TemplateBlockProps> = ({
@@ -23,6 +24,7 @@ export const TemplateBlock: React.FC<TemplateBlockProps> = ({
   children,
   level = 0,
   isEditing,
+  onClose,
 }) => {
   const levelFactor = 50;
 
@@ -30,7 +32,7 @@ export const TemplateBlock: React.FC<TemplateBlockProps> = ({
     <Card withBorder shadow="xs" p="xs" ml={level * levelFactor}>
       <Stack>
         <Group justify="space-between">
-          <Group>
+          <Group gap="xs">
             <ThemeIcon variant="subtle">{icon}</ThemeIcon>
             <Text mb={0} fw="bold">
               {title}
@@ -43,6 +45,7 @@ export const TemplateBlock: React.FC<TemplateBlockProps> = ({
               style={{
                 visibility: isEditing ? undefined : "hidden",
               }}
+              onClick={() => onClose?.call(null)}
             />
           </Group>
         </Group>
@@ -50,9 +53,9 @@ export const TemplateBlock: React.FC<TemplateBlockProps> = ({
     </Card>
   ) : (
     <Card withBorder shadow="xs" p="xs" ml={level * levelFactor}>
-      <Stack>
+      <Stack gap="xs">
         <Group justify="space-between">
-          <Group>
+          <Group gap="xs">
             <ThemeIcon variant="subtle">{icon}</ThemeIcon>
             <Text mb={0} fw="bold">
               {title}
@@ -63,6 +66,7 @@ export const TemplateBlock: React.FC<TemplateBlockProps> = ({
             style={{
               visibility: isEditing ? undefined : "hidden",
             }}
+            onClick={() => onClose?.call(null)}
           />
         </Group>
 
