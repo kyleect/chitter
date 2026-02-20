@@ -1,9 +1,9 @@
-use std::{env::current_dir, path::PathBuf, sync::Arc};
+use std::{env::current_dir, path::PathBuf, sync::Arc, vec};
 
 use axum::{
     Json, Router,
     extract::{
-        Request, State,
+        Path, Request, State,
         ws::{Message, WebSocket, WebSocketUpgrade},
     },
     http::StatusCode,
@@ -34,6 +34,7 @@ use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use types::{
     DebugInfo,
     achievement::{AchievementDto, AchievementId},
+    conversation::{Conversation, ConversationTemplate, Persona},
     socket::ClientMessage,
 };
 
@@ -93,6 +94,8 @@ pub struct AppState {
     pub db: Option<Pool<Sqlite>>,
     pub db_is_encrypted: bool,
     pub tx: Option<Arc<Mutex<UnboundedSender<String>>>>,
+    pub conversation_templates: Vec<ConversationTemplate>,
+    pub conservations: Vec<Conversation>,
 }
 
 impl AppState {
@@ -260,6 +263,53 @@ pub async fn init_server(options: InitServerOptions) -> Result<AppServer, Error>
         db: Some(db_pool),
         db_is_encrypted,
         tx: None,
+        conversation_templates: vec![
+            {
+                let mut template =
+                    ConversationTemplate::new(Persona::default(), Persona::default());
+
+                let summarize_as_list_var = template.set_var("summaryAsList", true.into());
+
+                template.add_system_message("You are a helpful AI assistant.");
+
+                template
+                    .add_assistant_message("Hello, I'm here to help! What can I do for you today?");
+
+                template.inner_thoughts_message("I wonder what the task is.");
+
+                template.add_user_message(
+            "I need you to summarize some text for me, highlighting the most important details.",
+        );
+
+                template.ooc_message("Only respond with the summary of the text.");
+
+                template.if_eq(&summarize_as_list_var, &true.into());
+
+                template.ooc_message("Format the summary as a bulleted list");
+
+                template.end_if();
+
+                template
+            },
+            {
+                let mut template =
+                    ConversationTemplate::new(Persona::default(), Persona::default());
+
+                template.add_system_message("You are a helpful AI assistant.");
+
+                template
+                    .add_assistant_message("Hello, I'm here to help! What can I do for you today?");
+
+                template.add_user_message(
+            "I need you to summarize some text for me, highlighting the most important details.",
+        );
+
+                template.ooc_message("Only respond with the summary of the text.");
+
+                template
+            },
+        ],
+        conservations: vec![],
     };
 
     let state = Arc::new(Mutex::new(state));
@@ -282,6 +332,13 @@ pub async fn init_server(options: InitServerOptions) -> Result<AppServer, Error>
         .route("/api/debug/achievement", post(trigger_test_achievement))
         .route("/api/achievements", get(get_achievements))
         .route("/api/ws", any(ws_handler))
+        .route("/api/templates", get(get_templates))
+        .route("/api/templates/{template_id}", get(get_template))
+        .route(
+            "/api/templates/{template_id}/chat",
+            post(start_conversation),
+        )
+        .route("/api/conversations", get(get_conversations))
         .fallback_service(static_dir.clone())
         .with_state(state)
         .layer(compression_layer)
@@ -469,4 +526,60 @@ pub async fn get_achievements(
         StatusCode::OK,
         Json(achievements_service::get_achievements(state).await),
     )
+}
+
+pub async fn get_templates(
+    State(state): State<Arc<Mutex<AppState>>>,
+) -> Json<Vec<ConversationTemplate>> {
+    let state = state.clone();
+    let state = state.lock().await;
+
+    Json(state.conversation_templates.clone())
+}
+
+pub async fn get_template(
+    State(state): State<Arc<Mutex<AppState>>>,
+    Path(template_id): Path<String>,
+) -> Json<ConversationTemplate> {
+    let state = state.clone();
+    let state = state.lock().await;
+
+    Json(
+        state
+            .conversation_templates
+            .iter()
+            .find(|x| x.id == template_id)
+            .cloned()
+            .expect("should have template by id"),
+    )
+}
+
+pub async fn get_conversations(
+    State(state): State<Arc<Mutex<AppState>>>,
+) -> Json<Vec<Conversation>> {
+    let state = state.clone();
+    let state = state.lock().await;
+
+    Json(state.conservations.clone())
+}
+
+pub async fn start_conversation(
+    State(state): State<Arc<Mutex<AppState>>>,
+    Path(template_id): Path<String>,
+) -> Json<Conversation> {
+    let state = state.clone();
+    let mut state = state.lock().await;
+
+    let template = state
+        .conversation_templates
+        .iter()
+        .find(|x| x.id == template_id)
+        .cloned()
+        .expect("should have template by id");
+
+    let conversation: Conversation = template.into();
+
+    state.conservations.push(conversation.clone());
+
+    Json(conversation)
 }

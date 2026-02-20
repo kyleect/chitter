@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
 pub mod achievement;
+pub mod conversation;
 pub mod errors;
 pub mod socket;
 pub mod utils;
