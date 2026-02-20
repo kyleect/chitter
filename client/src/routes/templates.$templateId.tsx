@@ -38,6 +38,7 @@ import {
   IconVariablePlus,
 } from "@tabler/icons-react";
 import { createFileRoute } from "@tanstack/react-router";
+import { useState } from "react";
 
 export const Route = createFileRoute("/templates/$templateId")({
   component: RouteComponent,
@@ -47,6 +48,7 @@ function RouteComponent() {
   const params = Route.useParams();
   const getTemplateByIdQuery = useGetTemplateByIdQuery(params.templateId);
   const [opened, { open, close }] = useDisclosure(false);
+  const [isEditing, setIsEditing] = useState(false);
 
   if (getTemplateByIdQuery.isLoading) {
     return <Loader />;
@@ -118,9 +120,16 @@ function RouteComponent() {
           <Group justify="space-between">
             <Text mb={0}>{template.id}</Text>
             <Button.Group>
-              <Button>Chat</Button>
-              <Button>Edit</Button>
-              <Button color="red">Delete</Button>
+              <Button
+                variant={isEditing ? undefined : "light"}
+                onClick={() => {
+                  setIsEditing(!isEditing);
+                }}
+              >
+                {isEditing ? "Save" : "Edit"}
+              </Button>
+              <Button variant="gradient">Chat</Button>
+              <Button variant="outline">Delete</Button>
             </Button.Group>
           </Group>
         </Card>
@@ -146,7 +155,11 @@ function RouteComponent() {
 
               return (
                 <>
-                  <TemplateBlock icon={icon} title={item.message.role.kind}>
+                  <TemplateBlock
+                    icon={icon}
+                    title={item.message.role.kind}
+                    isEditing={isEditing}
+                  >
                     <Text>{item.message.message}</Text>
                   </TemplateBlock>
 
@@ -162,6 +175,7 @@ function RouteComponent() {
                     icon={<IconCompass stroke={1.5} />}
                     title="OOC"
                     level={1}
+                    isEditing={isEditing}
                   >
                     <Text>{item.oOC}</Text>
                   </TemplateBlock>
@@ -178,6 +192,7 @@ function RouteComponent() {
                     icon={<IconBrain stroke={1.5} />}
                     title="Inner Thoughts"
                     level={1}
+                    isEditing={isEditing}
                   >
                     <Text>{item.innerThoughts}</Text>
                   </TemplateBlock>
@@ -204,6 +219,7 @@ function RouteComponent() {
                     icon={<IconVariablePlus stroke={1.5} />}
                     title="Set Variable"
                     inline
+                    isEditing={isEditing}
                   >
                     <Code block mt={0} mb={0}>
                       {key} = {JSON.stringify(value)}
@@ -232,6 +248,7 @@ function RouteComponent() {
                     icon={<IconCode stroke={1.5} />}
                     title="If Eq"
                     inline
+                    isEditing={isEditing}
                   >
                     <Code block mt={0} mb={0}>
                       {key} = {JSON.stringify(value)}
@@ -249,6 +266,7 @@ function RouteComponent() {
                   <TemplateBlock
                     icon={<IconCodeOff stroke={1.5} />}
                     title="End If"
+                    isEditing={isEditing}
                   />
 
                   {divider}
@@ -280,6 +298,7 @@ type TemplateBlockProps = {
   title: string;
   inline?: boolean;
   level?: number;
+  isEditing: boolean;
 };
 
 const TemplateBlock: React.FC<TemplateBlockProps> = ({
@@ -288,10 +307,11 @@ const TemplateBlock: React.FC<TemplateBlockProps> = ({
   inline,
   children,
   level = 0,
+  isEditing,
 }) => {
   const levelFactor = 50;
 
-  return inline ? (
+  return inline && !isEditing ? (
     <Card withBorder shadow="xs" ml={level * levelFactor}>
       <Stack>
         <Group justify="space-between">
