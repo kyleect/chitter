@@ -1,5 +1,5 @@
 import { useGetPersonaByIdQuery } from "@/queries/personas";
-import { Alert, Card, Group, Loader, Text } from "@mantine/core";
+import { Alert, Card, Group, Loader, Stack, Text } from "@mantine/core";
 import { createFileRoute } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/personas/$personaId")({
@@ -19,13 +19,27 @@ function RouteComponent() {
   }
 
   return (
-    <Card>
-      <Group>
-        <Text mb={0} fw="bold">
-          Persona:
-        </Text>
-        <Text>{getPersonaQuery.data?.name}</Text>
-      </Group>
-    </Card>
+    <Stack>
+      <Card>
+        <Group>
+          <Text mb={0} fw="bold">
+            Persona:
+          </Text>
+          <Text>{getPersonaQuery.data?.name}</Text>
+        </Group>
+      </Card>
+
+      {getPersonaQuery.data?.description && (
+        <Card>
+          <Stack>
+            <Text mb={0} fw="bold">
+              Description
+            </Text>
+
+            <Text>{getPersonaQuery.data?.description}</Text>
+          </Stack>
+        </Card>
+      )}
+    </Stack>
   );
 }

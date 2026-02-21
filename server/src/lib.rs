@@ -260,8 +260,11 @@ pub async fn init_server(options: InitServerOptions) -> Result<AppServer, Error>
 
     let db_pool = connect_to_db(options.db_options, default_db_path).await;
 
-    let user_persona = Persona::new("You");
-    let assistant_persona = Persona::new("AI Assistant");
+    let user_persona = Persona::new("You", None);
+    let assistant_persona = Persona::new(
+        "AI Assistant",
+        Some("The default AI assistant in the Chitter app."),
+    );
 
     let state = AppState {
         home_dir: project_dir,
