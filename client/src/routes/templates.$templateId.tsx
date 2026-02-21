@@ -21,6 +21,7 @@ import {
   Group,
   Loader,
   Menu,
+  Select,
   Skeleton,
   Stack,
   Text,
@@ -134,15 +135,77 @@ function RouteComponent() {
   };
 
   const patchInnerThoughtsMessage = (index: number, value: string) => {
-    patchItem(
-      index,
-      (draft, patch) => {
-        Object.assign(draft, patch);
-      },
-      {
-        innerThoughts: value,
-      },
-    );
+    patchItem(index, Object.assign, {
+      innerThoughts: value,
+    });
+  };
+
+  const patchIfEqMessage = (index: number, value: string) => {
+    let [draftKey, draftValue] = value.split("=").map((x) => x.trim());
+    let draftVarValue: VariableValue | null = null;
+
+    const maybeNumberValue = parseInt(draftValue, 10);
+    const maybeBoolValue = draftValue === "true" || draftValue === "false";
+
+    if (!Number.isNaN(maybeNumberValue)) {
+      draftVarValue = {
+        number: maybeNumberValue,
+      };
+
+      patchItem(index, Object.assign, {
+        ifEq: [draftKey, draftVarValue],
+      });
+    } else if (maybeBoolValue) {
+      draftVarValue = {
+        boolean: draftValue === "true",
+      };
+
+      patchItem(index, Object.assign, {
+        ifEq: [draftKey, draftVarValue],
+      });
+    } else {
+      draftVarValue = {
+        string: draftValue,
+      };
+
+      patchItem(index, Object.assign, {
+        ifEq: [draftKey, draftVarValue],
+      });
+    }
+  };
+
+  const patchSetVarMessage = (index: number, value: string) => {
+    let [draftKey, draftValue] = value.split("=").map((x) => x.trim());
+    let draftVarValue: VariableValue | null = null;
+
+    const maybeNumberValue = parseInt(draftValue, 10);
+    const maybeBoolValue = draftValue === "true" || draftValue === "false";
+
+    if (!Number.isNaN(maybeNumberValue)) {
+      draftVarValue = {
+        number: maybeNumberValue,
+      };
+
+      patchItem(index, Object.assign, {
+        setVar: [draftKey, draftVarValue],
+      });
+    } else if (maybeBoolValue) {
+      draftVarValue = {
+        boolean: draftValue === "true",
+      };
+
+      patchItem(index, Object.assign, {
+        setVar: [draftKey, draftVarValue],
+      });
+    } else {
+      draftVarValue = {
+        string: draftValue,
+      };
+
+      patchItem(index, Object.assign, {
+        setVar: [draftKey, draftVarValue],
+      });
+    }
   };
 
   const handleDeleteAtIndex = (index: number) => () => {
@@ -314,43 +377,21 @@ function RouteComponent() {
 
   const handleDelete = () => {};
 
-  const buttons = (
-    <Button.Group>
-      {isEditing && (
-        <>
-          <Button onClick={handleSave}>Save</Button>
-          <Button variant="light" onClick={handleCancel}>
-            Cancel
-          </Button>
-        </>
-      )}
-
-      {!isEditing && (
-        <>
-          <Button onClick={handleEdit}>Edit</Button>
-        </>
-      )}
-
-      <Button variant="outline" onClick={handleDelete}>
-        Delete
-      </Button>
-    </Button.Group>
-  );
-
   return (
     <>
       <Stack>
         <Group justify="space-between">
           <Button variant="gradient">Chat</Button>
-          {buttons}
+          <Buttons
+            isEditing={isEditing}
+            handleCancel={handleCancel}
+            handleEdit={handleEdit}
+            handleSave={handleSave}
+            handleDelete={handleDelete}
+          />
         </Group>
 
-        <Divider
-          label={"Blocks"}
-          labelPosition="left"
-          mt="md"
-          mb="md"
-        ></Divider>
+        <Divider label={"Blocks"} labelPosition="left" mt="md" mb="md" />
 
         <Stack gap="xs">
           {draftTemplateItems.map((item, index) => {
@@ -373,7 +414,50 @@ function RouteComponent() {
                 <>
                   <TemplateBlock
                     icon={icon}
-                    title={item.message.role.kind}
+                    title={
+                      isEditing ? (
+                        <Select
+                          size="md"
+                          value={item.message.role.kind}
+                          onChange={(newRole) => {
+                            if (newRole === null) return;
+
+                            patchItem(
+                              index,
+                              (draft, patch) => {
+                                if (
+                                  // @ts-expect-error: WIP
+                                  isMessageItem(draft) &&
+                                  // @ts-expect-error: WIP
+                                  isMessageItem(patch)
+                                ) {
+                                  draft.message.role.kind =
+                                    patch.message.role.kind;
+                                }
+                              },
+                              {
+                                message: {
+                                  role: {
+                                    // @ts-expect-error: WIP
+                                    kind: newRole,
+                                  },
+                                },
+                              },
+                            );
+                          }}
+                          data={["user", "system", "assistant"] as const}
+                        />
+                      ) : (
+                        <Text
+                          fw="bold"
+                          style={{
+                            textTransform: "capitalize",
+                          }}
+                        >
+                          {item.message.role.kind}
+                        </Text>
+                      )
+                    }
                     isEditing={isEditing}
                     onClose={handleDeleteAtIndex(index)}
                   >
@@ -475,9 +559,21 @@ function RouteComponent() {
                     isEditing={isEditing}
                     onClose={handleDeleteAtIndex(index)}
                   >
-                    <Code block mt={0} mb={0}>
-                      {key} = {JSON.stringify(value)}
-                    </Code>
+                    {isEditing ? (
+                      <Textarea
+                        size="md"
+                        minRows={1}
+                        autosize
+                        value={`${key} = ${value}`}
+                        onChange={(e) =>
+                          patchSetVarMessage(index, e.target.value)
+                        }
+                      />
+                    ) : (
+                      <Code block mt={0} mb={0}>
+                        {key} = {JSON.stringify(value)}
+                      </Code>
+                    )}
                   </TemplateBlock>
 
                   <DividerBar index={index} />
@@ -511,64 +607,9 @@ function RouteComponent() {
                         minRows={1}
                         autosize
                         value={`${key} = ${value}`}
-                        onChange={(e) => {
-                          let [draftKey, draftValue] = e.target.value
-                            .split("=")
-                            .map((x) => x.trim());
-                          let draftVarValue: VariableValue | null = null;
-
-                          if (draftVarValue === null) {
-                            return;
-                          }
-
-                          const maybeNumberValue = parseInt(draftValue, 10);
-                          const maybeBoolValue =
-                            draftValue === "true" || draftValue === "false";
-
-                          if (!Number.isNaN(maybeNumberValue)) {
-                            draftVarValue = {
-                              number: maybeNumberValue,
-                            };
-
-                            patchItem(
-                              index,
-                              (draft, patch) => {
-                                Object.assign(draft, patch);
-                              },
-                              {
-                                setVar: [draftKey, draftVarValue],
-                              },
-                            );
-                          } else if (maybeBoolValue) {
-                            draftVarValue = {
-                              boolean: draftValue === "true",
-                            };
-
-                            patchItem(
-                              index,
-                              (draft, patch) => {
-                                Object.assign(draft, patch);
-                              },
-                              {
-                                setVar: [draftKey, draftVarValue],
-                              },
-                            );
-                          } else {
-                            draftVarValue = {
-                              string: draftValue,
-                            };
-
-                            patchItem(
-                              index,
-                              (draft, patch) => {
-                                Object.assign(draft, patch);
-                              },
-                              {
-                                setVar: [draftKey, draftVarValue],
-                              },
-                            );
-                          }
-                        }}
+                        onChange={(e) =>
+                          patchIfEqMessage(index, e.target.value)
+                        }
                       />
                     ) : (
                       <Code block mt={0} mb={0}>
@@ -644,7 +685,13 @@ function RouteComponent() {
         <Transition transition="slide-up" mounted={scroll.y > 100}>
           {(transitionStyles) => (
             <Card p="xs" style={transitionStyles}>
-              {buttons}
+              <Buttons
+                isEditing={isEditing}
+                handleCancel={handleCancel}
+                handleEdit={handleEdit}
+                handleSave={handleSave}
+                handleDelete={handleDelete}
+              />
             </Card>
           )}
         </Transition>
@@ -679,7 +726,48 @@ const patchItemImmer =
       produce((draftItems) => {
         const draftItem = draftItems[draftItemIndex];
 
+        debugger;
+
         patchFn(draftItem, patch);
+
+        console.log(draftItem);
+
+        debugger;
       }),
     );
   };
+
+const Buttons = ({
+  isEditing,
+  handleCancel,
+  handleDelete,
+  handleEdit,
+  handleSave,
+}: {
+  isEditing: boolean;
+  handleCancel: () => void;
+  handleEdit: () => void;
+  handleSave: () => void;
+  handleDelete: () => void;
+}) => (
+  <Button.Group>
+    {isEditing && (
+      <>
+        <Button onClick={handleSave}>Save</Button>
+        <Button variant="light" onClick={handleCancel}>
+          Cancel
+        </Button>
+      </>
+    )}
+
+    {!isEditing && (
+      <>
+        <Button onClick={handleEdit}>Edit</Button>
+      </>
+    )}
+
+    <Button variant="outline" onClick={handleDelete}>
+      Delete
+    </Button>
+  </Button.Group>
+);

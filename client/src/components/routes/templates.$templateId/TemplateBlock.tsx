@@ -10,7 +10,7 @@ import {
 type TemplateBlockProps = {
   children?: React.ReactNode;
   icon: React.ReactNode;
-  title: string;
+  title: React.ReactNode;
   inline?: boolean;
   level?: number;
   isEditing: boolean;
