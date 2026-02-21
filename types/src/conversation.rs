@@ -22,6 +22,13 @@ impl Persona {
     }
 }
 
+#[derive(TS, Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[ts(export)]
+pub struct NewPersona {
+    pub name: String,
+    pub description: Option<String>,
+}
+
 #[derive(TS, Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 #[serde(tag = "kind")]

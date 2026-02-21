@@ -35,7 +35,7 @@ use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use types::{
     DebugInfo,
     achievement::{AchievementDto, AchievementId},
-    conversation::{Conversation, ConversationTemplate, Persona},
+    conversation::{Conversation, ConversationTemplate, NewPersona, Persona},
     socket::ClientMessage,
 };
 
@@ -355,7 +355,7 @@ pub async fn init_server(options: InitServerOptions) -> Result<AppServer, Error>
             post(start_conversation),
         )
         .route("/api/conversations", get(get_conversations))
-        .route("/api/personas", get(get_personas))
+        .route("/api/personas", get(get_personas).post(add_personas))
         .fallback_service(static_dir.clone())
         .with_state(state)
         .layer(compression_layer)
@@ -663,4 +663,18 @@ pub async fn get_personas(State(state): State<Arc<Mutex<AppState>>>) -> Json<Vec
     let state = state.lock().await;
 
     Json(state.personass.clone())
+}
+
+pub async fn add_personas(
+    State(state): State<Arc<Mutex<AppState>>>,
+    Json(body): Json<NewPersona>,
+) -> Json<Persona> {
+    let state = state.clone();
+    let mut state = state.lock().await;
+
+    let persona = Persona::new(&body.name, body.description.as_deref());
+
+    state.personass.push(persona.clone());
+
+    Json(persona)
 }

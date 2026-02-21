@@ -1,13 +1,28 @@
-import { useGetPersonasQuery } from "@/queries/personas";
-import { Alert, Card, Group, Loader, Stack, Text } from "@mantine/core";
+import {
+  useCreatePersonaMutation,
+  useGetPersonasQuery,
+} from "@/queries/personas";
+import {
+  Alert,
+  Button,
+  Card,
+  Group,
+  Loader,
+  Stack,
+  Text,
+  TextInput,
+} from "@mantine/core";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useState } from "react";
 
 export const Route = createFileRoute("/personas/")({
   component: RouteComponent,
 });
 
 function RouteComponent() {
+  const [draftName, setDraftName] = useState("");
   const personasQuery = useGetPersonasQuery();
+  const createPersonaMutation = useCreatePersonaMutation();
 
   if (personasQuery.isLoading) {
     return <Loader />;
@@ -20,6 +35,21 @@ function RouteComponent() {
       </Alert>
     );
   }
+
+  const handleAddPersona = () => {
+    createPersonaMutation.mutate(
+      {
+        name: draftName,
+        description: null,
+      },
+      {
+        onSuccess() {
+          setDraftName("");
+        },
+      },
+    );
+  };
+
   return (
     <Stack>
       {personasQuery.data?.map((persona) => {
@@ -43,6 +73,21 @@ function RouteComponent() {
           </Card>
         );
       })}
+
+      <Card>
+        <Stack>
+          <TextInput
+            value={draftName}
+            size="md"
+            placeholder="Persona Name"
+            onChange={(e) => setDraftName(e.target.value)}
+          />
+
+          <Button.Group>
+            <Button onClick={handleAddPersona}>Add</Button>
+          </Button.Group>
+        </Stack>
+      </Card>
     </Stack>
   );
 }

@@ -1,5 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
-import { Persona } from "server-types";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { NewPersona, Persona } from "server-types";
 
 export const PERSONA_KEYS = {
   all: ["personas"] as const,
@@ -29,3 +29,27 @@ export const useGetPersonaByIdQuery = (id: string) =>
       return persona ?? null;
     },
   });
+
+export const useCreatePersonaMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (newPerson: NewPersona) => {
+      const response = await fetch(`/api/personas`, {
+        method: "POST",
+        body: JSON.stringify(newPerson),
+        headers: {
+          "content-type": "application/json",
+        },
+      });
+      const data = (await response.json()) as Persona;
+
+      return data;
+    },
+    onSuccess() {
+      queryClient.invalidateQueries({
+        queryKey: PERSONA_KEYS.all,
+      });
+    },
+  });
+};
