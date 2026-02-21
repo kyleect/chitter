@@ -1,17 +1,20 @@
 import {
   useCreatePersonaMutation,
+  useDeletePersonaMutation,
   useGetPersonasQuery,
 } from "@/queries/personas";
 import {
   Alert,
   Button,
   Card,
+  CloseButton,
   Group,
   Loader,
   Stack,
   Text,
   TextInput,
 } from "@mantine/core";
+import { modals } from "@mantine/modals";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 
@@ -23,6 +26,7 @@ function RouteComponent() {
   const [draftName, setDraftName] = useState("");
   const personasQuery = useGetPersonasQuery();
   const createPersonaMutation = useCreatePersonaMutation();
+  const deletePersonaMutation = useDeletePersonaMutation();
 
   if (personasQuery.isLoading) {
     return <Loader />;
@@ -55,28 +59,48 @@ function RouteComponent() {
       {personasQuery.data?.map((persona) => {
         return (
           <Card>
-            <Group>
-              <Text mb={0} fw="bold">
-                Persona:
-              </Text>
-              <Text>
-                <Link
-                  to="/personas/$personaId"
-                  params={{
-                    personaId: persona.id,
-                  }}
-                >
-                  {persona.name}
-                </Link>
-              </Text>
+            <Group justify="space-between">
+              <Group>
+                <Text mb={0} fw="bold">
+                  Persona:
+                </Text>
+                <Text>
+                  <Link
+                    to="/personas/$personaId"
+                    params={{
+                      personaId: persona.id,
+                    }}
+                  >
+                    {persona.name}
+                  </Link>
+                </Text>
+              </Group>
+              <CloseButton
+                onClick={() => {
+                  modals.openConfirmModal({
+                    title: "Delete Persona",
+                    labels: {
+                      confirm: "Delete",
+                      cancel: "Cancel",
+                    },
+                    confirmProps: {
+                      color: "red",
+                    },
+                    onConfirm() {
+                      deletePersonaMutation.mutate(persona.id);
+                    },
+                  });
+                }}
+              />
             </Group>
           </Card>
         );
       })}
 
       <Card>
-        <Stack>
+        <Group>
           <TextInput
+            flex={1}
             value={draftName}
             size="md"
             placeholder="Persona Name"
@@ -86,7 +110,7 @@ function RouteComponent() {
           <Button.Group>
             <Button onClick={handleAddPersona}>Add</Button>
           </Button.Group>
-        </Stack>
+        </Group>
       </Card>
     </Stack>
   );

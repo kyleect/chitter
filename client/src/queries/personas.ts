@@ -21,12 +21,10 @@ export const useGetPersonaByIdQuery = (id: string) =>
   useQuery({
     queryKey: PERSONA_KEYS.detail(id),
     queryFn: async () => {
-      const response = await fetch(`/api/personas`);
-      const data = (await response.json()) as Persona[];
+      const response = await fetch(`/api/personas/${id}`);
+      const data = (await response.json()) as Persona;
 
-      const persona = data.find((item) => item.id === id);
-
-      return persona ?? null;
+      return data;
     },
   });
 
@@ -45,6 +43,47 @@ export const useCreatePersonaMutation = () => {
       const data = (await response.json()) as Persona;
 
       return data;
+    },
+    onSuccess() {
+      queryClient.invalidateQueries({
+        queryKey: PERSONA_KEYS.all,
+      });
+    },
+  });
+};
+
+export const useUpdatePersonaMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (update: Persona) => {
+      const response = await fetch(`/api/personas/${update.id}`, {
+        method: "PUT",
+        body: JSON.stringify(update),
+        headers: {
+          "content-type": "application/json",
+        },
+      });
+      const data = (await response.json()) as Persona;
+
+      return data;
+    },
+    onSuccess(data) {
+      queryClient.invalidateQueries({
+        queryKey: PERSONA_KEYS.detail(data.id),
+      });
+    },
+  });
+};
+
+export const useDeletePersonaMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (personaId: Persona["id"]) => {
+      await fetch(`/api/personas/${personaId}`, {
+        method: "DELETE",
+      });
     },
     onSuccess() {
       queryClient.invalidateQueries({

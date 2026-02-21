@@ -356,6 +356,10 @@ pub async fn init_server(options: InitServerOptions) -> Result<AppServer, Error>
         )
         .route("/api/conversations", get(get_conversations))
         .route("/api/personas", get(get_personas).post(add_personas))
+        .route(
+            "/api/personas/{persona_id}",
+            get(get_persona).delete(delete_persona).put(update_persona),
+        )
         .fallback_service(static_dir.clone())
         .with_state(state)
         .layer(compression_layer)
@@ -581,10 +585,6 @@ pub async fn update_template(
     let state = state.clone();
     let mut state = state.lock().await;
 
-    // What I'd like to do
-    // let conversation_index = todo!() // Find the index in state.conversation_templates that matches body.id
-    // Insert the new conversation_template (body) at the correct index
-
     let template = state
         .conversation_templates
         .iter_mut()
@@ -677,4 +677,56 @@ pub async fn add_personas(
     state.personass.push(persona.clone());
 
     Json(persona)
+}
+
+pub async fn get_persona(
+    State(state): State<Arc<Mutex<AppState>>>,
+    Path(persona_id): Path<String>,
+) -> Json<Persona> {
+    let state = state.clone();
+    let mut state = state.lock().await;
+
+    let persona = state
+        .personass
+        .iter_mut()
+        .find(|t| t.id == persona_id)
+        .ok_or(StatusCode::NOT_FOUND)
+        .unwrap();
+
+    Json(persona.clone())
+}
+
+pub async fn delete_persona(
+    State(state): State<Arc<Mutex<AppState>>>,
+    Path(persona_id): Path<String>,
+) {
+    let state = state.clone();
+    let mut state = state.lock().await;
+
+    state.personass = state
+        .personass
+        .iter()
+        .filter(|x| x.id != persona_id)
+        .cloned()
+        .collect();
+}
+
+pub async fn update_persona(
+    State(state): State<Arc<Mutex<AppState>>>,
+    Path(persona_id): Path<String>,
+    Json(body): Json<Persona>,
+) -> Json<Persona> {
+    let state = state.clone();
+    let mut state = state.lock().await;
+
+    let persona = state
+        .personass
+        .iter_mut()
+        .find(|t| t.id == persona_id)
+        .ok_or(StatusCode::NOT_FOUND)
+        .unwrap();
+
+    *persona = body;
+
+    Json(persona.clone())
 }
