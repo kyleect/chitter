@@ -3,7 +3,7 @@ use std::{env::current_dir, path::PathBuf, sync::Arc, vec};
 use axum::{
     Json, Router,
     extract::{
-        Path, Query, Request, State,
+        Request, State,
         ws::{Message, WebSocket, WebSocketUpgrade},
     },
     http::StatusCode,
@@ -17,7 +17,6 @@ use hyper_util::{
     rt::{TokioExecutor, TokioIo},
     server,
 };
-use serde::{Deserialize, Serialize};
 use serde_json::from_str;
 use sqlx::{Pool, Sqlite, SqlitePool, migrate::Migrator, sqlite::SqliteConnectOptions};
 use tokio::{
@@ -35,7 +34,7 @@ use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use types::{
     DebugInfo,
     achievement::{AchievementDto, AchievementId},
-    conversation::{Conversation, ConversationTemplate, NewPersona, Persona},
+    conversation::{Conversation, ConversationTemplate, Persona},
     socket::ClientMessage,
 };
 
@@ -48,7 +47,12 @@ use tower_http::services::ServeDir;
 #[cfg(not(feature = "development_mode"))]
 use tower_serve_static::ServeDir as StaticServeDir;
 
-use crate::services::achievements_service;
+use crate::services::{
+    achievements_service,
+    conversation_service::{preview_conversation, start_conversation},
+    persona_services::{add_personas, delete_persona, get_persona, get_personas, update_persona},
+    template_service::{get_template, get_templates, update_template},
+};
 
 pub mod services;
 
@@ -354,7 +358,7 @@ pub async fn init_server(options: InitServerOptions) -> Result<AppServer, Error>
             "/api/templates/{template_id}/chat",
             post(start_conversation),
         )
-        .route("/api/conversations", get(get_conversations))
+        .route("/api/conversations", get(start_conversation))
         .route("/api/personas", get(get_personas).post(add_personas))
         .route(
             "/api/personas/{persona_id}",
@@ -547,186 +551,4 @@ pub async fn get_achievements(
         StatusCode::OK,
         Json(achievements_service::get_achievements(state).await),
     )
-}
-
-pub async fn get_templates(
-    State(state): State<Arc<Mutex<AppState>>>,
-) -> Json<Vec<ConversationTemplate>> {
-    let state = state.clone();
-    let state = state.lock().await;
-
-    Json(state.conversation_templates.clone())
-}
-
-pub async fn get_template(
-    State(state): State<Arc<Mutex<AppState>>>,
-    Path(template_id): Path<String>,
-) -> Json<ConversationTemplate> {
-    let state = state.clone();
-    let state = state.lock().await;
-
-    Json(
-        state
-            .conversation_templates
-            .iter()
-            .find(|x| x.id == template_id)
-            .cloned()
-            .expect("should have template by id"),
-    )
-}
-
-//
-
-pub async fn update_template(
-    State(state): State<Arc<Mutex<AppState>>>,
-    Path(template_id): Path<String>,
-    Json(body): Json<ConversationTemplate>,
-) {
-    let state = state.clone();
-    let mut state = state.lock().await;
-
-    let template = state
-        .conversation_templates
-        .iter_mut()
-        .find(|t| t.id == template_id)
-        .ok_or(StatusCode::NOT_FOUND)
-        .unwrap();
-
-    *template = body;
-}
-
-pub async fn get_conversations(
-    State(state): State<Arc<Mutex<AppState>>>,
-) -> Json<Vec<Conversation>> {
-    let state = state.clone();
-    let state = state.lock().await;
-
-    Json(state.conservations.clone())
-}
-
-pub async fn start_conversation(
-    State(state): State<Arc<Mutex<AppState>>>,
-    Path(template_id): Path<String>,
-) -> Json<Conversation> {
-    let state = state.clone();
-    let mut state = state.lock().await;
-
-    let template = state
-        .conversation_templates
-        .iter()
-        .find(|x| x.id == template_id)
-        .cloned()
-        .expect("should have template by id");
-
-    let conversation: Conversation = template.into();
-
-    state.conservations.push(conversation.clone());
-
-    Json(conversation)
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct PreviewQueryParams {
-    at: Option<usize>,
-}
-
-pub async fn preview_conversation(
-    State(state): State<Arc<Mutex<AppState>>>,
-    Path(template_id): Path<String>,
-    Query(params): Query<PreviewQueryParams>,
-) -> Json<Conversation> {
-    let state = state.clone();
-    let mut state = state.lock().await;
-
-    let mut template = state
-        .conversation_templates
-        .iter()
-        .find(|x| x.id == template_id)
-        .cloned()
-        .expect("should have template by id");
-
-    if let Some(at) = params.at
-        && at > 0
-    {
-        template.items = template.items[..at].to_vec()
-    }
-
-    let conversation: Conversation = template.into();
-
-    state.conservations.push(conversation.clone());
-
-    Json(conversation)
-}
-
-pub async fn get_personas(State(state): State<Arc<Mutex<AppState>>>) -> Json<Vec<Persona>> {
-    let state = state.clone();
-    let state = state.lock().await;
-
-    Json(state.personass.clone())
-}
-
-pub async fn add_personas(
-    State(state): State<Arc<Mutex<AppState>>>,
-    Json(body): Json<NewPersona>,
-) -> Json<Persona> {
-    let state = state.clone();
-    let mut state = state.lock().await;
-
-    let persona = Persona::new(&body.name, body.description.as_deref());
-
-    state.personass.push(persona.clone());
-
-    Json(persona)
-}
-
-pub async fn get_persona(
-    State(state): State<Arc<Mutex<AppState>>>,
-    Path(persona_id): Path<String>,
-) -> Json<Persona> {
-    let state = state.clone();
-    let mut state = state.lock().await;
-
-    let persona = state
-        .personass
-        .iter_mut()
-        .find(|t| t.id == persona_id)
-        .ok_or(StatusCode::NOT_FOUND)
-        .unwrap();
-
-    Json(persona.clone())
-}
-
-pub async fn delete_persona(
-    State(state): State<Arc<Mutex<AppState>>>,
-    Path(persona_id): Path<String>,
-) {
-    let state = state.clone();
-    let mut state = state.lock().await;
-
-    state.personass = state
-        .personass
-        .iter()
-        .filter(|x| x.id != persona_id)
-        .cloned()
-        .collect();
-}
-
-pub async fn update_persona(
-    State(state): State<Arc<Mutex<AppState>>>,
-    Path(persona_id): Path<String>,
-    Json(body): Json<Persona>,
-) -> Json<Persona> {
-    let state = state.clone();
-    let mut state = state.lock().await;
-
-    let persona = state
-        .personass
-        .iter_mut()
-        .find(|t| t.id == persona_id)
-        .ok_or(StatusCode::NOT_FOUND)
-        .unwrap();
-
-    *persona = body;
-
-    Json(persona.clone())
 }
