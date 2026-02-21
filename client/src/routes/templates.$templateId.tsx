@@ -6,40 +6,35 @@ import {
   isMessageItem,
   isOOCItem,
   isSetVarItem,
+  patchItemImmer,
+  patchItemsImmer,
+  patchItemsWithInsertAt,
   useGetTemplateByIdPreviewQuery,
   useGetTemplateByIdQuery,
   useUpdateTemplateByIdMutation,
 } from "@/queries/templates";
 import {
-  ActionIcon,
   Affix,
   Alert,
-  Badge,
   Button,
   Card,
   Code,
   Divider,
-  Drawer,
   Group,
   Loader,
-  Menu,
   Select,
   Stack,
   Text,
   Textarea,
-  ThemeIcon,
   Transition,
 } from "@mantine/core";
 import { useDisclosure, useWindowScroll } from "@mantine/hooks";
 import {
   IconBrain,
   IconCode,
-  IconCodeDots,
   IconCodeOff,
   IconCompass,
   IconCpu,
-  IconMail,
-  IconPlus,
   IconRobot,
   IconUser,
   IconVariablePlus,
@@ -52,8 +47,10 @@ import {
   Message,
   VariableValue,
 } from "server-types";
-import { produce } from "immer";
 import { modals } from "@mantine/modals";
+import { DividerBar } from "@/components/routes/templates.$templateId/DividerBar";
+import { ConversationPreviewDrawer } from "@/components/routes/templates.$templateId/ConversationPreviewDrawer";
+import { Buttons } from "@/components/routes/templates.$templateId/Buttons";
 
 type Search = {
   at?: number;
@@ -116,9 +113,6 @@ function RouteComponent() {
 
   const patchItems = patchItemsImmer(setDraftTemplateItems);
   const patchItem = patchItemImmer(setDraftTemplateItems);
-
-  const patchItemsWithInsertAt = (index: number, newItem: ConversationItem) =>
-    patchItems((items) => items.splice(index, 0, newItem));
 
   const patchMessageItem = (index: number, value: string) => {
     patchItem(
@@ -248,142 +242,6 @@ function RouteComponent() {
     });
   };
 
-  const DividerBar = ({ index }: { index: number }) => (
-    <Divider
-      mt={0}
-      variant="dashed"
-      // size="sm"
-      label={
-        <ActionIcon.Group>
-          {isEditing && (
-            <Menu shadow="md" width={200} position="right-start">
-              <Menu.Target>
-                <ActionIcon variant="subtle" color="gray">
-                  <IconPlus />
-                </ActionIcon>
-              </Menu.Target>
-
-              <Menu.Dropdown>
-                <Menu.Label>New Template Block</Menu.Label>
-
-                <Menu.Sub>
-                  <Menu.Sub.Target>
-                    <Menu.Sub.Item leftSection={<IconMail />}>
-                      Message
-                    </Menu.Sub.Item>
-                  </Menu.Sub.Target>
-
-                  <Menu.Sub.Dropdown>
-                    <Menu.Item
-                      leftSection={<IconRobot />}
-                      onClick={() => {
-                        patchItemsWithInsertAt(index + 1, {
-                          message: {
-                            role: {
-                              kind: "assistant",
-                            },
-                            message: null,
-                            kind: "Message",
-                          },
-                        });
-                      }}
-                    >
-                      Assistant
-                    </Menu.Item>
-                    <Menu.Item
-                      leftSection={<IconUser />}
-                      onClick={() => {
-                        patchItemsWithInsertAt(index + 1, {
-                          message: {
-                            role: {
-                              kind: "user",
-                            },
-                            message: null,
-                            kind: "Message",
-                          },
-                        });
-                      }}
-                    >
-                      User
-                    </Menu.Item>
-                    <Menu.Item
-                      leftSection={<IconCpu />}
-                      onClick={() => {
-                        patchItemsWithInsertAt(index + 1, {
-                          message: {
-                            role: {
-                              kind: "system",
-                            },
-                            message: null,
-                            kind: "Message",
-                          },
-                        });
-                      }}
-                    >
-                      System
-                    </Menu.Item>
-                  </Menu.Sub.Dropdown>
-                </Menu.Sub>
-
-                <Menu.Item
-                  leftSection={<IconVariablePlus />}
-                  onClick={() => {
-                    patchItemsWithInsertAt(index + 1, {
-                      setVar: ["foo", { string: "bar" }],
-                    });
-                  }}
-                >
-                  Set Variable
-                </Menu.Item>
-                <Menu.Item
-                  leftSection={<IconCode />}
-                  onClick={() => {
-                    patchItemsWithInsertAt(index + 1, {
-                      ifEq: ["foo", { string: "bar" }],
-                    });
-                  }}
-                >
-                  If Equals
-                </Menu.Item>
-                <Menu.Item
-                  leftSection={<IconCompass />}
-                  onClick={() => {
-                    patchItemsWithInsertAt(index + 1, {
-                      oOC: "",
-                    });
-                  }}
-                >
-                  OOC
-                </Menu.Item>
-                <Menu.Item
-                  leftSection={<IconBrain />}
-                  onClick={() => {
-                    patchItemsWithInsertAt(index + 1, {
-                      innerThoughts: "",
-                    });
-                  }}
-                >
-                  Inner Thoughts
-                </Menu.Item>
-              </Menu.Dropdown>
-            </Menu>
-          )}
-
-          <ActionIcon
-            variant="subtle"
-            color="gray"
-            onClick={() => {
-              open();
-              setAt(index + 1);
-            }}
-          >
-            <IconCodeDots stroke={1.5} />
-          </ActionIcon>
-        </ActionIcon.Group>
-      }
-    />
-  );
-
   const handleSave = () => {
     getTemplateByIdQuery.data.items = draftTemplateItems;
 
@@ -505,7 +363,13 @@ function RouteComponent() {
                     )}
                   </TemplateBlock>
 
-                  <DividerBar index={index} />
+                  <DividerBar
+                    index={index}
+                    isEditing={isEditing}
+                    patchItemsWithInsertAt={patchItemsWithInsertAt(patchItems)}
+                    setAt={setAt}
+                    open={open}
+                  />
                 </>
               );
             }
@@ -533,7 +397,13 @@ function RouteComponent() {
                     )}
                   </TemplateBlock>
 
-                  <DividerBar index={index} />
+                  <DividerBar
+                    index={index}
+                    isEditing={isEditing}
+                    patchItemsWithInsertAt={patchItemsWithInsertAt(patchItems)}
+                    setAt={setAt}
+                    open={open}
+                  />
                 </>
               );
             }
@@ -563,7 +433,13 @@ function RouteComponent() {
                     )}
                   </TemplateBlock>
 
-                  <DividerBar index={index} />
+                  <DividerBar
+                    index={index}
+                    isEditing={isEditing}
+                    patchItemsWithInsertAt={patchItemsWithInsertAt(patchItems)}
+                    setAt={setAt}
+                    open={open}
+                  />
                 </>
               );
             }
@@ -605,7 +481,13 @@ function RouteComponent() {
                     )}
                   </TemplateBlock>
 
-                  <DividerBar index={index} />
+                  <DividerBar
+                    index={index}
+                    isEditing={isEditing}
+                    patchItemsWithInsertAt={patchItemsWithInsertAt(patchItems)}
+                    setAt={setAt}
+                    open={open}
+                  />
                 </>
               );
             }
@@ -647,7 +529,13 @@ function RouteComponent() {
                     )}
                   </TemplateBlock>
 
-                  <DividerBar index={index} />
+                  <DividerBar
+                    index={index}
+                    isEditing={isEditing}
+                    patchItemsWithInsertAt={patchItemsWithInsertAt(patchItems)}
+                    setAt={setAt}
+                    open={open}
+                  />
                 </>
               );
             }
@@ -662,7 +550,13 @@ function RouteComponent() {
                     onClose={handleDeleteAtIndex(index)}
                   />
 
-                  <DividerBar index={index} />
+                  <DividerBar
+                    index={index}
+                    isEditing={isEditing}
+                    patchItemsWithInsertAt={patchItemsWithInsertAt(patchItems)}
+                    setAt={setAt}
+                    open={open}
+                  />
                 </>
               );
             }
@@ -672,79 +566,13 @@ function RouteComponent() {
         </Stack>
       </Stack>
 
-      <Drawer
-        zIndex={10000}
-        keepMounted={false}
-        position="bottom"
+      <ConversationPreviewDrawer
         opened={opened}
-        onClose={close}
-        title={
-          <Group>
-            <Group>
-              <Text fw="bold">Conversation Preview</Text>
-              <Badge radius="xs" variant="outline" color="gray">
-                Index: {at}
-              </Badge>
-            </Group>
-          </Group>
-        }
-        size="lg"
-      >
-        <Stack mt="md">
-          <Card withBorder shadow="xs">
-            <Group>
-              <ThemeIcon variant="transparent" color="gray">
-                <IconCodeDots />
-              </ThemeIcon>
-              <Text mb={0} fw="bold">
-                State
-              </Text>
-            </Group>
-            <Code block>
-              {JSON.stringify(
-                getTemplateByIdPreviewQuery.data?.variables ?? {},
-                null,
-                2,
-              )}
-            </Code>
-          </Card>
-          {getTemplateByIdPreviewQuery.data &&
-            getTemplateByIdPreviewQuery.data.messages.map((message) => {
-              let icon: React.ReactNode = null;
-
-              switch (message.role.kind) {
-                case "user":
-                  icon = <IconUser stroke={1.5} />;
-                  break;
-                case "assistant":
-                  icon = <IconRobot stroke={1.5} />;
-                  break;
-                case "system":
-                  icon = <IconCpu stroke={1.5} />;
-                  break;
-              }
-
-              return (
-                <TemplateBlock
-                  icon={icon}
-                  title={
-                    <Text
-                      fw="bold"
-                      style={{
-                        textTransform: "capitalize",
-                      }}
-                    >
-                      {message.role.kind}
-                    </Text>
-                  }
-                  isEditing={false}
-                >
-                  <Text>{message.message}</Text>
-                </TemplateBlock>
-              );
-            })}
-        </Stack>
-      </Drawer>
+        close={close}
+        templateByIdItems={getTemplateByIdQuery.data.items}
+        templateByIdPreview={getTemplateByIdPreviewQuery.data}
+        at={at}
+      />
 
       <Affix position={{ bottom: 20, right: 20 }}>
         <Transition transition="slide-up" mounted={scroll.y > 100}>
@@ -764,75 +592,3 @@ function RouteComponent() {
     </>
   );
 }
-
-type Unarray<T> = T extends Array<infer U> ? U : T;
-
-const patchItemsImmer =
-  (set: React.Dispatch<React.SetStateAction<ConversationTemplate["items"]>>) =>
-  (patchFn: (items: ConversationTemplate["items"]) => void) => {
-    set(
-      produce((draftItems) => {
-        patchFn(draftItems);
-      }),
-    );
-  };
-
-const patchItemImmer =
-  (set: React.Dispatch<React.SetStateAction<ConversationTemplate["items"]>>) =>
-  (
-    draftItemIndex: number,
-    patchFn: (
-      item: Partial<Unarray<ConversationTemplate["items"]>>,
-      patch: Partial<Unarray<ConversationTemplate["items"]>>,
-    ) => void,
-    patch: Partial<Unarray<ConversationTemplate["items"]>>,
-  ) => {
-    set(
-      produce((draftItems) => {
-        const draftItem = draftItems[draftItemIndex];
-
-        debugger;
-
-        patchFn(draftItem, patch);
-
-        console.log(draftItem);
-
-        debugger;
-      }),
-    );
-  };
-
-const Buttons = ({
-  isEditing,
-  handleCancel,
-  handleDelete,
-  handleEdit,
-  handleSave,
-}: {
-  isEditing: boolean;
-  handleCancel: () => void;
-  handleEdit: () => void;
-  handleSave: () => void;
-  handleDelete: () => void;
-}) => (
-  <Button.Group>
-    {isEditing && (
-      <>
-        <Button onClick={handleSave}>Save</Button>
-        <Button variant="light" onClick={handleCancel}>
-          Cancel
-        </Button>
-      </>
-    )}
-
-    {!isEditing && (
-      <>
-        <Button onClick={handleEdit}>Edit</Button>
-      </>
-    )}
-
-    <Button variant="outline" onClick={handleDelete}>
-      Delete
-    </Button>
-  </Button.Group>
-);

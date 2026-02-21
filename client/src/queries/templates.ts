@@ -1,4 +1,6 @@
+import { Unarray } from "@/types";
 import { useMutation, useQuery } from "@tanstack/react-query";
+import { produce } from "immer";
 import {
   Conversation,
   ConversationItem,
@@ -133,3 +135,45 @@ export function isIfEqItem(item: ConversationItem): item is {
 
   return key === "ifEq";
 }
+
+export const patchItemsImmer =
+  (set: React.Dispatch<React.SetStateAction<ConversationTemplate["items"]>>) =>
+  (patchFn: (items: ConversationTemplate["items"]) => void) => {
+    set(
+      produce((draftItems) => {
+        patchFn(draftItems);
+      }),
+    );
+  };
+
+export const patchItemImmer =
+  (set: React.Dispatch<React.SetStateAction<ConversationTemplate["items"]>>) =>
+  (
+    draftItemIndex: number,
+    patchFn: (
+      item: Partial<Unarray<ConversationTemplate["items"]>>,
+      patch: Partial<Unarray<ConversationTemplate["items"]>>,
+    ) => void,
+    patch: Partial<Unarray<ConversationTemplate["items"]>>,
+  ) => {
+    set(
+      produce((draftItems) => {
+        const draftItem = draftItems[draftItemIndex];
+
+        debugger;
+
+        patchFn(draftItem, patch);
+
+        console.log(draftItem);
+
+        debugger;
+      }),
+    );
+  };
+
+type PatchItemsPatchFn = (items: ConversationItem[]) => void;
+type PatchItemsFn = (patchFn: PatchItemsPatchFn) => void;
+
+export const patchItemsWithInsertAt =
+  (patchItems: PatchItemsFn) => (index: number, newItem: ConversationItem) =>
+    patchItems((items) => items.splice(index, 0, newItem));
