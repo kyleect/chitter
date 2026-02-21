@@ -215,8 +215,18 @@ impl From<ConversationTemplate> for Conversation {
     fn from(template: ConversationTemplate) -> Self {
         let mut messages: Vec<Message> = vec![];
         let mut variables: HashMap<VariableKey, VariableValue> = HashMap::new();
+        let mut in_if_eq = false;
+        let mut if_eq_result: Option<bool> = None;
 
         for item in template.items.iter() {
+            if let Some(result) = if_eq_result
+                && in_if_eq
+            {
+                if !result {
+                    continue;
+                }
+            }
+
             match item {
                 ConversationItem::Message(next_message) => {
                     if let Some(existing_draft_message) = &mut messages.last_mut() {
@@ -249,10 +259,23 @@ impl From<ConversationTemplate> for Conversation {
                     }
                 }
                 ConversationItem::SetVar(key, value) => {
-                    dbg!(&key, &value);
                     variables.insert(key.clone(), value.clone());
                 }
-                _ => (),
+                ConversationItem::IfEq(key, expected_value) => {
+                    in_if_eq = true;
+
+                    let maybe_value = variables.get(key);
+
+                    let result = match maybe_value {
+                        Some(value) => value == expected_value,
+                        None => false,
+                    };
+
+                    if_eq_result = Some(result)
+                }
+                ConversationItem::EndIf => {
+                    in_if_eq = false;
+                }
             }
         }
 
@@ -283,7 +306,7 @@ mod conversation_tests {
 
         template.id = "expectedTemplateId".to_string();
 
-        let summarize_as_list_var = template.set_var("summaryAsList", true.into());
+        let summarize_as_list_var = template.set_var("summaryAsList", false.into());
 
         template.add_system_message("You are a helpful AI assistant.");
 
@@ -327,11 +350,11 @@ mod conversation_tests {
                     Message {
                         role: Role::User,
                         message: Some(
-                            "I need you to summarize some text for me, highlighting the most important details.\n((OOC: Only respond with the summary of the text.))\n\n\n((OOC: Format the summary as a bulleted list))\n\n".to_string()
+                            "I need you to summarize some text for me, highlighting the most important details.\n((OOC: Only respond with the summary of the text.))\n\n".to_string()
                         )
                     }
                 ],
-                variables: HashMap::from([(summarize_as_list_var, true.into())])
+                variables: HashMap::from([(summarize_as_list_var, false.into())])
             },
             conservation
         );
