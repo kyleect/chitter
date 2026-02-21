@@ -1,5 +1,6 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {
+  Conversation,
   ConversationItem,
   ConversationTemplate,
   Message,
@@ -10,6 +11,12 @@ import {
 export const TEMPLATE_KEYS = {
   all: ["templates"] as const,
   detail: (id: string) => [...TEMPLATE_KEYS.all, id],
+  preview: (id: string, at?: number) => [
+    ...TEMPLATE_KEYS.detail(id),
+    "preview",
+    "at",
+    at ?? null,
+  ],
 } as const;
 
 export const useGetTemplatesQuery = () =>
@@ -29,6 +36,21 @@ export const useGetTemplateByIdQuery = (id: string) =>
     queryFn: async () => {
       const response = await fetch(`/api/templates/${id}`);
       const data = (await response.json()) as ConversationTemplate;
+
+      return data ?? null;
+    },
+  });
+
+export const useGetTemplateByIdPreviewQuery = (id: string, at?: number) =>
+  useQuery({
+    queryKey: TEMPLATE_KEYS.preview(id, at),
+    queryFn: async () => {
+      const response = await fetch(
+        at
+          ? `/api/templates/${id}/preview?at=${at}`
+          : `/api/templates/${id}/preview`,
+      );
+      const data = (await response.json()) as Conversation;
 
       return data ?? null;
     },

@@ -3,7 +3,7 @@ use std::{env::current_dir, path::PathBuf, sync::Arc, vec};
 use axum::{
     Json, Router,
     extract::{
-        Path, Request, State,
+        Path, Query, Request, State,
         ws::{Message, WebSocket, WebSocketUpgrade},
     },
     http::StatusCode,
@@ -17,6 +17,7 @@ use hyper_util::{
     rt::{TokioExecutor, TokioIo},
     server,
 };
+use serde::{Deserialize, Serialize};
 use serde_json::from_str;
 use sqlx::{Pool, Sqlite, SqlitePool, migrate::Migrator, sqlite::SqliteConnectOptions};
 use tokio::{
@@ -338,6 +339,10 @@ pub async fn init_server(options: InitServerOptions) -> Result<AppServer, Error>
             get(get_template).put(update_template),
         )
         .route(
+            "/api/templates/{template_id}/preview",
+            get(preview_conversation),
+        )
+        .route(
             "/api/templates/{template_id}/chat",
             post(start_conversation),
         )
@@ -603,6 +608,39 @@ pub async fn start_conversation(
         .find(|x| x.id == template_id)
         .cloned()
         .expect("should have template by id");
+
+    let conversation: Conversation = template.into();
+
+    state.conservations.push(conversation.clone());
+
+    Json(conversation)
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct PreviewQueryParams {
+    at: Option<usize>,
+}
+
+pub async fn preview_conversation(
+    State(state): State<Arc<Mutex<AppState>>>,
+    Path(template_id): Path<String>,
+    Query(params): Query<PreviewQueryParams>,
+) -> Json<Conversation> {
+    let state = state.clone();
+    let mut state = state.lock().await;
+
+    let mut template = state
+        .conversation_templates
+        .iter()
+        .find(|x| x.id == template_id)
+        .cloned()
+        .expect("should have template by id");
+
+    if let Some(at) = params.at
+        && at > 0
+    {
+        template.items = template.items[..at].to_vec()
+    }
 
     let conversation: Conversation = template.into();
 

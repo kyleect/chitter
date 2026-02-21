@@ -6,6 +6,7 @@ import {
   isMessageItem,
   isOOCItem,
   isSetVarItem,
+  useGetTemplateByIdPreviewQuery,
   useGetTemplateByIdQuery,
   useUpdateTemplateByIdMutation,
 } from "@/queries/templates";
@@ -13,6 +14,7 @@ import {
   ActionIcon,
   Affix,
   Alert,
+  Badge,
   Button,
   Card,
   Code,
@@ -22,7 +24,6 @@ import {
   Loader,
   Menu,
   Select,
-  Skeleton,
   Stack,
   Text,
   Textarea,
@@ -54,12 +55,20 @@ import {
 import { produce } from "immer";
 import { modals } from "@mantine/modals";
 
+type Search = {
+  at?: number;
+};
+
 export const Route = createFileRoute("/templates/$templateId")({
   component: RouteComponent,
+  validateSearch: (search: Record<string, unknown>): Search => {
+    return { ...search };
+  },
 });
 
 function RouteComponent() {
   const params = Route.useParams();
+  const [at, setAt] = useState<number | undefined>();
   const getTemplateByIdQuery = useGetTemplateByIdQuery(params.templateId);
   const [opened, { open, close }] = useDisclosure(false);
   const [scroll] = useWindowScroll();
@@ -67,6 +76,10 @@ function RouteComponent() {
   const [draftTemplateItems, setDraftTemplateItems] = useState<
     ConversationTemplate["items"]
   >([]);
+  const getTemplateByIdPreviewQuery = useGetTemplateByIdPreviewQuery(
+    params.templateId,
+    at,
+  );
 
   const updateItemMutation = useUpdateTemplateByIdMutation();
 
@@ -74,7 +87,7 @@ function RouteComponent() {
     setDraftTemplateItems(getTemplateByIdQuery.data?.items ?? []);
   }, [getTemplateByIdQuery.data]);
 
-  if (getTemplateByIdQuery.isLoading) {
+  if (getTemplateByIdQuery.isLoading && getTemplateByIdPreviewQuery.isLoading) {
     return <Loader />;
   }
 
@@ -82,6 +95,15 @@ function RouteComponent() {
     return (
       <Alert color="red">
         Failed to load template: {JSON.stringify(getTemplateByIdQuery.error)}
+      </Alert>
+    );
+  }
+
+  if (getTemplateByIdPreviewQuery.isError) {
+    return (
+      <Alert color="red">
+        Failed to load template preview:{" "}
+        {JSON.stringify(getTemplateByIdPreviewQuery.error)}
       </Alert>
     );
   }
@@ -347,7 +369,14 @@ function RouteComponent() {
             </Menu>
           )}
 
-          <ActionIcon variant="subtle" color="gray" onClick={open}>
+          <ActionIcon
+            variant="subtle"
+            color="gray"
+            onClick={() => {
+              open();
+              setAt(index + 1);
+            }}
+          >
             <IconCodeDots stroke={1.5} />
           </ActionIcon>
         </ActionIcon.Group>
@@ -644,6 +673,8 @@ function RouteComponent() {
       </Stack>
 
       <Drawer
+        zIndex={10000}
+        keepMounted={false}
         position="bottom"
         opened={opened}
         onClose={close}
@@ -652,32 +683,52 @@ function RouteComponent() {
             <ThemeIcon variant="transparent" color="gray">
               <IconCodeDots />
             </ThemeIcon>
-            <Text>Conversation State</Text>
+            <Group>
+              <Badge radius="xs" variant="outline" color="gray">
+                Index: {at}
+              </Badge>
+              <Text>Conversation State</Text>
+            </Group>
           </Group>
         }
         size="lg"
       >
-        <Stack gap="xl" mt="xl">
-          <Card withBorder shadow="xs">
-            <Skeleton height={20} width="10%" mb="md" radius="xl" />
-            <Skeleton height={8} mt={6} radius="xl" />
-            <Skeleton height={8} mt={6} radius="xl" />
-            <Skeleton height={8} mt={6} width="70%" radius="xl" />
-          </Card>
+        <Stack mt="md">
+          {getTemplateByIdPreviewQuery.data &&
+            getTemplateByIdPreviewQuery.data.messages.map((message) => {
+              let icon: React.ReactNode = null;
 
-          <Card withBorder shadow="xs">
-            <Skeleton height={20} width="10%" mb="md" radius="xl" />
-            <Skeleton height={8} mt={6} radius="xl" />
-            <Skeleton height={8} mt={6} width="80%" radius="xl" />
-          </Card>
+              switch (message.role.kind) {
+                case "user":
+                  icon = <IconUser stroke={1.5} />;
+                  break;
+                case "assistant":
+                  icon = <IconRobot stroke={1.5} />;
+                  break;
+                case "system":
+                  icon = <IconCpu stroke={1.5} />;
+                  break;
+              }
 
-          <Card withBorder shadow="xs">
-            <Skeleton height={20} width="10%" mb="md" radius="xl" />
-            <Skeleton height={8} mt={6} radius="xl" />
-            <Skeleton height={8} mt={6} radius="xl" />
-            <Skeleton height={8} mt={6} radius="xl" />
-            <Skeleton height={8} mt={6} width="25%" radius="xl" />
-          </Card>
+              return (
+                <TemplateBlock
+                  icon={icon}
+                  title={
+                    <Text
+                      fw="bold"
+                      style={{
+                        textTransform: "capitalize",
+                      }}
+                    >
+                      {message.role.kind}
+                    </Text>
+                  }
+                  isEditing={false}
+                >
+                  <Text>{message.message}</Text>
+                </TemplateBlock>
+              );
+            })}
         </Stack>
       </Drawer>
 
