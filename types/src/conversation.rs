@@ -1,4 +1,4 @@
-use std::fmt::Display;
+use std::{collections::HashMap, fmt::Display, hash::Hash};
 
 use bon::Builder;
 use serde::{Deserialize, Serialize};
@@ -208,11 +208,13 @@ pub struct Conversation {
     pub assistant_persona: Persona,
     pub user_persona: Persona,
     pub messages: Vec<Message>,
+    pub variables: HashMap<VariableKey, VariableValue>,
 }
 
 impl From<ConversationTemplate> for Conversation {
     fn from(template: ConversationTemplate) -> Self {
         let mut messages: Vec<Message> = vec![];
+        let mut variables: HashMap<VariableKey, VariableValue> = HashMap::new();
 
         for item in template.items.iter() {
             match item {
@@ -246,9 +248,15 @@ impl From<ConversationTemplate> for Conversation {
                         }
                     }
                 }
+                ConversationItem::SetVar(key, value) => {
+                    dbg!(&key, &value);
+                    variables.insert(key.clone(), value.clone());
+                }
                 _ => (),
             }
         }
+
+        dbg!(&variables);
 
         Self {
             id: uuid::Uuid::new_v4().to_string(),
@@ -256,6 +264,7 @@ impl From<ConversationTemplate> for Conversation {
             assistant_persona: template.assistant_persona,
             user_persona: template.user_persona,
             messages,
+            variables,
         }
     }
 }
@@ -321,7 +330,8 @@ mod conversation_tests {
                             "I need you to summarize some text for me, highlighting the most important details.\n((OOC: Only respond with the summary of the text.))\n\n\n((OOC: Format the summary as a bulleted list))\n\n".to_string()
                         )
                     }
-                ]
+                ],
+                variables: HashMap::from([(summarize_as_list_var, true.into())])
             },
             conservation
         );

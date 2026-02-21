@@ -680,20 +680,34 @@ function RouteComponent() {
         onClose={close}
         title={
           <Group>
-            <ThemeIcon variant="transparent" color="gray">
-              <IconCodeDots />
-            </ThemeIcon>
             <Group>
+              <Text fw="bold">Conversation Preview</Text>
               <Badge radius="xs" variant="outline" color="gray">
                 Index: {at}
               </Badge>
-              <Text>Conversation State</Text>
             </Group>
           </Group>
         }
         size="lg"
       >
         <Stack mt="md">
+          <Card withBorder shadow="xs">
+            <Group>
+              <ThemeIcon variant="transparent" color="gray">
+                <IconCodeDots />
+              </ThemeIcon>
+              <Text mb={0} fw="bold">
+                State
+              </Text>
+            </Group>
+            <Code block>
+              {JSON.stringify(
+                getTemplateByIdPreviewQuery.data?.variables ?? {},
+                null,
+                2,
+              )}
+            </Code>
+          </Card>
           {getTemplateByIdPreviewQuery.data &&
             getTemplateByIdPreviewQuery.data.messages.map((message) => {
               let icon: React.ReactNode = null;
