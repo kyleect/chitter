@@ -6,7 +6,19 @@ use ts_rs::TS;
 
 #[derive(TS, Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 #[ts(export)]
-pub struct Persona {}
+pub struct Persona {
+    pub id: String,
+    pub name: String,
+}
+
+impl Persona {
+    pub fn new(name: &str) -> Self {
+        Self {
+            id: uuid::Uuid::new_v4().to_string(),
+            name: name.to_string(),
+        }
+    }
+}
 
 #[derive(TS, Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -110,8 +122,8 @@ pub struct VariableKey(pub String);
 #[ts(export)]
 pub struct ConversationTemplate {
     pub id: String,
-    pub assistant_persona: Persona,
-    pub user_persona: Persona,
+    pub assistant_persona_id: String,
+    pub user_persona_id: String,
     pub items: Vec<ConversationItem>,
 }
 
@@ -119,8 +131,8 @@ impl ConversationTemplate {
     pub fn new(assistant: Persona, user: Persona) -> Self {
         Self {
             id: uuid::Uuid::new_v4().to_string(),
-            assistant_persona: assistant,
-            user_persona: user,
+            assistant_persona_id: assistant.id,
+            user_persona_id: user.id,
             items: vec![],
         }
     }
@@ -205,8 +217,8 @@ impl ConversationTemplate {
 pub struct Conversation {
     pub id: String,
     pub template_id: String,
-    pub assistant_persona: Persona,
-    pub user_persona: Persona,
+    pub assistant_persona_id: String,
+    pub user_persona_id: String,
     pub messages: Vec<Message>,
     pub variables: HashMap<VariableKey, VariableValue>,
 }
@@ -284,8 +296,8 @@ impl From<ConversationTemplate> for Conversation {
         Self {
             id: uuid::Uuid::new_v4().to_string(),
             template_id: template.id.clone(),
-            assistant_persona: template.assistant_persona,
-            user_persona: template.user_persona,
+            assistant_persona_id: template.assistant_persona_id,
+            user_persona_id: template.user_persona_id,
             messages,
             variables,
         }
@@ -299,10 +311,13 @@ mod conversation_tests {
 
     #[test]
     fn test() {
-        let assistant: Persona = Persona::default();
-        let user: Persona = Persona::default();
+        let mut assistant: Persona = Persona::default();
+        assistant.id = "assistantId".to_string();
 
-        let mut template = ConversationTemplate::new(assistant, user);
+        let mut user: Persona = Persona::default();
+        user.id = "userId".to_string();
+
+        let mut template = ConversationTemplate::new(assistant.clone(), user.clone());
 
         template.id = "expectedTemplateId".to_string();
 
@@ -334,8 +349,8 @@ mod conversation_tests {
             Conversation {
                 id: "expectedConservationId".to_string(),
                 template_id: template.id,
-                assistant_persona: Persona::default(),
-                user_persona: Persona::default(),
+                assistant_persona_id: assistant.id,
+                user_persona_id : user.id,
                 messages: vec![
                     Message {
                         role: Role::System,
@@ -369,10 +384,13 @@ mod conversation_template_tests {
 
     #[test]
     fn test_basic_conversation() {
-        let assistant: Persona = Persona::default();
-        let user: Persona = Persona::default();
+        let mut assistant: Persona = Persona::default();
+        assistant.id = "assistantId".to_string();
 
-        let mut conversation = ConversationTemplate::new(assistant, user);
+        let mut user: Persona = Persona::default();
+        user.id = "userId".to_string();
+
+        let mut conversation = ConversationTemplate::new(assistant.clone(), user.clone());
 
         let summarize_as_list_var = conversation.set_var("summaryAsList", true.into());
 
@@ -397,8 +415,8 @@ mod conversation_template_tests {
         assert_eq!(
             ConversationTemplate {
                 id: "".to_string(),
-                assistant_persona: Persona {},
-                user_persona: Persona {},
+                assistant_persona_id: assistant.id,
+                user_persona_id : user.id,
                 items: vec![
                     ConversationItem::set_var("summaryAsList", VariableValue::Boolean(true)),
                     ConversationItem::message(

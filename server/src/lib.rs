@@ -97,6 +97,7 @@ pub struct AppState {
     pub tx: Option<Arc<Mutex<UnboundedSender<String>>>>,
     pub conversation_templates: Vec<ConversationTemplate>,
     pub conservations: Vec<Conversation>,
+    pub personass: Vec<Persona>,
 }
 
 impl AppState {
@@ -311,6 +312,7 @@ pub async fn init_server(options: InitServerOptions) -> Result<AppServer, Error>
             },
         ],
         conservations: vec![],
+        personass: vec![Persona::new("You"), Persona::new("AI Assistant")],
     };
 
     let state = Arc::new(Mutex::new(state));
@@ -347,6 +349,7 @@ pub async fn init_server(options: InitServerOptions) -> Result<AppServer, Error>
             post(start_conversation),
         )
         .route("/api/conversations", get(get_conversations))
+        .route("/api/personas", get(get_personas))
         .fallback_service(static_dir.clone())
         .with_state(state)
         .layer(compression_layer)
@@ -647,4 +650,11 @@ pub async fn preview_conversation(
     state.conservations.push(conversation.clone());
 
     Json(conversation)
+}
+
+pub async fn get_personas(State(state): State<Arc<Mutex<AppState>>>) -> Json<Vec<Persona>> {
+    let state = state.clone();
+    let state = state.lock().await;
+
+    Json(state.personass.clone())
 }
