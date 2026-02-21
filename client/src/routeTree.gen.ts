@@ -11,20 +11,15 @@
 // Import Routes
 
 import { Route as rootRoute } from './routes/__root'
-import { Route as PersonasImport } from './routes/personas'
 import { Route as DebugImport } from './routes/debug'
 import { Route as AchievementsImport } from './routes/achievements'
 import { Route as IndexImport } from './routes/index'
 import { Route as TemplatesIndexImport } from './routes/templates.index'
+import { Route as PersonasIndexImport } from './routes/personas.index'
 import { Route as TemplatesTemplateIdImport } from './routes/templates.$templateId'
+import { Route as PersonasPersonaIdImport } from './routes/personas.$personaId'
 
 // Create/Update Routes
-
-const PersonasRoute = PersonasImport.update({
-  id: '/personas',
-  path: '/personas',
-  getParentRoute: () => rootRoute,
-} as any)
 
 const DebugRoute = DebugImport.update({
   id: '/debug',
@@ -50,9 +45,21 @@ const TemplatesIndexRoute = TemplatesIndexImport.update({
   getParentRoute: () => rootRoute,
 } as any)
 
+const PersonasIndexRoute = PersonasIndexImport.update({
+  id: '/personas/',
+  path: '/personas/',
+  getParentRoute: () => rootRoute,
+} as any)
+
 const TemplatesTemplateIdRoute = TemplatesTemplateIdImport.update({
   id: '/templates/$templateId',
   path: '/templates/$templateId',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const PersonasPersonaIdRoute = PersonasPersonaIdImport.update({
+  id: '/personas/$personaId',
+  path: '/personas/$personaId',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -81,11 +88,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DebugImport
       parentRoute: typeof rootRoute
     }
-    '/personas': {
-      id: '/personas'
-      path: '/personas'
-      fullPath: '/personas'
-      preLoaderRoute: typeof PersonasImport
+    '/personas/$personaId': {
+      id: '/personas/$personaId'
+      path: '/personas/$personaId'
+      fullPath: '/personas/$personaId'
+      preLoaderRoute: typeof PersonasPersonaIdImport
       parentRoute: typeof rootRoute
     }
     '/templates/$templateId': {
@@ -93,6 +100,13 @@ declare module '@tanstack/react-router' {
       path: '/templates/$templateId'
       fullPath: '/templates/$templateId'
       preLoaderRoute: typeof TemplatesTemplateIdImport
+      parentRoute: typeof rootRoute
+    }
+    '/personas/': {
+      id: '/personas/'
+      path: '/personas'
+      fullPath: '/personas'
+      preLoaderRoute: typeof PersonasIndexImport
       parentRoute: typeof rootRoute
     }
     '/templates/': {
@@ -111,8 +125,9 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/achievements': typeof AchievementsRoute
   '/debug': typeof DebugRoute
-  '/personas': typeof PersonasRoute
+  '/personas/$personaId': typeof PersonasPersonaIdRoute
   '/templates/$templateId': typeof TemplatesTemplateIdRoute
+  '/personas': typeof PersonasIndexRoute
   '/templates': typeof TemplatesIndexRoute
 }
 
@@ -120,8 +135,9 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/achievements': typeof AchievementsRoute
   '/debug': typeof DebugRoute
-  '/personas': typeof PersonasRoute
+  '/personas/$personaId': typeof PersonasPersonaIdRoute
   '/templates/$templateId': typeof TemplatesTemplateIdRoute
+  '/personas': typeof PersonasIndexRoute
   '/templates': typeof TemplatesIndexRoute
 }
 
@@ -130,8 +146,9 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/achievements': typeof AchievementsRoute
   '/debug': typeof DebugRoute
-  '/personas': typeof PersonasRoute
+  '/personas/$personaId': typeof PersonasPersonaIdRoute
   '/templates/$templateId': typeof TemplatesTemplateIdRoute
+  '/personas/': typeof PersonasIndexRoute
   '/templates/': typeof TemplatesIndexRoute
 }
 
@@ -141,24 +158,27 @@ export interface FileRouteTypes {
     | '/'
     | '/achievements'
     | '/debug'
-    | '/personas'
+    | '/personas/$personaId'
     | '/templates/$templateId'
+    | '/personas'
     | '/templates'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/achievements'
     | '/debug'
-    | '/personas'
+    | '/personas/$personaId'
     | '/templates/$templateId'
+    | '/personas'
     | '/templates'
   id:
     | '__root__'
     | '/'
     | '/achievements'
     | '/debug'
-    | '/personas'
+    | '/personas/$personaId'
     | '/templates/$templateId'
+    | '/personas/'
     | '/templates/'
   fileRoutesById: FileRoutesById
 }
@@ -167,8 +187,9 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AchievementsRoute: typeof AchievementsRoute
   DebugRoute: typeof DebugRoute
-  PersonasRoute: typeof PersonasRoute
+  PersonasPersonaIdRoute: typeof PersonasPersonaIdRoute
   TemplatesTemplateIdRoute: typeof TemplatesTemplateIdRoute
+  PersonasIndexRoute: typeof PersonasIndexRoute
   TemplatesIndexRoute: typeof TemplatesIndexRoute
 }
 
@@ -176,8 +197,9 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AchievementsRoute: AchievementsRoute,
   DebugRoute: DebugRoute,
-  PersonasRoute: PersonasRoute,
+  PersonasPersonaIdRoute: PersonasPersonaIdRoute,
   TemplatesTemplateIdRoute: TemplatesTemplateIdRoute,
+  PersonasIndexRoute: PersonasIndexRoute,
   TemplatesIndexRoute: TemplatesIndexRoute,
 }
 
@@ -194,8 +216,9 @@ export const routeTree = rootRoute
         "/",
         "/achievements",
         "/debug",
-        "/personas",
+        "/personas/$personaId",
         "/templates/$templateId",
+        "/personas/",
         "/templates/"
       ]
     },
@@ -208,11 +231,14 @@ export const routeTree = rootRoute
     "/debug": {
       "filePath": "debug.tsx"
     },
-    "/personas": {
-      "filePath": "personas.tsx"
+    "/personas/$personaId": {
+      "filePath": "personas.$personaId.tsx"
     },
     "/templates/$templateId": {
       "filePath": "templates.$templateId.tsx"
+    },
+    "/personas/": {
+      "filePath": "personas.index.tsx"
     },
     "/templates/": {
       "filePath": "templates.index.tsx"

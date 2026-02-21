@@ -260,6 +260,9 @@ pub async fn init_server(options: InitServerOptions) -> Result<AppServer, Error>
 
     let db_pool = connect_to_db(options.db_options, default_db_path).await;
 
+    let user_persona = Persona::new("You");
+    let assistant_persona = Persona::new("AI Assistant");
+
     let state = AppState {
         home_dir: project_dir,
         db: Some(db_pool),
@@ -268,7 +271,7 @@ pub async fn init_server(options: InitServerOptions) -> Result<AppServer, Error>
         conversation_templates: vec![
             {
                 let mut template =
-                    ConversationTemplate::new(Persona::default(), Persona::default());
+                    ConversationTemplate::new(assistant_persona.clone(), user_persona.clone());
 
                 let summarize_as_list_var = template.set_var("summaryAsList", true.into());
 
@@ -312,7 +315,7 @@ pub async fn init_server(options: InitServerOptions) -> Result<AppServer, Error>
             },
         ],
         conservations: vec![],
-        personass: vec![Persona::new("You"), Persona::new("AI Assistant")],
+        personass: vec![user_persona, assistant_persona],
     };
 
     let state = Arc::new(Mutex::new(state));

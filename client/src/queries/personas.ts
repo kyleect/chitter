@@ -17,15 +17,15 @@ export const useGetPersonasQuery = () =>
     },
   });
 
-// export const useGetConservationByIdQuery = (id: string) =>
-//   useQuery({
-//     queryKey: CONSERVATION_KEYS.detail(id),
-//     queryFn: async () => {
-//       const response = await fetch(`/api/conservations`);
-//       const data = (await response.json()) as Conversation[];
+export const useGetPersonaByIdQuery = (id: string) =>
+  useQuery({
+    queryKey: PERSONA_KEYS.detail(id),
+    queryFn: async () => {
+      const response = await fetch(`/api/personas`);
+      const data = (await response.json()) as Persona[];
 
-//       const template = data.find((item) => item.id === id);
+      const persona = data.find((item) => item.id === id);
 
-//       return template ?? null;
-//     },
-//   });
+      return persona ?? null;
+    },
+  });

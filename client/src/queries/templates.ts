@@ -1,5 +1,5 @@
 import { Unarray } from "@/types";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { produce } from "immer";
 import {
   Conversation,
@@ -9,6 +9,7 @@ import {
   VariableKey,
   VariableValue,
 } from "server-types";
+import { PERSONA_KEYS } from "./personas";
 
 export const TEMPLATE_KEYS = {
   all: ["templates"] as const,
@@ -58,8 +59,10 @@ export const useGetTemplateByIdPreviewQuery = (id: string, at?: number) =>
     },
   });
 
-export const useUpdateTemplateByIdMutation = () =>
-  useMutation({
+export const useUpdateTemplateByIdMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
     mutationFn: async (template: ConversationTemplate) => {
       const response = await fetch(`/api/templates/${template.id}`, {
         method: "PUT",
@@ -72,7 +75,17 @@ export const useUpdateTemplateByIdMutation = () =>
 
       return data ?? null;
     },
+    onSuccess(_) {
+      queryClient.invalidateQueries({
+        queryKey: [TEMPLATE_KEYS.all],
+      });
+
+      queryClient.invalidateQueries({
+        queryKey: [PERSONA_KEYS.all],
+      });
+    },
   });
+};
 
 export function isMessageItem(
   item: ConversationItem,

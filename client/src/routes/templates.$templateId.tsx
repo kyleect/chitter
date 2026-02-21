@@ -26,6 +26,7 @@ import {
   Stack,
   Text,
   Textarea,
+  ThemeIcon,
   Transition,
 } from "@mantine/core";
 import { useDisclosure, useWindowScroll } from "@mantine/hooks";
@@ -39,7 +40,7 @@ import {
   IconUser,
   IconVariablePlus,
 } from "@tabler/icons-react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import {
   ConversationItem,
@@ -51,6 +52,7 @@ import { modals } from "@mantine/modals";
 import { DividerBar } from "@/components/routes/templates.$templateId/DividerBar";
 import { ConversationPreviewDrawer } from "@/components/routes/templates.$templateId/ConversationPreviewDrawer";
 import { Buttons } from "@/components/routes/templates.$templateId/Buttons";
+import { useGetPersonasQuery } from "@/queries/personas";
 
 type Search = {
   at?: number;
@@ -77,6 +79,14 @@ function RouteComponent() {
     params.templateId,
     at,
   );
+  const [draftUserPersonaId, setDraftUserPersonaId] = useState<string | null>(
+    null,
+  );
+  const [draftAssistantPersonaId, setDraftAssistantPersonaId] = useState<
+    string | null
+  >(null);
+
+  const getPersonasQuery = useGetPersonasQuery();
 
   const updateItemMutation = useUpdateTemplateByIdMutation();
 
@@ -84,7 +94,18 @@ function RouteComponent() {
     setDraftTemplateItems(getTemplateByIdQuery.data?.items ?? []);
   }, [getTemplateByIdQuery.data]);
 
-  if (getTemplateByIdQuery.isLoading && getTemplateByIdPreviewQuery.isLoading) {
+  useEffect(() => {
+    if (getTemplateByIdQuery.data) {
+      setDraftAssistantPersonaId(getTemplateByIdQuery.data.assistantPersonaId);
+      setDraftUserPersonaId(getTemplateByIdQuery.data.userPersonaId);
+    }
+  }, [getTemplateByIdQuery.data]);
+
+  if (
+    getTemplateByIdQuery.isLoading &&
+    getTemplateByIdPreviewQuery.isLoading &&
+    getPersonasQuery
+  ) {
     return <Loader />;
   }
 
@@ -101,6 +122,14 @@ function RouteComponent() {
       <Alert color="red">
         Failed to load template preview:{" "}
         {JSON.stringify(getTemplateByIdPreviewQuery.error)}
+      </Alert>
+    );
+  }
+
+  if (getPersonasQuery.isError) {
+    return (
+      <Alert color="red">
+        Failed to load personas: {JSON.stringify(getPersonasQuery.error)}
       </Alert>
     );
   }
@@ -246,6 +275,8 @@ function RouteComponent() {
     getTemplateByIdQuery.data.items = draftTemplateItems;
 
     let result = Object.assign({}, getTemplateByIdQuery.data, {
+      assistantPersonaId: draftAssistantPersonaId,
+      userPersonaId: draftUserPersonaId,
       items: draftTemplateItems,
     });
 
@@ -276,6 +307,78 @@ function RouteComponent() {
             handleSave={handleSave}
             handleDelete={handleDelete}
           />
+        </Group>
+
+        <Divider label={"Personas"} labelPosition="left" mt="md" mb="md" />
+
+        <Group gap="xl">
+          <Group gap="xs">
+            <ThemeIcon variant="subtle">
+              <IconRobot stroke={1.5} color="white" />
+            </ThemeIcon>
+            {isEditing ? (
+              <Select
+                size="md"
+                data={getPersonasQuery.data?.map((persona) => ({
+                  value: persona.id,
+                  label: persona.name,
+                }))}
+                value={draftAssistantPersonaId}
+                onChange={(newId) => {
+                  setDraftAssistantPersonaId(newId);
+                }}
+              />
+            ) : (
+              <Text>
+                <Link
+                  to="/personas/$personaId"
+                  params={{
+                    personaId: draftAssistantPersonaId ?? "",
+                  }}
+                >
+                  {
+                    getPersonasQuery.data?.find(
+                      (persona) => persona.id === draftAssistantPersonaId,
+                    )?.name
+                  }
+                </Link>
+              </Text>
+            )}
+          </Group>
+
+          <Group>
+            <ThemeIcon variant="subtle">
+              <IconUser stroke={1.5} color="white" />
+            </ThemeIcon>
+            {isEditing ? (
+              <Select
+                size="md"
+                data={getPersonasQuery.data?.map((persona) => ({
+                  value: persona.id,
+                  label: persona.name,
+                }))}
+                value={draftUserPersonaId}
+                onChange={(newId) => {
+                  setDraftUserPersonaId(newId);
+                }}
+              />
+            ) : (
+              <Text>
+                <Link
+                  to="/personas/$personaId"
+                  params={{
+                    personaId: draftUserPersonaId ?? "",
+                  }}
+                >
+                  {
+                    getPersonasQuery.data?.find(
+                      (persona) => persona.id === draftUserPersonaId,
+                    )?.name
+                  }
+                </Link>
+              </Text>
+            )}
+          </Group>
         </Group>
 
         <Divider label={"Blocks"} labelPosition="left" mt="md" mb="md" />
