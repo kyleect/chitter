@@ -26,6 +26,7 @@ import {
   Stack,
   Text,
   Textarea,
+  TextInput,
   ThemeIcon,
   Transition,
 } from "@mantine/core";
@@ -77,6 +78,7 @@ function RouteComponent() {
   const [opened, { open, close }] = useDisclosure(false);
   const [scroll] = useWindowScroll();
   const [isEditing, setIsEditing] = useState(false);
+  const [draftTitle, setDraftTitle] = useState("");
   const [draftTemplateItems, setDraftTemplateItems] = useState<
     ConversationTemplate["items"]
   >([]);
@@ -95,7 +97,7 @@ function RouteComponent() {
 
   const getPersonasQuery = useGetPersonasQuery();
 
-  const updateItemMutation = useUpdateTemplateByIdMutation();
+  const updateTemplateMutation = useUpdateTemplateByIdMutation();
 
   useEffect(() => {
     setDraftTemplateItems(getTemplateByIdQuery.data?.items ?? []);
@@ -105,6 +107,7 @@ function RouteComponent() {
     if (getTemplateByIdQuery.data) {
       setDraftAssistantPersonaId(getTemplateByIdQuery.data.assistantPersonaId);
       setDraftUserPersonaId(getTemplateByIdQuery.data.userPersonaId);
+      setDraftTitle(getTemplateByIdQuery.data.title ?? "");
     }
   }, [getTemplateByIdQuery.data]);
 
@@ -291,13 +294,14 @@ function RouteComponent() {
   const handleSave = () => {
     getTemplateByIdQuery.data!.items = draftTemplateItems;
 
-    let result = Object.assign({}, getTemplateByIdQuery.data, {
+    let updatedTemplate = Object.assign({}, getTemplateByIdQuery.data, {
+      title: draftTitle,
       assistantPersonaId: draftAssistantPersonaId,
       userPersonaId: draftUserPersonaId,
       items: draftTemplateItems,
     });
 
-    updateItemMutation.mutate(result);
+    updateTemplateMutation.mutate(updatedTemplate);
     setIsEditing(!isEditing);
   };
 
@@ -319,29 +323,45 @@ function RouteComponent() {
     <>
       <Stack>
         <Group justify="space-between">
-          <Group>
-            <Button
-              variant="gradient"
-              disabled={personasMissing}
-              onClick={() => {
-                startConversationMutation.mutate(template.id, {
-                  onSuccess(data) {
-                    nav({
-                      to: "/conversations/$conversationId",
-                      params: {
-                        conversationId: data.id,
-                      },
-                    });
-                  },
-                });
-              }}
-            >
-              Chat
-            </Button>
+          <Group flex={1}>
+            {!isEditing && (
+              <Button
+                variant="gradient"
+                disabled={personasMissing}
+                onClick={() => {
+                  startConversationMutation.mutate(template.id, {
+                    onSuccess(data) {
+                      nav({
+                        to: "/conversations/$conversationId",
+                        params: {
+                          conversationId: data.id,
+                        },
+                      });
+                    },
+                  });
+                }}
+              >
+                Chat
+              </Button>
+            )}
 
-            <Text fw="bold" size="lg">
-              Template: {template.title ?? template.id}
-            </Text>
+            {isEditing ? (
+              <Group gap="xs" flex={1}>
+                <Text fw="bold" size="lg" mb={0} mt={0}>
+                  Title:
+                </Text>
+                <TextInput
+                  size="sm"
+                  flex={1}
+                  value={draftTitle}
+                  onChange={(e) => setDraftTitle(e.target.value)}
+                />
+              </Group>
+            ) : (
+              <Text fw="bold" size="lg">
+                Template: {draftTitle ?? template.id}
+              </Text>
+            )}
           </Group>
           <Buttons
             isEditing={isEditing}

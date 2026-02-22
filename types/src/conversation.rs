@@ -227,6 +227,7 @@ impl ConversationTemplate {
 #[ts(export)]
 pub struct Conversation {
     pub id: String,
+    pub title: Option<String>,
     pub template_id: String,
     pub assistant_persona_id: String,
     pub user_persona_id: String,
@@ -304,6 +305,7 @@ impl From<ConversationTemplate> for Conversation {
 
         Self {
             id: uuid::Uuid::new_v4().to_string(),
+            title: template.title,
             template_id: template.id.clone(),
             assistant_persona_id: template.assistant_persona_id,
             user_persona_id: template.user_persona_id,
@@ -357,6 +359,7 @@ mod conversation_tests {
         assert_eq!(
             Conversation {
                 id: "expectedConservationId".to_string(),
+                title: template.title,
                 template_id: template.id,
                 assistant_persona_id: assistant.id,
                 user_persona_id : user.id,

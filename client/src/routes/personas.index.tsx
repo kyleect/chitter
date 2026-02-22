@@ -1,7 +1,9 @@
+import { ConversationPersonas } from "@/components/common/ConversationPersonas";
 import {
   useCreatePersonaMutation,
   useDeletePersonaMutation,
   useGetDefaultPersonasQuery,
+  useGetPersonaByIdQuery,
   useGetPersonasQuery,
   useSetDefaultAssistantPersonaMutation,
   useSetDefaultUserPersonaMutation,
@@ -36,6 +38,12 @@ function RouteComponent() {
     useSetDefaultAssistantPersonaMutation();
   const setDefaultUserPersonaMutation = useSetDefaultUserPersonaMutation();
   const getDefaultPersonasQuery = useGetDefaultPersonasQuery();
+  const getAssistantQuery = useGetPersonaByIdQuery(
+    getDefaultPersonasQuery.data?.assistant,
+  );
+  const getUserQuery = useGetPersonaByIdQuery(
+    getDefaultPersonasQuery.data?.user,
+  );
 
   if (personasQuery.isLoading && getDefaultPersonasQuery.isLoading) {
     return <Loader />;
@@ -74,14 +82,20 @@ function RouteComponent() {
 
   return (
     <Stack>
+      <Group gap="xl">
+        <Text fw="bold" mb={0}>
+          Defaults
+        </Text>
+        <ConversationPersonas
+          assistantPersona={getAssistantQuery.data}
+          userPersona={getUserQuery.data}
+        />
+      </Group>
       {personasQuery.data?.map((persona) => {
         return (
           <Card>
             <Group justify="space-between">
               <Group>
-                <Text mb={0} fw="bold">
-                  Persona:
-                </Text>
                 <Text>
                   <Link
                     to="/personas/$personaId"

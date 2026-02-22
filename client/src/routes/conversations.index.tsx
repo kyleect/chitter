@@ -37,7 +37,7 @@ function RouteComponent() {
                   conversationId: conversation.id,
                 }}
               >
-                {conversation.id}
+                {conversation.title ?? conversation.id}
               </Link>
             </Group>
           </Card>

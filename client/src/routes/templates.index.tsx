@@ -1,3 +1,6 @@
+import { ConversationPersonas } from "@/components/common/ConversationPersonas";
+import { useStartConversationMutation } from "@/queries/conversations";
+import { useGetPersonasQuery } from "@/queries/personas";
 import {
   useCreateTemplateMutation,
   useGetTemplatesQuery,
@@ -6,10 +9,10 @@ import {
   Alert,
   Button,
   Card,
+  CloseButton,
   Group,
   Loader,
   Stack,
-  Text,
   TextInput,
 } from "@mantine/core";
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -23,9 +26,11 @@ function RouteComponent() {
   const templatesQuery = useGetTemplatesQuery();
   const [draftName, setDraftName] = useState("");
   const createTemplateMutation = useCreateTemplateMutation();
+  const getPersonasQuery = useGetPersonasQuery();
   const nav = Route.useNavigate();
+  const startConversationMutation = useStartConversationMutation();
 
-  if (templatesQuery.isLoading) {
+  if (templatesQuery.isLoading && getPersonasQuery) {
     return <Loader />;
   }
 
@@ -37,16 +42,28 @@ function RouteComponent() {
     );
   }
 
+  if (getPersonasQuery.isError) {
+    return (
+      <Alert color="red">
+        Failed to load personas: {JSON.stringify(getPersonasQuery.error)}
+      </Alert>
+    );
+  }
+
   return (
     <Stack>
       {templatesQuery.data?.map((template) => {
-        return (
-          <Card>
-            <Group>
-              <Text fw="bold" mb={0}>
-                Template:
-              </Text>
+        const assistantPersona = getPersonasQuery.data?.find(
+          (persona) => persona.id === template.assistantPersonaId,
+        );
 
+        const userPersona = getPersonasQuery.data?.find(
+          (persona) => persona.id === template.userPersonaId,
+        );
+
+        return (
+          <Card p="sm">
+            <Group justify="space-between">
               <Link
                 to={`/templates/$templateId`}
                 params={{
@@ -55,6 +72,30 @@ function RouteComponent() {
               >
                 {template.title ?? template.id}
               </Link>
+              <Group gap="xl">
+                <ConversationPersonas
+                  assistantPersona={assistantPersona}
+                  userPersona={userPersona}
+                />
+                <Button
+                  variant="gradient"
+                  onClick={() => {
+                    startConversationMutation.mutate(template.id, {
+                      onSuccess(data) {
+                        nav({
+                          to: "/conversations/$conversationId",
+                          params: {
+                            conversationId: data.id,
+                          },
+                        });
+                      },
+                    });
+                  }}
+                >
+                  Chat
+                </Button>
+                <CloseButton />
+              </Group>
             </Group>
           </Card>
         );
