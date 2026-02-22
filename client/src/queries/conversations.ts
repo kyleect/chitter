@@ -16,7 +16,7 @@ export const useGetConservationsQuery = () =>
   useQuery({
     queryKey: CONSERVATION_KEYS.all,
     queryFn: async () => {
-      const response = await fetch(`/api/conservations`);
+      const response = await fetch(`/api/conversations`);
       const data = (await response.json()) as Conversation[];
 
       return data;
@@ -27,7 +27,7 @@ export const useGetConservationByIdQuery = (id: string) =>
   useQuery({
     queryKey: CONSERVATION_KEYS.detail(id),
     queryFn: async () => {
-      const response = await fetch(`/api/conservations`);
+      const response = await fetch(`/api/conversations`);
       const data = (await response.json()) as Conversation[];
 
       const template = data.find((item) => item.id === id);

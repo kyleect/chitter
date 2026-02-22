@@ -217,7 +217,7 @@ pub mod template_service {
                 .iter()
                 .find(|x| x.id == template_id)
                 .cloned()
-                .expect("should have template by id"),
+                .expect(&format!("should have template by id: {template_id}")),
         )
     }
 
@@ -365,7 +365,11 @@ pub mod conversation_service {
             .cloned()
             .expect("should have template by id");
 
+        dbg!("start_conversation", &template);
+
         let conversation: Conversation = template.into();
+
+        dbg!("start_conversation", &conversation);
 
         state.conservations.push(conversation.clone());
 
@@ -383,7 +387,7 @@ pub mod conversation_service {
         Query(params): Query<PreviewQueryParams>,
     ) -> Json<Conversation> {
         let state = state.clone();
-        let mut state = state.lock().await;
+        let state = state.lock().await;
 
         let mut template = state
             .conversation_templates
@@ -399,8 +403,6 @@ pub mod conversation_service {
         }
 
         let conversation: Conversation = template.into();
-
-        state.conservations.push(conversation.clone());
 
         Json(conversation)
     }

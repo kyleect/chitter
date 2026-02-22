@@ -49,7 +49,7 @@ use tower_serve_static::ServeDir as StaticServeDir;
 
 use crate::services::{
     achievements_service,
-    conversation_service::{preview_conversation, start_conversation},
+    conversation_service::{get_conversations, preview_conversation, start_conversation},
     persona_services::{add_personas, delete_persona, get_persona, get_personas, update_persona},
     template_service::{get_template, get_templates, update_template},
 };
@@ -270,58 +270,54 @@ pub async fn init_server(options: InitServerOptions) -> Result<AppServer, Error>
         Some("The default AI assistant in the Chitter app."),
     );
 
+    let template_1 = {
+        let mut template =
+            ConversationTemplate::new(assistant_persona.clone(), user_persona.clone());
+
+        let summarize_as_list_var = template.set_var("summaryAsList", true.into());
+
+        template.add_system_message("You are a helpful AI assistant.");
+
+        template.add_assistant_message("Hello, I'm here to help! What can I do for you today?");
+
+        template.inner_thoughts_message("I wonder what the task is.");
+
+        template.add_user_message(
+            "I need you to summarize some text for me, highlighting the most important details.",
+        );
+
+        template.ooc_message("Only respond with the summary of the text.");
+
+        template.if_eq(&summarize_as_list_var, &true.into());
+
+        template.ooc_message("Format the summary as a bulleted list");
+
+        template.end_if();
+
+        template
+    };
+
     let state = AppState {
         home_dir: project_dir,
         db: Some(db_pool),
         db_is_encrypted,
         tx: None,
-        conversation_templates: vec![
-            {
-                let mut template =
-                    ConversationTemplate::new(assistant_persona.clone(), user_persona.clone());
+        conversation_templates: vec![template_1.clone(), {
+            let mut template = ConversationTemplate::new(Persona::default(), Persona::default());
 
-                let summarize_as_list_var = template.set_var("summaryAsList", true.into());
+            template.add_system_message("You are a helpful AI assistant.");
 
-                template.add_system_message("You are a helpful AI assistant.");
+            template.add_assistant_message("Hello, I'm here to help! What can I do for you today?");
 
-                template
-                    .add_assistant_message("Hello, I'm here to help! What can I do for you today?");
-
-                template.inner_thoughts_message("I wonder what the task is.");
-
-                template.add_user_message(
+            template.add_user_message(
             "I need you to summarize some text for me, highlighting the most important details.",
         );
 
-                template.ooc_message("Only respond with the summary of the text.");
+            template.ooc_message("Only respond with the summary of the text.");
 
-                template.if_eq(&summarize_as_list_var, &true.into());
-
-                template.ooc_message("Format the summary as a bulleted list");
-
-                template.end_if();
-
-                template
-            },
-            {
-                let mut template =
-                    ConversationTemplate::new(Persona::default(), Persona::default());
-
-                template.add_system_message("You are a helpful AI assistant.");
-
-                template
-                    .add_assistant_message("Hello, I'm here to help! What can I do for you today?");
-
-                template.add_user_message(
-            "I need you to summarize some text for me, highlighting the most important details.",
-        );
-
-                template.ooc_message("Only respond with the summary of the text.");
-
-                template
-            },
-        ],
-        conservations: vec![],
+            template
+        }],
+        conservations: vec![template_1.into()],
         personass: vec![user_persona, assistant_persona],
     };
 
@@ -358,7 +354,10 @@ pub async fn init_server(options: InitServerOptions) -> Result<AppServer, Error>
             "/api/templates/{template_id}/chat",
             post(start_conversation),
         )
-        .route("/api/conversations", get(start_conversation))
+        .route(
+            "/api/conversations",
+            get(get_conversations).post(start_conversation),
+        )
         .route("/api/personas", get(get_personas).post(add_personas))
         .route(
             "/api/personas/{persona_id}",

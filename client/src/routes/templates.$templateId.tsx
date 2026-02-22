@@ -53,6 +53,7 @@ import { DividerBar } from "@/components/routes/templates.$templateId/DividerBar
 import { ConversationPreviewDrawer } from "@/components/routes/templates.$templateId/ConversationPreviewDrawer";
 import { Buttons } from "@/components/routes/templates.$templateId/Buttons";
 import { useGetPersonasQuery } from "@/queries/personas";
+import { useStartConversationMutation } from "@/queries/conversations";
 
 type Search = {
   at?: number;
@@ -67,6 +68,7 @@ export const Route = createFileRoute("/templates/$templateId")({
 
 function RouteComponent() {
   const params = Route.useParams();
+  const nav = Route.useNavigate();
   const [at, setAt] = useState<number | undefined>();
   const getTemplateByIdQuery = useGetTemplateByIdQuery(params.templateId);
   const [opened, { open, close }] = useDisclosure(false);
@@ -79,6 +81,7 @@ function RouteComponent() {
     params.templateId,
     at,
   );
+  const startConversationMutation = useStartConversationMutation();
   const [draftUserPersonaId, setDraftUserPersonaId] = useState<string | null>(
     null,
   );
@@ -272,7 +275,7 @@ function RouteComponent() {
   };
 
   const handleSave = () => {
-    getTemplateByIdQuery.data.items = draftTemplateItems;
+    getTemplateByIdQuery.data!.items = draftTemplateItems;
 
     let result = Object.assign({}, getTemplateByIdQuery.data, {
       assistantPersonaId: draftAssistantPersonaId,
@@ -285,7 +288,7 @@ function RouteComponent() {
   };
 
   const handleCancel = () => {
-    setDraftTemplateItems(getTemplateByIdQuery.data.items);
+    setDraftTemplateItems(getTemplateByIdQuery.data!.items);
     setIsEditing(false);
   };
 
@@ -295,11 +298,31 @@ function RouteComponent() {
 
   const handleDelete = () => {};
 
+  const personasMissing =
+    !template.assistantPersonaId || !template.userPersonaId;
+
   return (
     <>
       <Stack>
         <Group justify="space-between">
-          <Button variant="gradient">Chat</Button>
+          <Button
+            variant="gradient"
+            disabled={personasMissing}
+            onClick={() => {
+              startConversationMutation.mutate(template.id, {
+                onSuccess(data) {
+                  nav({
+                    to: "/conversations/$conversationId",
+                    params: {
+                      conversationId: data.id,
+                    },
+                  });
+                },
+              });
+            }}
+          >
+            Chat
+          </Button>
           <Buttons
             isEditing={isEditing}
             handleCancel={handleCancel}
@@ -380,6 +403,13 @@ function RouteComponent() {
             )}
           </Group>
         </Group>
+
+        {personasMissing && (
+          <Alert title="Personas Required" color="red">
+            An assistant and user persona are required to start a conversation.
+            Click edit button to assign personas.
+          </Alert>
+        )}
 
         <Divider label={"Blocks"} labelPosition="left" mt="md" mb="md" />
 
@@ -672,7 +702,7 @@ function RouteComponent() {
       <ConversationPreviewDrawer
         opened={opened}
         close={close}
-        templateByIdItems={getTemplateByIdQuery.data.items}
+        templateByIdItems={getTemplateByIdQuery.data!.items}
         templateByIdPreview={getTemplateByIdPreviewQuery.data}
         at={at}
       />

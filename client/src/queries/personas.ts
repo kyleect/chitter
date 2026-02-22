@@ -3,7 +3,7 @@ import { NewPersona, Persona } from "server-types";
 
 export const PERSONA_KEYS = {
   all: ["personas"] as const,
-  detail: (id: string) => [...PERSONA_KEYS.all, id],
+  detail: (id?: string) => [...PERSONA_KEYS.all, id],
 } as const;
 
 export const useGetPersonasQuery = () =>
@@ -17,16 +17,18 @@ export const useGetPersonasQuery = () =>
     },
   });
 
-export const useGetPersonaByIdQuery = (id: string) =>
-  useQuery({
+export const useGetPersonaByIdQuery = (id?: string) => {
+  return useQuery({
     queryKey: PERSONA_KEYS.detail(id),
     queryFn: async () => {
+      if (typeof id === "undefined") return;
       const response = await fetch(`/api/personas/${id}`);
       const data = (await response.json()) as Persona;
 
       return data;
     },
   });
+};
 
 export const useCreatePersonaMutation = () => {
   const queryClient = useQueryClient();

@@ -300,8 +300,6 @@ impl From<ConversationTemplate> for Conversation {
             }
         }
 
-        dbg!(&variables);
-
         Self {
             id: uuid::Uuid::new_v4().to_string(),
             template_id: template.id.clone(),

@@ -16,8 +16,10 @@ import { Route as AchievementsImport } from './routes/achievements'
 import { Route as IndexImport } from './routes/index'
 import { Route as TemplatesIndexImport } from './routes/templates.index'
 import { Route as PersonasIndexImport } from './routes/personas.index'
+import { Route as ConversationsIndexImport } from './routes/conversations.index'
 import { Route as TemplatesTemplateIdImport } from './routes/templates.$templateId'
 import { Route as PersonasPersonaIdImport } from './routes/personas.$personaId'
+import { Route as ConversationsConversationIdImport } from './routes/conversations.$conversationId'
 
 // Create/Update Routes
 
@@ -51,6 +53,12 @@ const PersonasIndexRoute = PersonasIndexImport.update({
   getParentRoute: () => rootRoute,
 } as any)
 
+const ConversationsIndexRoute = ConversationsIndexImport.update({
+  id: '/conversations/',
+  path: '/conversations/',
+  getParentRoute: () => rootRoute,
+} as any)
+
 const TemplatesTemplateIdRoute = TemplatesTemplateIdImport.update({
   id: '/templates/$templateId',
   path: '/templates/$templateId',
@@ -62,6 +70,13 @@ const PersonasPersonaIdRoute = PersonasPersonaIdImport.update({
   path: '/personas/$personaId',
   getParentRoute: () => rootRoute,
 } as any)
+
+const ConversationsConversationIdRoute =
+  ConversationsConversationIdImport.update({
+    id: '/conversations/$conversationId',
+    path: '/conversations/$conversationId',
+    getParentRoute: () => rootRoute,
+  } as any)
 
 // Populate the FileRoutesByPath interface
 
@@ -88,6 +103,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DebugImport
       parentRoute: typeof rootRoute
     }
+    '/conversations/$conversationId': {
+      id: '/conversations/$conversationId'
+      path: '/conversations/$conversationId'
+      fullPath: '/conversations/$conversationId'
+      preLoaderRoute: typeof ConversationsConversationIdImport
+      parentRoute: typeof rootRoute
+    }
     '/personas/$personaId': {
       id: '/personas/$personaId'
       path: '/personas/$personaId'
@@ -100,6 +122,13 @@ declare module '@tanstack/react-router' {
       path: '/templates/$templateId'
       fullPath: '/templates/$templateId'
       preLoaderRoute: typeof TemplatesTemplateIdImport
+      parentRoute: typeof rootRoute
+    }
+    '/conversations/': {
+      id: '/conversations/'
+      path: '/conversations'
+      fullPath: '/conversations'
+      preLoaderRoute: typeof ConversationsIndexImport
       parentRoute: typeof rootRoute
     }
     '/personas/': {
@@ -125,8 +154,10 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/achievements': typeof AchievementsRoute
   '/debug': typeof DebugRoute
+  '/conversations/$conversationId': typeof ConversationsConversationIdRoute
   '/personas/$personaId': typeof PersonasPersonaIdRoute
   '/templates/$templateId': typeof TemplatesTemplateIdRoute
+  '/conversations': typeof ConversationsIndexRoute
   '/personas': typeof PersonasIndexRoute
   '/templates': typeof TemplatesIndexRoute
 }
@@ -135,8 +166,10 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/achievements': typeof AchievementsRoute
   '/debug': typeof DebugRoute
+  '/conversations/$conversationId': typeof ConversationsConversationIdRoute
   '/personas/$personaId': typeof PersonasPersonaIdRoute
   '/templates/$templateId': typeof TemplatesTemplateIdRoute
+  '/conversations': typeof ConversationsIndexRoute
   '/personas': typeof PersonasIndexRoute
   '/templates': typeof TemplatesIndexRoute
 }
@@ -146,8 +179,10 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/achievements': typeof AchievementsRoute
   '/debug': typeof DebugRoute
+  '/conversations/$conversationId': typeof ConversationsConversationIdRoute
   '/personas/$personaId': typeof PersonasPersonaIdRoute
   '/templates/$templateId': typeof TemplatesTemplateIdRoute
+  '/conversations/': typeof ConversationsIndexRoute
   '/personas/': typeof PersonasIndexRoute
   '/templates/': typeof TemplatesIndexRoute
 }
@@ -158,8 +193,10 @@ export interface FileRouteTypes {
     | '/'
     | '/achievements'
     | '/debug'
+    | '/conversations/$conversationId'
     | '/personas/$personaId'
     | '/templates/$templateId'
+    | '/conversations'
     | '/personas'
     | '/templates'
   fileRoutesByTo: FileRoutesByTo
@@ -167,8 +204,10 @@ export interface FileRouteTypes {
     | '/'
     | '/achievements'
     | '/debug'
+    | '/conversations/$conversationId'
     | '/personas/$personaId'
     | '/templates/$templateId'
+    | '/conversations'
     | '/personas'
     | '/templates'
   id:
@@ -176,8 +215,10 @@ export interface FileRouteTypes {
     | '/'
     | '/achievements'
     | '/debug'
+    | '/conversations/$conversationId'
     | '/personas/$personaId'
     | '/templates/$templateId'
+    | '/conversations/'
     | '/personas/'
     | '/templates/'
   fileRoutesById: FileRoutesById
@@ -187,8 +228,10 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AchievementsRoute: typeof AchievementsRoute
   DebugRoute: typeof DebugRoute
+  ConversationsConversationIdRoute: typeof ConversationsConversationIdRoute
   PersonasPersonaIdRoute: typeof PersonasPersonaIdRoute
   TemplatesTemplateIdRoute: typeof TemplatesTemplateIdRoute
+  ConversationsIndexRoute: typeof ConversationsIndexRoute
   PersonasIndexRoute: typeof PersonasIndexRoute
   TemplatesIndexRoute: typeof TemplatesIndexRoute
 }
@@ -197,8 +240,10 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AchievementsRoute: AchievementsRoute,
   DebugRoute: DebugRoute,
+  ConversationsConversationIdRoute: ConversationsConversationIdRoute,
   PersonasPersonaIdRoute: PersonasPersonaIdRoute,
   TemplatesTemplateIdRoute: TemplatesTemplateIdRoute,
+  ConversationsIndexRoute: ConversationsIndexRoute,
   PersonasIndexRoute: PersonasIndexRoute,
   TemplatesIndexRoute: TemplatesIndexRoute,
 }
@@ -216,8 +261,10 @@ export const routeTree = rootRoute
         "/",
         "/achievements",
         "/debug",
+        "/conversations/$conversationId",
         "/personas/$personaId",
         "/templates/$templateId",
+        "/conversations/",
         "/personas/",
         "/templates/"
       ]
@@ -231,11 +278,17 @@ export const routeTree = rootRoute
     "/debug": {
       "filePath": "debug.tsx"
     },
+    "/conversations/$conversationId": {
+      "filePath": "conversations.$conversationId.tsx"
+    },
     "/personas/$personaId": {
       "filePath": "personas.$personaId.tsx"
     },
     "/templates/$templateId": {
       "filePath": "templates.$templateId.tsx"
+    },
+    "/conversations/": {
+      "filePath": "conversations.index.tsx"
     },
     "/personas/": {
       "filePath": "personas.index.tsx"

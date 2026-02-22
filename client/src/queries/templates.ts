@@ -13,7 +13,7 @@ import { PERSONA_KEYS } from "./personas";
 
 export const TEMPLATE_KEYS = {
   all: ["templates"] as const,
-  detail: (id: string) => [...TEMPLATE_KEYS.all, id],
+  detail: (id?: string) => [...TEMPLATE_KEYS.all, id],
   preview: (id: string, at?: number) => [
     ...TEMPLATE_KEYS.detail(id),
     "preview",
@@ -33,10 +33,12 @@ export const useGetTemplatesQuery = () =>
     },
   });
 
-export const useGetTemplateByIdQuery = (id: string) =>
+export const useGetTemplateByIdQuery = (id: string | undefined) =>
   useQuery({
     queryKey: TEMPLATE_KEYS.detail(id),
     queryFn: async () => {
+      if (typeof id === "undefined") return;
+
       const response = await fetch(`/api/templates/${id}`);
       const data = (await response.json()) as ConversationTemplate;
 

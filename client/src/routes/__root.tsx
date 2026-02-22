@@ -118,6 +118,16 @@ export const Route = createRootRoute({
           />
 
           <NavLink
+            label="Conversations"
+            component={Link}
+            to="/conversations"
+            activeProps={{
+              style: { fontWeight: "bold" },
+            }}
+            aria-label="Conversations"
+          />
+
+          <NavLink
             label="Debug"
             component={Link}
             to="/debug"
