@@ -128,6 +128,16 @@ export const Route = createRootRoute({
           />
 
           <NavLink
+            label="Settings"
+            component={Link}
+            to="/settings"
+            activeProps={{
+              style: { fontWeight: "bold" },
+            }}
+            aria-label="Settings"
+          />
+
+          <NavLink
             label="Debug"
             component={Link}
             to="/debug"

@@ -15,6 +15,7 @@ import { Route as DebugImport } from './routes/debug'
 import { Route as AchievementsImport } from './routes/achievements'
 import { Route as IndexImport } from './routes/index'
 import { Route as TemplatesIndexImport } from './routes/templates.index'
+import { Route as SettingsIndexImport } from './routes/settings.index'
 import { Route as PersonasIndexImport } from './routes/personas.index'
 import { Route as ConversationsIndexImport } from './routes/conversations.index'
 import { Route as TemplatesTemplateIdImport } from './routes/templates.$templateId'
@@ -44,6 +45,12 @@ const IndexRoute = IndexImport.update({
 const TemplatesIndexRoute = TemplatesIndexImport.update({
   id: '/templates/',
   path: '/templates/',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const SettingsIndexRoute = SettingsIndexImport.update({
+  id: '/settings/',
+  path: '/settings/',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -138,6 +145,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PersonasIndexImport
       parentRoute: typeof rootRoute
     }
+    '/settings/': {
+      id: '/settings/'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsIndexImport
+      parentRoute: typeof rootRoute
+    }
     '/templates/': {
       id: '/templates/'
       path: '/templates'
@@ -159,6 +173,7 @@ export interface FileRoutesByFullPath {
   '/templates/$templateId': typeof TemplatesTemplateIdRoute
   '/conversations': typeof ConversationsIndexRoute
   '/personas': typeof PersonasIndexRoute
+  '/settings': typeof SettingsIndexRoute
   '/templates': typeof TemplatesIndexRoute
 }
 
@@ -171,6 +186,7 @@ export interface FileRoutesByTo {
   '/templates/$templateId': typeof TemplatesTemplateIdRoute
   '/conversations': typeof ConversationsIndexRoute
   '/personas': typeof PersonasIndexRoute
+  '/settings': typeof SettingsIndexRoute
   '/templates': typeof TemplatesIndexRoute
 }
 
@@ -184,6 +200,7 @@ export interface FileRoutesById {
   '/templates/$templateId': typeof TemplatesTemplateIdRoute
   '/conversations/': typeof ConversationsIndexRoute
   '/personas/': typeof PersonasIndexRoute
+  '/settings/': typeof SettingsIndexRoute
   '/templates/': typeof TemplatesIndexRoute
 }
 
@@ -198,6 +215,7 @@ export interface FileRouteTypes {
     | '/templates/$templateId'
     | '/conversations'
     | '/personas'
+    | '/settings'
     | '/templates'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -209,6 +227,7 @@ export interface FileRouteTypes {
     | '/templates/$templateId'
     | '/conversations'
     | '/personas'
+    | '/settings'
     | '/templates'
   id:
     | '__root__'
@@ -220,6 +239,7 @@ export interface FileRouteTypes {
     | '/templates/$templateId'
     | '/conversations/'
     | '/personas/'
+    | '/settings/'
     | '/templates/'
   fileRoutesById: FileRoutesById
 }
@@ -233,6 +253,7 @@ export interface RootRouteChildren {
   TemplatesTemplateIdRoute: typeof TemplatesTemplateIdRoute
   ConversationsIndexRoute: typeof ConversationsIndexRoute
   PersonasIndexRoute: typeof PersonasIndexRoute
+  SettingsIndexRoute: typeof SettingsIndexRoute
   TemplatesIndexRoute: typeof TemplatesIndexRoute
 }
 
@@ -245,6 +266,7 @@ const rootRouteChildren: RootRouteChildren = {
   TemplatesTemplateIdRoute: TemplatesTemplateIdRoute,
   ConversationsIndexRoute: ConversationsIndexRoute,
   PersonasIndexRoute: PersonasIndexRoute,
+  SettingsIndexRoute: SettingsIndexRoute,
   TemplatesIndexRoute: TemplatesIndexRoute,
 }
 
@@ -266,6 +288,7 @@ export const routeTree = rootRoute
         "/templates/$templateId",
         "/conversations/",
         "/personas/",
+        "/settings/",
         "/templates/"
       ]
     },
@@ -292,6 +315,9 @@ export const routeTree = rootRoute
     },
     "/personas/": {
       "filePath": "personas.index.tsx"
+    },
+    "/settings/": {
+      "filePath": "settings.index.tsx"
     },
     "/templates/": {
       "filePath": "templates.index.tsx"
