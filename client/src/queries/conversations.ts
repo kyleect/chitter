@@ -8,7 +8,7 @@ import {
 } from "server-types";
 
 export const CONSERVATION_KEYS = {
-  all: ["templates"] as const,
+  all: ["conversations"] as const,
   detail: (id: string) => [...CONSERVATION_KEYS.all, id],
 } as const;
 

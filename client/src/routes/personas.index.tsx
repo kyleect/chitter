@@ -108,7 +108,16 @@ function RouteComponent() {
                 </Text>
               </Group>
               <Group>
-                <Text mb={0} size="sm">
+                <Text
+                  mb={0}
+                  size="sm"
+                  fw={
+                    getDefaultPersonasQuery.data?.assistant === persona.id ||
+                    getDefaultPersonasQuery.data?.user === persona.id
+                      ? "bold"
+                      : undefined
+                  }
+                >
                   Default
                 </Text>
                 <ActionIcon.Group>
