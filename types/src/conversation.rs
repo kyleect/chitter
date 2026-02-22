@@ -126,20 +126,22 @@ impl From<f64> for VariableValue {
 #[ts(export)]
 pub struct VariableKey(pub String);
 
-#[derive(TS, Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(TS, Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 #[ts(export)]
 pub struct ConversationTemplate {
     pub id: String,
+    pub title: Option<String>,
     pub assistant_persona_id: String,
     pub user_persona_id: String,
     pub items: Vec<ConversationItem>,
 }
 
 impl ConversationTemplate {
-    pub fn new(assistant: Persona, user: Persona) -> Self {
+    pub fn new(title: Option<String>, assistant: Persona, user: Persona) -> Self {
         Self {
             id: uuid::Uuid::new_v4().to_string(),
+            title,
             assistant_persona_id: assistant.id,
             user_persona_id: user.id,
             items: vec![],
@@ -324,7 +326,7 @@ mod conversation_tests {
         let mut user: Persona = Persona::default();
         user.id = "userId".to_string();
 
-        let mut template = ConversationTemplate::new(assistant.clone(), user.clone());
+        let mut template = ConversationTemplate::new(None, assistant.clone(), user.clone());
 
         template.id = "expectedTemplateId".to_string();
 
@@ -397,7 +399,7 @@ mod conversation_template_tests {
         let mut user: Persona = Persona::default();
         user.id = "userId".to_string();
 
-        let mut conversation = ConversationTemplate::new(assistant.clone(), user.clone());
+        let mut conversation = ConversationTemplate::new(None, assistant.clone(), user.clone());
 
         let summarize_as_list_var = conversation.set_var("summaryAsList", true.into());
 
@@ -422,6 +424,7 @@ mod conversation_template_tests {
         assert_eq!(
             ConversationTemplate {
                 id: "".to_string(),
+                title: None,
                 assistant_persona_id: assistant.id,
                 user_persona_id : user.id,
                 items: vec![

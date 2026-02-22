@@ -46,6 +46,24 @@ export const useGetTemplateByIdQuery = (id: string | undefined) =>
     },
   });
 
+export const useCreateTemplateMutation = () =>
+  useMutation({
+    mutationFn: async (title: string) => {
+      const response = await fetch(`/api/templates`, {
+        method: "POST",
+        body: JSON.stringify({
+          title,
+        }),
+        headers: {
+          "content-type": "application/json",
+        },
+      });
+      const data = (await response.json()) as ConversationTemplate;
+
+      return data;
+    },
+  });
+
 export const useGetTemplateByIdPreviewQuery = (id: string, at?: number) =>
   useQuery({
     queryKey: TEMPLATE_KEYS.preview(id, at),

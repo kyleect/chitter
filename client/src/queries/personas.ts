@@ -4,6 +4,7 @@ import { NewPersona, Persona } from "server-types";
 export const PERSONA_KEYS = {
   all: ["personas"] as const,
   detail: (id?: string) => [...PERSONA_KEYS.all, id],
+  defaults: () => [...PERSONA_KEYS.all, "defaults"],
 } as const;
 
 export const useGetPersonasQuery = () =>
@@ -34,10 +35,10 @@ export const useCreatePersonaMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (newPerson: NewPersona) => {
+    mutationFn: async (newPersona: NewPersona) => {
       const response = await fetch(`/api/personas`, {
         method: "POST",
-        body: JSON.stringify(newPerson),
+        body: JSON.stringify(newPersona),
         headers: {
           "content-type": "application/json",
         },
@@ -91,6 +92,55 @@ export const useDeletePersonaMutation = () => {
       queryClient.invalidateQueries({
         queryKey: PERSONA_KEYS.all,
       });
+    },
+  });
+};
+
+export const useSetDefaultUserPersonaMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (personaId: String) => {
+      await fetch(`/api/personas/default/user?persona_id=${personaId}`, {
+        method: "POST",
+      });
+    },
+    onSuccess() {
+      queryClient.invalidateQueries({
+        queryKey: PERSONA_KEYS.defaults(),
+      });
+    },
+  });
+};
+
+export const useSetDefaultAssistantPersonaMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (personaId: string) => {
+      await fetch(`/api/personas/default/assistant?persona_id=${personaId}`, {
+        method: "POST",
+      });
+    },
+    onSuccess() {
+      queryClient.invalidateQueries({
+        queryKey: PERSONA_KEYS.defaults(),
+      });
+    },
+  });
+};
+
+export const useGetDefaultPersonasQuery = () => {
+  return useQuery({
+    queryKey: PERSONA_KEYS.defaults(),
+    queryFn: async () => {
+      const response = await fetch(`/api/personas/default`);
+      const data = (await response.json()) as {
+        assistant?: string;
+        user?: string;
+      };
+
+      return data;
     },
   });
 };

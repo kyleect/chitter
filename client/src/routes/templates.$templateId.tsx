@@ -52,7 +52,10 @@ import { modals } from "@mantine/modals";
 import { DividerBar } from "@/components/routes/templates.$templateId/DividerBar";
 import { ConversationPreviewDrawer } from "@/components/routes/templates.$templateId/ConversationPreviewDrawer";
 import { Buttons } from "@/components/routes/templates.$templateId/Buttons";
-import { useGetPersonasQuery } from "@/queries/personas";
+import {
+  useGetDefaultPersonasQuery,
+  useGetPersonasQuery,
+} from "@/queries/personas";
 import { useStartConversationMutation } from "@/queries/conversations";
 
 type Search = {
@@ -82,12 +85,13 @@ function RouteComponent() {
     at,
   );
   const startConversationMutation = useStartConversationMutation();
+  const getDefaultPersonasQuery = useGetDefaultPersonasQuery();
   const [draftUserPersonaId, setDraftUserPersonaId] = useState<string | null>(
-    null,
+    getDefaultPersonasQuery.data?.user ?? null,
   );
   const [draftAssistantPersonaId, setDraftAssistantPersonaId] = useState<
     string | null
-  >(null);
+  >(getDefaultPersonasQuery.data?.assistant ?? null);
 
   const getPersonasQuery = useGetPersonasQuery();
 
@@ -107,7 +111,8 @@ function RouteComponent() {
   if (
     getTemplateByIdQuery.isLoading &&
     getTemplateByIdPreviewQuery.isLoading &&
-    getPersonasQuery
+    getPersonasQuery.isLoading &&
+    getDefaultPersonasQuery.isLoading
   ) {
     return <Loader />;
   }
@@ -133,6 +138,15 @@ function RouteComponent() {
     return (
       <Alert color="red">
         Failed to load personas: {JSON.stringify(getPersonasQuery.error)}
+      </Alert>
+    );
+  }
+
+  if (getDefaultPersonasQuery.isError) {
+    return (
+      <Alert color="red">
+        Failed to load default personas:{" "}
+        {JSON.stringify(getDefaultPersonasQuery.error)}
       </Alert>
     );
   }
@@ -305,24 +319,30 @@ function RouteComponent() {
     <>
       <Stack>
         <Group justify="space-between">
-          <Button
-            variant="gradient"
-            disabled={personasMissing}
-            onClick={() => {
-              startConversationMutation.mutate(template.id, {
-                onSuccess(data) {
-                  nav({
-                    to: "/conversations/$conversationId",
-                    params: {
-                      conversationId: data.id,
-                    },
-                  });
-                },
-              });
-            }}
-          >
-            Chat
-          </Button>
+          <Group>
+            <Button
+              variant="gradient"
+              disabled={personasMissing}
+              onClick={() => {
+                startConversationMutation.mutate(template.id, {
+                  onSuccess(data) {
+                    nav({
+                      to: "/conversations/$conversationId",
+                      params: {
+                        conversationId: data.id,
+                      },
+                    });
+                  },
+                });
+              }}
+            >
+              Chat
+            </Button>
+
+            <Text fw="bold" size="lg">
+              Template: {template.title ?? template.id}
+            </Text>
+          </Group>
           <Buttons
             isEditing={isEditing}
             handleCancel={handleCancel}
@@ -414,288 +434,315 @@ function RouteComponent() {
         <Divider label={"Blocks"} labelPosition="left" mt="md" mb="md" />
 
         <Stack gap="xs">
-          {draftTemplateItems.map((item, index) => {
-            if (isMessageItem(item)) {
-              let icon: React.ReactNode = null;
+          {draftTemplateItems.length > 0 ? (
+            draftTemplateItems.map((item, index) => {
+              if (isMessageItem(item)) {
+                let icon: React.ReactNode = null;
 
-              switch (item.message.role.kind) {
-                case "user":
-                  icon = <IconUser stroke={1.5} />;
-                  break;
-                case "assistant":
-                  icon = <IconRobot stroke={1.5} />;
-                  break;
-                case "system":
-                  icon = <IconCpu stroke={1.5} />;
-                  break;
-              }
+                switch (item.message.role.kind) {
+                  case "user":
+                    icon = <IconUser stroke={1.5} />;
+                    break;
+                  case "assistant":
+                    icon = <IconRobot stroke={1.5} />;
+                    break;
+                  case "system":
+                    icon = <IconCpu stroke={1.5} />;
+                    break;
+                }
 
-              return (
-                <>
-                  <TemplateBlock
-                    icon={icon}
-                    title={
-                      isEditing ? (
-                        <Select
-                          size="md"
-                          value={item.message.role.kind}
-                          onChange={(newRole) => {
-                            if (newRole === null) return;
+                return (
+                  <>
+                    <TemplateBlock
+                      icon={icon}
+                      title={
+                        isEditing ? (
+                          <Select
+                            size="md"
+                            value={item.message.role.kind}
+                            onChange={(newRole) => {
+                              if (newRole === null) return;
 
-                            patchItem(
-                              index,
-                              (draft, patch) => {
-                                if (
-                                  // @ts-expect-error: WIP
-                                  isMessageItem(draft) &&
-                                  // @ts-expect-error: WIP
-                                  isMessageItem(patch)
-                                ) {
-                                  draft.message.role.kind =
-                                    patch.message.role.kind;
-                                }
-                              },
-                              {
-                                message: {
-                                  role: {
+                              patchItem(
+                                index,
+                                (draft, patch) => {
+                                  if (
                                     // @ts-expect-error: WIP
-                                    kind: newRole,
+                                    isMessageItem(draft) &&
+                                    // @ts-expect-error: WIP
+                                    isMessageItem(patch)
+                                  ) {
+                                    draft.message.role.kind =
+                                      patch.message.role.kind;
+                                  }
+                                },
+                                {
+                                  message: {
+                                    role: {
+                                      // @ts-expect-error: WIP
+                                      kind: newRole,
+                                    },
                                   },
                                 },
-                              },
-                            );
-                          }}
-                          data={["user", "system", "assistant"] as const}
+                              );
+                            }}
+                            data={["user", "system", "assistant"] as const}
+                          />
+                        ) : (
+                          <Text
+                            fw="bold"
+                            style={{
+                              textTransform: "capitalize",
+                            }}
+                          >
+                            {item.message.role.kind}
+                          </Text>
+                        )
+                      }
+                      isEditing={isEditing}
+                      onClose={handleDeleteAtIndex(index)}
+                    >
+                      {isEditing ? (
+                        <Textarea
+                          size="md"
+                          minRows={1}
+                          autosize
+                          value={item.message.message ?? ""}
+                          onChange={(e) =>
+                            patchMessageItem(index, e.target.value)
+                          }
                         />
                       ) : (
-                        <Text
-                          fw="bold"
-                          style={{
-                            textTransform: "capitalize",
-                          }}
-                        >
-                          {item.message.role.kind}
-                        </Text>
-                      )
-                    }
-                    isEditing={isEditing}
-                    onClose={handleDeleteAtIndex(index)}
-                  >
-                    {isEditing ? (
-                      <Textarea
-                        size="md"
-                        minRows={1}
-                        autosize
-                        value={item.message.message ?? ""}
-                        onChange={(e) =>
-                          patchMessageItem(index, e.target.value)
-                        }
-                      />
-                    ) : (
-                      <Text>{item.message.message}</Text>
-                    )}
-                  </TemplateBlock>
+                        <Text>{item.message.message}</Text>
+                      )}
+                    </TemplateBlock>
 
-                  <DividerBar
-                    index={index}
-                    isEditing={isEditing}
-                    patchItemsWithInsertAt={patchItemsWithInsertAt(patchItems)}
-                    setAt={setAt}
-                    open={open}
-                  />
-                </>
-              );
-            }
+                    <DividerBar
+                      index={index}
+                      isEditing={isEditing}
+                      patchItemsWithInsertAt={patchItemsWithInsertAt(
+                        patchItems,
+                      )}
+                      setAt={setAt}
+                      open={open}
+                    />
+                  </>
+                );
+              }
 
-            if (isOOCItem(item)) {
-              return (
-                <>
-                  <TemplateBlock
-                    icon={<IconCompass stroke={1.5} />}
-                    title="OOC"
-                    level={1}
-                    isEditing={isEditing}
-                    onClose={handleDeleteAtIndex(index)}
-                  >
-                    {isEditing ? (
-                      <Textarea
-                        size="md"
-                        minRows={1}
-                        autosize
-                        value={item.oOC}
-                        onChange={(e) => patchOOCMessage(index, e.target.value)}
-                      />
-                    ) : (
-                      <Text>{item.oOC}</Text>
-                    )}
-                  </TemplateBlock>
+              if (isOOCItem(item)) {
+                return (
+                  <>
+                    <TemplateBlock
+                      icon={<IconCompass stroke={1.5} />}
+                      title="OOC"
+                      level={1}
+                      isEditing={isEditing}
+                      onClose={handleDeleteAtIndex(index)}
+                    >
+                      {isEditing ? (
+                        <Textarea
+                          size="md"
+                          minRows={1}
+                          autosize
+                          value={item.oOC}
+                          onChange={(e) =>
+                            patchOOCMessage(index, e.target.value)
+                          }
+                        />
+                      ) : (
+                        <Text>{item.oOC}</Text>
+                      )}
+                    </TemplateBlock>
 
-                  <DividerBar
-                    index={index}
-                    isEditing={isEditing}
-                    patchItemsWithInsertAt={patchItemsWithInsertAt(patchItems)}
-                    setAt={setAt}
-                    open={open}
-                  />
-                </>
-              );
-            }
+                    <DividerBar
+                      index={index}
+                      isEditing={isEditing}
+                      patchItemsWithInsertAt={patchItemsWithInsertAt(
+                        patchItems,
+                      )}
+                      setAt={setAt}
+                      open={open}
+                    />
+                  </>
+                );
+              }
 
-            if (isInnerThoughtsItem(item)) {
-              return (
-                <>
-                  <TemplateBlock
-                    icon={<IconBrain stroke={1.5} />}
-                    title="Inner Thoughts"
-                    level={1}
-                    isEditing={isEditing}
-                    onClose={handleDeleteAtIndex(index)}
-                  >
-                    {isEditing ? (
-                      <Textarea
-                        size="md"
-                        minRows={1}
-                        autosize
-                        value={item.innerThoughts}
-                        onChange={(e) =>
-                          patchInnerThoughtsMessage(index, e.target.value)
-                        }
-                      />
-                    ) : (
-                      <Text>{item.innerThoughts}</Text>
-                    )}
-                  </TemplateBlock>
+              if (isInnerThoughtsItem(item)) {
+                return (
+                  <>
+                    <TemplateBlock
+                      icon={<IconBrain stroke={1.5} />}
+                      title="Inner Thoughts"
+                      level={1}
+                      isEditing={isEditing}
+                      onClose={handleDeleteAtIndex(index)}
+                    >
+                      {isEditing ? (
+                        <Textarea
+                          size="md"
+                          minRows={1}
+                          autosize
+                          value={item.innerThoughts}
+                          onChange={(e) =>
+                            patchInnerThoughtsMessage(index, e.target.value)
+                          }
+                        />
+                      ) : (
+                        <Text>{item.innerThoughts}</Text>
+                      )}
+                    </TemplateBlock>
 
-                  <DividerBar
-                    index={index}
-                    isEditing={isEditing}
-                    patchItemsWithInsertAt={patchItemsWithInsertAt(patchItems)}
-                    setAt={setAt}
-                    open={open}
-                  />
-                </>
-              );
-            }
+                    <DividerBar
+                      index={index}
+                      isEditing={isEditing}
+                      patchItemsWithInsertAt={patchItemsWithInsertAt(
+                        patchItems,
+                      )}
+                      setAt={setAt}
+                      open={open}
+                    />
+                  </>
+                );
+              }
 
-            if (isSetVarItem(item)) {
-              const key = item.setVar[0];
-              // @ts-ignore
-              const value =
+              if (isSetVarItem(item)) {
+                const key = item.setVar[0];
                 // @ts-ignore
-                item.setVar[1]?.string ??
+                const value =
+                  // @ts-ignore
+                  item.setVar[1]?.string ??
+                  // @ts-ignore
+                  item.setVar[1]?.number ??
+                  // @ts-ignore
+                  item.setVar[1]?.boolean;
+
+                return (
+                  <>
+                    <TemplateBlock
+                      icon={<IconVariablePlus stroke={1.5} />}
+                      title="Set Variable"
+                      inline
+                      isEditing={isEditing}
+                      onClose={handleDeleteAtIndex(index)}
+                    >
+                      {isEditing ? (
+                        <Textarea
+                          size="md"
+                          minRows={1}
+                          autosize
+                          value={`${key} = ${value}`}
+                          onChange={(e) =>
+                            patchSetVarMessage(index, e.target.value)
+                          }
+                        />
+                      ) : (
+                        <Code block mt={0} mb={0}>
+                          {key} = {JSON.stringify(value)}
+                        </Code>
+                      )}
+                    </TemplateBlock>
+
+                    <DividerBar
+                      index={index}
+                      isEditing={isEditing}
+                      patchItemsWithInsertAt={patchItemsWithInsertAt(
+                        patchItems,
+                      )}
+                      setAt={setAt}
+                      open={open}
+                    />
+                  </>
+                );
+              }
+
+              if (isIfEqItem(item)) {
+                const key = item.ifEq[0];
                 // @ts-ignore
-                item.setVar[1]?.number ??
-                // @ts-ignore
-                item.setVar[1]?.boolean;
+                const value =
+                  // @ts-ignore
+                  item.ifEq[1]?.string ??
+                  // @ts-ignore
+                  item.ifEq[1]?.number ??
+                  // @ts-ignore
+                  item.ifEq[1]?.boolean;
 
-              return (
-                <>
-                  <TemplateBlock
-                    icon={<IconVariablePlus stroke={1.5} />}
-                    title="Set Variable"
-                    inline
-                    isEditing={isEditing}
-                    onClose={handleDeleteAtIndex(index)}
-                  >
-                    {isEditing ? (
-                      <Textarea
-                        size="md"
-                        minRows={1}
-                        autosize
-                        value={`${key} = ${value}`}
-                        onChange={(e) =>
-                          patchSetVarMessage(index, e.target.value)
-                        }
-                      />
-                    ) : (
-                      <Code block mt={0} mb={0}>
-                        {key} = {JSON.stringify(value)}
-                      </Code>
-                    )}
-                  </TemplateBlock>
+                return (
+                  <>
+                    <TemplateBlock
+                      icon={<IconCode stroke={1.5} />}
+                      title="If Eq"
+                      inline
+                      isEditing={isEditing}
+                      onClose={handleDeleteAtIndex(index)}
+                    >
+                      {isEditing ? (
+                        <Textarea
+                          size="md"
+                          minRows={1}
+                          autosize
+                          value={`${key} = ${value}`}
+                          onChange={(e) =>
+                            patchIfEqMessage(index, e.target.value)
+                          }
+                        />
+                      ) : (
+                        <Code block mt={0} mb={0}>
+                          {key} = {JSON.stringify(value)}
+                        </Code>
+                      )}
+                    </TemplateBlock>
 
-                  <DividerBar
-                    index={index}
-                    isEditing={isEditing}
-                    patchItemsWithInsertAt={patchItemsWithInsertAt(patchItems)}
-                    setAt={setAt}
-                    open={open}
-                  />
-                </>
-              );
-            }
+                    <DividerBar
+                      index={index}
+                      isEditing={isEditing}
+                      patchItemsWithInsertAt={patchItemsWithInsertAt(
+                        patchItems,
+                      )}
+                      setAt={setAt}
+                      open={open}
+                    />
+                  </>
+                );
+              }
 
-            if (isIfEqItem(item)) {
-              const key = item.ifEq[0];
-              // @ts-ignore
-              const value =
-                // @ts-ignore
-                item.ifEq[1]?.string ??
-                // @ts-ignore
-                item.ifEq[1]?.number ??
-                // @ts-ignore
-                item.ifEq[1]?.boolean;
+              if (isEndIf(item)) {
+                return (
+                  <>
+                    <TemplateBlock
+                      icon={<IconCodeOff stroke={1.5} />}
+                      title="End If"
+                      isEditing={isEditing}
+                      onClose={handleDeleteAtIndex(index)}
+                    />
 
-              return (
-                <>
-                  <TemplateBlock
-                    icon={<IconCode stroke={1.5} />}
-                    title="If Eq"
-                    inline
-                    isEditing={isEditing}
-                    onClose={handleDeleteAtIndex(index)}
-                  >
-                    {isEditing ? (
-                      <Textarea
-                        size="md"
-                        minRows={1}
-                        autosize
-                        value={`${key} = ${value}`}
-                        onChange={(e) =>
-                          patchIfEqMessage(index, e.target.value)
-                        }
-                      />
-                    ) : (
-                      <Code block mt={0} mb={0}>
-                        {key} = {JSON.stringify(value)}
-                      </Code>
-                    )}
-                  </TemplateBlock>
+                    <DividerBar
+                      index={index}
+                      isEditing={isEditing}
+                      patchItemsWithInsertAt={patchItemsWithInsertAt(
+                        patchItems,
+                      )}
+                      setAt={setAt}
+                      open={open}
+                    />
+                  </>
+                );
+              }
 
-                  <DividerBar
-                    index={index}
-                    isEditing={isEditing}
-                    patchItemsWithInsertAt={patchItemsWithInsertAt(patchItems)}
-                    setAt={setAt}
-                    open={open}
-                  />
-                </>
-              );
-            }
-
-            if (isEndIf(item)) {
-              return (
-                <>
-                  <TemplateBlock
-                    icon={<IconCodeOff stroke={1.5} />}
-                    title="End If"
-                    isEditing={isEditing}
-                    onClose={handleDeleteAtIndex(index)}
-                  />
-
-                  <DividerBar
-                    index={index}
-                    isEditing={isEditing}
-                    patchItemsWithInsertAt={patchItemsWithInsertAt(patchItems)}
-                    setAt={setAt}
-                    open={open}
-                  />
-                </>
-              );
-            }
-
-            return null;
-          })}
+              return null;
+            })
+          ) : (
+            <DividerBar
+              index={-1}
+              isEditing={true}
+              patchItemsWithInsertAt={patchItemsWithInsertAt(patchItems)}
+              setAt={setAt}
+              open={open}
+              onClickAdd={() => {
+                setIsEditing(true);
+              }}
+            />
+          )}
         </Stack>
       </Stack>
 

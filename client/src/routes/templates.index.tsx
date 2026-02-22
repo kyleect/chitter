@@ -1,6 +1,19 @@
-import { useGetTemplatesQuery } from "@/queries/templates";
-import { Alert, Card, Group, Loader, Stack, Text } from "@mantine/core";
+import {
+  useCreateTemplateMutation,
+  useGetTemplatesQuery,
+} from "@/queries/templates";
+import {
+  Alert,
+  Button,
+  Card,
+  Group,
+  Loader,
+  Stack,
+  Text,
+  TextInput,
+} from "@mantine/core";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useState } from "react";
 
 export const Route = createFileRoute("/templates/")({
   component: RouteComponent,
@@ -8,6 +21,9 @@ export const Route = createFileRoute("/templates/")({
 
 function RouteComponent() {
   const templatesQuery = useGetTemplatesQuery();
+  const [draftName, setDraftName] = useState("");
+  const createTemplateMutation = useCreateTemplateMutation();
+  const nav = Route.useNavigate();
 
   if (templatesQuery.isLoading) {
     return <Loader />;
@@ -37,12 +53,44 @@ function RouteComponent() {
                   templateId: template.id,
                 }}
               >
-                {template.id}
+                {template.title ?? template.id}
               </Link>
             </Group>
           </Card>
         );
       })}
+
+      <Card>
+        <Group>
+          <TextInput
+            flex={1}
+            value={draftName}
+            size="md"
+            placeholder="Template Name"
+            autoFocus
+            onChange={(e) => setDraftName(e.target.value)}
+          />
+
+          <Button.Group>
+            <Button
+              onClick={() => {
+                createTemplateMutation.mutate(draftName, {
+                  onSuccess(data) {
+                    nav({
+                      to: "/templates/$templateId",
+                      params: {
+                        templateId: data.id,
+                      },
+                    });
+                  },
+                });
+              }}
+            >
+              Add
+            </Button>
+          </Button.Group>
+        </Group>
+      </Card>
     </Stack>
   );
 }

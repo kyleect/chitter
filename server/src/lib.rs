@@ -50,8 +50,11 @@ use tower_serve_static::ServeDir as StaticServeDir;
 use crate::services::{
     achievements_service,
     conversation_service::{get_conversations, preview_conversation, start_conversation},
-    persona_services::{add_personas, delete_persona, get_persona, get_personas, update_persona},
-    template_service::{get_template, get_templates, update_template},
+    persona_services::{
+        add_personas, delete_persona, get_default_personas, get_persona, get_personas,
+        set_default_assistant_persona, set_default_user_persona, update_persona,
+    },
+    template_service::{create_template, get_template, get_templates, update_template},
 };
 
 pub mod services;
@@ -102,6 +105,8 @@ pub struct AppState {
     pub conversation_templates: Vec<ConversationTemplate>,
     pub conservations: Vec<Conversation>,
     pub personass: Vec<Persona>,
+    pub default_assistant_persona: Option<String>,
+    pub default_user_persona: Option<String>,
 }
 
 impl AppState {
@@ -271,8 +276,11 @@ pub async fn init_server(options: InitServerOptions) -> Result<AppServer, Error>
     );
 
     let template_1 = {
-        let mut template =
-            ConversationTemplate::new(assistant_persona.clone(), user_persona.clone());
+        let mut template = ConversationTemplate::new(
+            Some("Example".to_string()),
+            assistant_persona.clone(),
+            user_persona.clone(),
+        );
 
         let summarize_as_list_var = template.set_var("summaryAsList", true.into());
 
@@ -303,7 +311,8 @@ pub async fn init_server(options: InitServerOptions) -> Result<AppServer, Error>
         db_is_encrypted,
         tx: None,
         conversation_templates: vec![template_1.clone(), {
-            let mut template = ConversationTemplate::new(Persona::default(), Persona::default());
+            let mut template =
+                ConversationTemplate::new(None, Persona::default(), Persona::default());
 
             template.add_system_message("You are a helpful AI assistant.");
 
@@ -318,7 +327,9 @@ pub async fn init_server(options: InitServerOptions) -> Result<AppServer, Error>
             template
         }],
         conservations: vec![template_1.into()],
-        personass: vec![user_persona, assistant_persona],
+        default_assistant_persona: Some(assistant_persona.id.clone()),
+        default_user_persona: Some(user_persona.id.clone()),
+        personass: vec![assistant_persona, user_persona],
     };
 
     let state = Arc::new(Mutex::new(state));
@@ -341,7 +352,7 @@ pub async fn init_server(options: InitServerOptions) -> Result<AppServer, Error>
         .route("/api/debug/achievement", post(trigger_test_achievement))
         .route("/api/achievements", get(get_achievements))
         .route("/api/ws", any(ws_handler))
-        .route("/api/templates", get(get_templates))
+        .route("/api/templates", get(get_templates).post(create_template))
         .route(
             "/api/templates/{template_id}",
             get(get_template).put(update_template),
@@ -359,6 +370,12 @@ pub async fn init_server(options: InitServerOptions) -> Result<AppServer, Error>
             get(get_conversations).post(start_conversation),
         )
         .route("/api/personas", get(get_personas).post(add_personas))
+        .route("/api/personas/default", get(get_default_personas))
+        .route("/api/personas/default/user", post(set_default_user_persona))
+        .route(
+            "/api/personas/default/assistant",
+            post(set_default_assistant_persona),
+        )
         .route(
             "/api/personas/{persona_id}",
             get(get_persona).delete(delete_persona).put(update_persona),

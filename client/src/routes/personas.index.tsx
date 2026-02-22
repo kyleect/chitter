@@ -1,9 +1,13 @@
 import {
   useCreatePersonaMutation,
   useDeletePersonaMutation,
+  useGetDefaultPersonasQuery,
   useGetPersonasQuery,
+  useSetDefaultAssistantPersonaMutation,
+  useSetDefaultUserPersonaMutation,
 } from "@/queries/personas";
 import {
+  ActionIcon,
   Alert,
   Button,
   Card,
@@ -15,6 +19,7 @@ import {
   TextInput,
 } from "@mantine/core";
 import { modals } from "@mantine/modals";
+import { IconRobot, IconUser } from "@tabler/icons-react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 
@@ -27,8 +32,12 @@ function RouteComponent() {
   const personasQuery = useGetPersonasQuery();
   const createPersonaMutation = useCreatePersonaMutation();
   const deletePersonaMutation = useDeletePersonaMutation();
+  const setDefaultAssistantPersonaMutation =
+    useSetDefaultAssistantPersonaMutation();
+  const setDefaultUserPersonaMutation = useSetDefaultUserPersonaMutation();
+  const getDefaultPersonasQuery = useGetDefaultPersonasQuery();
 
-  if (personasQuery.isLoading) {
+  if (personasQuery.isLoading && getDefaultPersonasQuery.isLoading) {
     return <Loader />;
   }
 
@@ -36,6 +45,15 @@ function RouteComponent() {
     return (
       <Alert color="red">
         Failed to load personas: {JSON.stringify(personasQuery.error)}
+      </Alert>
+    );
+  }
+
+  if (getDefaultPersonasQuery.isError) {
+    return (
+      <Alert color="red">
+        Failed to load default personas:{" "}
+        {JSON.stringify(getDefaultPersonasQuery.error)}
       </Alert>
     );
   }
@@ -75,23 +93,56 @@ function RouteComponent() {
                   </Link>
                 </Text>
               </Group>
-              <CloseButton
-                onClick={() => {
-                  modals.openConfirmModal({
-                    title: "Delete Persona",
-                    labels: {
-                      confirm: "Delete",
-                      cancel: "Cancel",
-                    },
-                    confirmProps: {
-                      color: "red",
-                    },
-                    onConfirm() {
-                      deletePersonaMutation.mutate(persona.id);
-                    },
-                  });
-                }}
-              />
+              <Group>
+                <Text mb={0} size="sm">
+                  Default
+                </Text>
+                <ActionIcon.Group>
+                  <ActionIcon
+                    variant={
+                      getDefaultPersonasQuery.data?.assistant === persona.id
+                        ? "filled"
+                        : "outline"
+                    }
+                    size="md"
+                    onClick={() => {
+                      setDefaultAssistantPersonaMutation.mutate(persona.id);
+                    }}
+                  >
+                    <IconRobot stroke={1} />
+                  </ActionIcon>
+                  <ActionIcon
+                    variant={
+                      getDefaultPersonasQuery.data?.user === persona.id
+                        ? "filled"
+                        : "outline"
+                    }
+                    size="md"
+                    onClick={() => {
+                      setDefaultUserPersonaMutation.mutate(persona.id);
+                    }}
+                  >
+                    <IconUser stroke={1} />
+                  </ActionIcon>
+                </ActionIcon.Group>
+                <CloseButton
+                  onClick={() => {
+                    modals.openConfirmModal({
+                      title: "Delete Persona",
+                      labels: {
+                        confirm: "Delete",
+                        cancel: "Cancel",
+                      },
+                      confirmProps: {
+                        color: "red",
+                      },
+                      onConfirm() {
+                        deletePersonaMutation.mutate(persona.id);
+                      },
+                    });
+                  }}
+                />
+              </Group>
             </Group>
           </Card>
         );
@@ -104,6 +155,7 @@ function RouteComponent() {
             value={draftName}
             size="md"
             placeholder="Persona Name"
+            autoFocus
             onChange={(e) => setDraftName(e.target.value)}
           />
 

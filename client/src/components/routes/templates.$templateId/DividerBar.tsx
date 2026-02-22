@@ -19,6 +19,7 @@ type Props = {
   patchItemsWithInsertAt: (index: number, newItem: ConversationItem) => void;
   setAt: React.Dispatch<React.SetStateAction<number | undefined>>;
   open: () => void;
+  onClickAdd?: () => void;
 };
 
 export const DividerBar: React.FC<Props> = ({
@@ -27,6 +28,7 @@ export const DividerBar: React.FC<Props> = ({
   patchItemsWithInsertAt,
   setAt,
   open,
+  onClickAdd,
 }) => (
   <Divider
     mt={0}
@@ -37,7 +39,13 @@ export const DividerBar: React.FC<Props> = ({
         {isEditing && (
           <Menu shadow="md" width={200} position="right-start">
             <Menu.Target>
-              <ActionIcon variant="subtle" color="gray">
+              <ActionIcon
+                variant="subtle"
+                color="gray"
+                onClick={() => {
+                  onClickAdd?.();
+                }}
+              >
                 <IconPlus />
               </ActionIcon>
             </Menu.Target>
