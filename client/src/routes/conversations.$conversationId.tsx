@@ -56,7 +56,7 @@ function RouteComponent() {
   }
 
   return (
-    <Stack mt="md" gap="xl">
+    <Stack gap="xl">
       <MessageList messages={getConversationQuery.data?.messages ?? []} />
 
       <UserReplyForm value={reply} onChange={setReply} />
