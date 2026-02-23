@@ -95,14 +95,16 @@ export const useUpdateTemplateByIdMutation = () => {
 
       return data ?? null;
     },
-    onSuccess(_) {
-      queryClient.invalidateQueries({
-        queryKey: [TEMPLATE_KEYS.all],
-      });
+    async onSuccess(_) {
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: [TEMPLATE_KEYS.all],
+        }),
 
-      queryClient.invalidateQueries({
-        queryKey: [PERSONA_KEYS.all],
-      });
+        queryClient.invalidateQueries({
+          queryKey: [PERSONA_KEYS.all],
+        }),
+      ]);
     },
   });
 };
