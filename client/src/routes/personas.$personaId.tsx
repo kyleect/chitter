@@ -35,7 +35,7 @@ function RouteComponent() {
     setDraftDescription(getPersonaQuery.data?.description ?? "");
   }, [getPersonaQuery.data]);
 
-  if (getPersonaQuery.isLoading) {
+  if (getPersonaQuery.isPending) {
     return <Loader />;
   }
 

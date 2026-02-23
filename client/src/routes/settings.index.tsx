@@ -42,7 +42,7 @@ function RouteComponent() {
     }
   }, [getDefaultPersonasQuery.data]);
 
-  if (getPersonasQuery.isLoading && getDefaultPersonasQuery.isLoading) {
+  if (getPersonasQuery.isPending && getDefaultPersonasQuery.isPending) {
     return <Loader />;
   }
 

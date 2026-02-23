@@ -39,13 +39,13 @@ function RouteComponent() {
   const setDefaultUserPersonaMutation = useSetDefaultUserPersonaMutation();
   const getDefaultPersonasQuery = useGetDefaultPersonasQuery();
   const getAssistantQuery = useGetPersonaByIdQuery(
-    getDefaultPersonasQuery.data?.assistant,
+    getDefaultPersonasQuery.data?.assistant ?? null,
   );
   const getUserQuery = useGetPersonaByIdQuery(
-    getDefaultPersonasQuery.data?.user,
+    getDefaultPersonasQuery.data?.user ?? null,
   );
 
-  if (personasQuery.isLoading && getDefaultPersonasQuery.isLoading) {
+  if (personasQuery.isPending && getDefaultPersonasQuery.isPending) {
     return <Loader />;
   }
 
@@ -93,7 +93,7 @@ function RouteComponent() {
       </Group>
       {personasQuery.data?.map((persona) => {
         return (
-          <Card>
+          <Card key={persona.id}>
             <Group justify="space-between">
               <Group>
                 <Text>

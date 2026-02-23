@@ -30,7 +30,7 @@ function RouteComponent() {
   const nav = Route.useNavigate();
   const startConversationMutation = useStartConversationMutation();
 
-  if (templatesQuery.isLoading && getPersonasQuery) {
+  if (templatesQuery.isPending && getPersonasQuery.isPending) {
     return <Loader />;
   }
 
@@ -62,7 +62,7 @@ function RouteComponent() {
         );
 
         return (
-          <Card p="sm">
+          <Card p="sm" key={template.id}>
             <Group justify="space-between">
               <Link
                 to={`/templates/$templateId`}

@@ -13,7 +13,7 @@ import { PERSONA_KEYS } from "./personas";
 
 export const TEMPLATE_KEYS = {
   all: ["templates"] as const,
-  detail: (id?: string) => [...TEMPLATE_KEYS.all, id],
+  detail: (id: string | null) => [...TEMPLATE_KEYS.all, id ?? null],
   preview: (id: string, at?: number) => [
     ...TEMPLATE_KEYS.detail(id),
     "preview",
@@ -33,7 +33,7 @@ export const useGetTemplatesQuery = () =>
     },
   });
 
-export const useGetTemplateByIdQuery = (id: string | undefined) =>
+export const useGetTemplateByIdQuery = (id: string | null) =>
   useQuery({
     queryKey: TEMPLATE_KEYS.detail(id),
     queryFn: async () => {
@@ -108,7 +108,7 @@ export const useUpdateTemplateByIdMutation = () => {
 };
 
 export function isMessageItem(
-  item: ConversationItem,
+  item: RecursivePartial<ConversationItem>,
 ): item is { message: Message } {
   const keys = Object.keys(item);
 
@@ -179,15 +179,23 @@ export const patchItemsImmer =
     );
   };
 
+type RecursivePartial<T> = {
+  [P in keyof T]?: T[P] extends (infer U)[]
+    ? RecursivePartial<U>[]
+    : T[P] extends object | undefined
+      ? RecursivePartial<T[P]>
+      : T[P];
+};
+
 export const patchItemImmer =
   (set: React.Dispatch<React.SetStateAction<ConversationTemplate["items"]>>) =>
   (
     draftItemIndex: number,
     patchFn: (
-      item: Partial<Unarray<ConversationTemplate["items"]>>,
-      patch: Partial<Unarray<ConversationTemplate["items"]>>,
+      item: RecursivePartial<Unarray<ConversationTemplate["items"]>>,
+      patch: RecursivePartial<Unarray<ConversationTemplate["items"]>>,
     ) => void,
-    patch: Partial<Unarray<ConversationTemplate["items"]>>,
+    patch: RecursivePartial<Unarray<ConversationTemplate["items"]>>,
   ) => {
     set(
       produce((draftItems) => {

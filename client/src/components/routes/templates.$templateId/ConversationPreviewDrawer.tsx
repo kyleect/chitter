@@ -66,7 +66,7 @@ export const ConversationPreviewDrawer: FC<Props> = ({
           </Code>
         </Card>
         {templateByIdPreview &&
-          templateByIdPreview.messages.map((message) => {
+          templateByIdPreview.messages.map((message, i) => {
             let icon: React.ReactNode = null;
 
             switch (message.role.kind) {
@@ -83,6 +83,7 @@ export const ConversationPreviewDrawer: FC<Props> = ({
 
             return (
               <TemplateBlock
+                key={i}
                 icon={icon}
                 title={
                   <Text

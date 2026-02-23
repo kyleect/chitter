@@ -112,10 +112,10 @@ function RouteComponent() {
   }, [getTemplateByIdQuery.data]);
 
   if (
-    getTemplateByIdQuery.isLoading &&
-    getTemplateByIdPreviewQuery.isLoading &&
-    getPersonasQuery.isLoading &&
-    getDefaultPersonasQuery.isLoading
+    getTemplateByIdQuery.isPending &&
+    getTemplateByIdPreviewQuery.isPending &&
+    getPersonasQuery.isPending &&
+    getDefaultPersonasQuery.isPending
   ) {
     return <Loader />;
   }
@@ -167,19 +167,20 @@ function RouteComponent() {
     patchItem(
       index,
       (draftItem, patch) => {
-        if (isMessageItem(draftItem as unknown as ConversationItem)) {
+        if (
+          isMessageItem(draftItem as unknown as ConversationItem) &&
+          isMessageItem(patch)
+        ) {
           (
                                   draftItem as {
                                     message: Message;
                                   }
                                 // prettier-ignore
                               ).message.message =
-            // @ts-expect-error: TODO: Fix
-            patch.message!.message;
+            patch.message.message;
         }
       },
       {
-        // @ts-expect-error: patchItem doesn't recursively apply Partial<T> yet
         message: {
           message: value,
         },
@@ -320,7 +321,7 @@ function RouteComponent() {
     !template.assistantPersonaId || !template.userPersonaId;
 
   return (
-    <>
+    <Stack>
       <Stack>
         <Group justify="space-between">
           <Group flex={1}>
@@ -392,20 +393,18 @@ function RouteComponent() {
                 }}
               />
             ) : (
-              <Text>
-                <Link
-                  to="/personas/$personaId"
-                  params={{
-                    personaId: draftAssistantPersonaId ?? "",
-                  }}
-                >
-                  {
-                    getPersonasQuery.data?.find(
-                      (persona) => persona.id === draftAssistantPersonaId,
-                    )?.name
-                  }
-                </Link>
-              </Text>
+              <Link
+                to="/personas/$personaId"
+                params={{
+                  personaId: draftAssistantPersonaId ?? "",
+                }}
+              >
+                {
+                  getPersonasQuery.data?.find(
+                    (persona) => persona.id === draftAssistantPersonaId,
+                  )?.name
+                }
+              </Link>
             )}
           </Group>
 
@@ -426,20 +425,18 @@ function RouteComponent() {
                 }}
               />
             ) : (
-              <Text>
-                <Link
-                  to="/personas/$personaId"
-                  params={{
-                    personaId: draftUserPersonaId ?? "",
-                  }}
-                >
-                  {
-                    getPersonasQuery.data?.find(
-                      (persona) => persona.id === draftUserPersonaId,
-                    )?.name
-                  }
-                </Link>
-              </Text>
+              <Link
+                to="/personas/$personaId"
+                params={{
+                  personaId: draftUserPersonaId ?? "",
+                }}
+              >
+                {
+                  getPersonasQuery.data?.find(
+                    (persona) => persona.id === draftUserPersonaId,
+                  )?.name
+                }
+              </Link>
             )}
           </Group>
         </Group>
@@ -472,7 +469,7 @@ function RouteComponent() {
                 }
 
                 return (
-                  <>
+                  <Stack key={index}>
                     <TemplateBlock
                       icon={icon}
                       title={
@@ -483,13 +480,19 @@ function RouteComponent() {
                             onChange={(newRole) => {
                               if (newRole === null) return;
 
+                              if (
+                                newRole !== "user" &&
+                                newRole !== "system" &&
+                                newRole !== "assistant"
+                              ) {
+                                return;
+                              }
+
                               patchItem(
                                 index,
                                 (draft, patch) => {
                                   if (
-                                    // @ts-expect-error: WIP
                                     isMessageItem(draft) &&
-                                    // @ts-expect-error: WIP
                                     isMessageItem(patch)
                                   ) {
                                     draft.message.role.kind =
@@ -499,7 +502,6 @@ function RouteComponent() {
                                 {
                                   message: {
                                     role: {
-                                      // @ts-expect-error: WIP
                                       kind: newRole,
                                     },
                                   },
@@ -546,7 +548,7 @@ function RouteComponent() {
                       setAt={setAt}
                       open={open}
                     />
-                  </>
+                  </Stack>
                 );
               }
 
@@ -789,6 +791,6 @@ function RouteComponent() {
           )}
         </Transition>
       </Affix>
-    </>
+    </Stack>
   );
 }

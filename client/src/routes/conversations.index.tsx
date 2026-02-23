@@ -23,9 +23,9 @@ function RouteComponent() {
   const getTemplatesQuery = useGetTemplatesQuery();
 
   if (
-    getConversationsQuery.isLoading &&
-    getPersonasQuery.isLoading &&
-    getTemplatesQuery.isLoading
+    getConversationsQuery.isPending &&
+    getPersonasQuery.isPending &&
+    getTemplatesQuery.isPending
   ) {
     return <Loader />;
   }
@@ -71,14 +71,8 @@ function RouteComponent() {
           (template) => template.id === conversation.templateId,
         );
 
-        console.log({
-          templates: getTemplatesQuery.data,
-          template: template,
-          conversation,
-        });
-
         return (
-          <Card>
+          <Card key={conversation.id}>
             <Group justify="space-between">
               <Link
                 to="/conversations/$conversationId"

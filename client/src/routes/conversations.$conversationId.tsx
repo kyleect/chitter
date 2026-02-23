@@ -19,22 +19,22 @@ function RouteComponent() {
   );
 
   const getTemplateByIdQuery = useGetTemplateByIdQuery(
-    getConversationQuery.data?.templateId,
+    getConversationQuery.data?.templateId ?? null,
   );
 
   const getAssistantPersonaQuery = useGetPersonaByIdQuery(
-    getConversationQuery.data?.assistantPersonaId,
+    getConversationQuery.data?.assistantPersonaId ?? null,
   );
 
   const getUserPersonaQuery = useGetPersonaByIdQuery(
-    getConversationQuery.data?.userPersonaId,
+    getConversationQuery.data?.userPersonaId ?? null,
   );
 
   if (
-    getConversationQuery.isLoading &&
-    getTemplateByIdQuery.isLoading &&
-    getAssistantPersonaQuery.isLoading &&
-    getUserPersonaQuery.isLoading
+    getConversationQuery.isPending &&
+    getTemplateByIdQuery.isPending &&
+    getAssistantPersonaQuery.isPending &&
+    getUserPersonaQuery.isPending
   ) {
     return <Loader />;
   }
