@@ -1,19 +1,9 @@
-import { ConversationBlock } from "@/components/routes/conversations.$conversationId/ConversationBlock";
+import { MessageList } from "@/components/routes/conversations.$conversationId/MessageList";
+import { UserReplyForm } from "@/components/routes/conversations.$conversationId/UserReplyForm";
 import { useGetConservationByIdQuery } from "@/queries/conversations";
 import { useGetPersonaByIdQuery } from "@/queries/personas";
 import { useGetTemplateByIdQuery } from "@/queries/templates";
-import {
-  Alert,
-  Button,
-  ButtonGroup,
-  Group,
-  Loader,
-  Stack,
-  Text,
-  Textarea,
-  ThemeIcon,
-} from "@mantine/core";
-import { IconRobot, IconSend, IconUser } from "@tabler/icons-react";
+import { Alert, Loader, Stack } from "@mantine/core";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 
@@ -67,76 +57,9 @@ function RouteComponent() {
 
   return (
     <Stack mt="md" gap="xl">
-      {getConversationQuery.data &&
-        getConversationQuery.data.messages.map((message) => {
-          let icon: React.ReactNode = null;
-          let from: string = message.role.kind;
+      <MessageList messages={getConversationQuery.data?.messages ?? []} />
 
-          switch (message.role.kind) {
-            case "user":
-              icon = <IconUser stroke={1.5} />;
-              from = getUserPersonaQuery.data?.name ?? message.role.kind;
-              break;
-            case "assistant":
-              icon = <IconRobot stroke={1.5} />;
-              from = getAssistantPersonaQuery.data?.name ?? message.role.kind;
-              break;
-            case "system":
-              return null;
-          }
-
-          return (
-            <ConversationBlock
-              icon={icon}
-              title={
-                <Text
-                  fw="bold"
-                  style={{
-                    textTransform: "capitalize",
-                  }}
-                >
-                  {from}
-                </Text>
-              }
-              isEditing={false}
-            >
-              <Stack mt="md">
-                {message.message
-                  ?.split("\n")
-                  .filter((v) => !!v)
-                  .map((text) => (
-                    <Text m={0} size="md">
-                      {text}
-                    </Text>
-                  ))}
-              </Stack>
-            </ConversationBlock>
-          );
-        })}
-      <Group align="flex-end" mt="md">
-        <Textarea
-          size="md"
-          value={reply}
-          onChange={(e) => setReply(e.target.value)}
-          autosize
-          minRows={0}
-          autoFocus
-          flex={1}
-        />
-        <ButtonGroup>
-          <Button
-            size="md"
-            variant="gradient"
-            leftSection={
-              <ThemeIcon size="xs">
-                <IconSend />
-              </ThemeIcon>
-            }
-          >
-            Reply
-          </Button>
-        </ButtonGroup>
-      </Group>
+      <UserReplyForm value={reply} onChange={setReply} />
     </Stack>
   );
 }
