@@ -312,7 +312,7 @@ pub async fn init_server(options: InitServerOptions) -> Result<AppServer, Error>
         tx: None,
         conversation_templates: vec![template_1.clone(), {
             let mut template =
-                ConversationTemplate::new(None, Persona::default(), Persona::default());
+                ConversationTemplate::new(None, assistant_persona.clone(), user_persona.clone());
 
             template.add_system_message("You are a helpful AI assistant.");
 
