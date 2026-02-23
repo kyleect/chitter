@@ -9,7 +9,7 @@ import {
 
 export const CONSERVATION_KEYS = {
   all: ["conversations"] as const,
-  detail: (id: string) => [...CONSERVATION_KEYS.all, id],
+  detail: (id: string | null) => [...CONSERVATION_KEYS.all, id],
 } as const;
 
 export const useGetConservationsQuery = () =>
@@ -27,10 +27,14 @@ export const useGetConservationByIdQuery = (id: string) =>
   useQuery({
     queryKey: CONSERVATION_KEYS.detail(id),
     queryFn: async () => {
+      if (id === null) return;
+
       const response = await fetch(`/api/conversations`);
       const data = (await response.json()) as Conversation[];
 
-      const template = data.find((item) => item.id === id);
+      const template: Conversation | undefined = data.find(
+        (item) => item.id === id,
+      ) as Conversation | undefined;
 
       return template ?? null;
     },

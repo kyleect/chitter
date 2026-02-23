@@ -1,5 +1,6 @@
 import { MessageList } from "@/components/routes/conversations.$conversationId/MessageList";
 import { UserReplyForm } from "@/components/routes/conversations.$conversationId/UserReplyForm";
+import { useCompletionMutation } from "@/queries/completions";
 import { useGetConservationByIdQuery } from "@/queries/conversations";
 import { useGetPersonaByIdQuery } from "@/queries/personas";
 import { useGetTemplateByIdQuery } from "@/queries/templates";
@@ -14,6 +15,7 @@ export const Route = createFileRoute("/conversations/$conversationId")({
 function RouteComponent() {
   const [reply, setReply] = useState("");
   const params = Route.useParams();
+  const completionMutation = useCompletionMutation(params.conversationId);
   const getConversationQuery = useGetConservationByIdQuery(
     params.conversationId,
   );
@@ -57,9 +59,20 @@ function RouteComponent() {
 
   return (
     <Stack gap="xl">
-      <MessageList messages={getConversationQuery.data?.messages ?? []} />
+      <MessageList
+        messages={getConversationQuery.data?.messages ?? []}
+        assistantPersona={getAssistantPersonaQuery.data}
+        userPersona={getUserPersonaQuery.data}
+      />
 
-      <UserReplyForm value={reply} onChange={setReply} />
+      <UserReplyForm
+        isLoading={completionMutation.isPending}
+        value={reply}
+        onChange={setReply}
+        onSubmit={() => {
+          completionMutation.mutate(reply);
+        }}
+      />
     </Stack>
   );
 }

@@ -1,5 +1,6 @@
 use std::{env::current_dir, path::PathBuf, sync::Arc, vec};
 
+use async_openai::{Client, config::OpenAIConfig, types::completions::CreateCompletionRequestArgs};
 use axum::{
     Json, Router,
     extract::{
@@ -17,6 +18,7 @@ use hyper_util::{
     rt::{TokioExecutor, TokioIo},
     server,
 };
+use serde::{Deserialize, Serialize};
 use serde_json::from_str;
 use sqlx::{Pool, Sqlite, SqlitePool, migrate::Migrator, sqlite::SqliteConnectOptions};
 use tokio::{
@@ -34,7 +36,10 @@ use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use types::{
     DebugInfo,
     achievement::{AchievementDto, AchievementId},
-    conversation::{Conversation, ConversationTemplate, Persona},
+    conversation::{
+        Conversation, ConversationTemplate, Persona,
+        Role::{Assistant, User},
+    },
     socket::ClientMessage,
 };
 
@@ -102,6 +107,7 @@ pub struct AppState {
     pub db: Option<Pool<Sqlite>>,
     pub db_is_encrypted: bool,
     pub tx: Option<Arc<Mutex<UnboundedSender<String>>>>,
+    pub llm: Option<Client<OpenAIConfig>>,
     pub conversation_templates: Vec<ConversationTemplate>,
     pub conservations: Vec<Conversation>,
     pub personass: Vec<Persona>,
@@ -302,30 +308,20 @@ pub async fn init_server(options: InitServerOptions) -> Result<AppServer, Error>
 
         template.end_if();
 
+        template.add_assistant_message("Send the text and I'll respond with a summary.");
+
         template
     };
+
+    let client = Client::with_config(OpenAIConfig::new().with_api_base("http://localhost:8080/v1"));
 
     let state = AppState {
         home_dir: project_dir,
         db: Some(db_pool),
         db_is_encrypted,
         tx: None,
-        conversation_templates: vec![template_1.clone(), {
-            let mut template =
-                ConversationTemplate::new(None, assistant_persona.clone(), user_persona.clone());
-
-            template.add_system_message("You are a helpful AI assistant.");
-
-            template.add_assistant_message("Hello, I'm here to help! What can I do for you today?");
-
-            template.add_user_message(
-            "I need you to summarize some text for me, highlighting the most important details.",
-        );
-
-            template.ooc_message("Only respond with the summary of the text.");
-
-            template
-        }],
+        llm: Some(client),
+        conversation_templates: vec![template_1.clone()],
         conservations: vec![template_1.into()],
         default_assistant_persona: Some(assistant_persona.id.clone()),
         default_user_persona: Some(user_persona.id.clone()),
@@ -380,6 +376,7 @@ pub async fn init_server(options: InitServerOptions) -> Result<AppServer, Error>
             "/api/personas/{persona_id}",
             get(get_persona).delete(delete_persona).put(update_persona),
         )
+        .route("/api/completions", post(completetion))
         .fallback_service(static_dir.clone())
         .with_state(state)
         .layer(compression_layer)
@@ -567,4 +564,117 @@ pub async fn get_achievements(
         StatusCode::OK,
         Json(achievements_service::get_achievements(state).await),
     )
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct CompletionRequestBody {
+    conversation_id: String,
+    prompt: String,
+}
+
+fn build_prompt(conversation: &Conversation) -> String {
+    let messages: Vec<String> = conversation
+        .messages
+        .iter()
+        .map(|message| {
+            format!(
+                "{:?}: {}",
+                message.role,
+                message.message.clone().unwrap_or_default()
+            )
+        })
+        .collect();
+    let messages = messages.join("\n\n");
+
+    format!(
+        "
+You are a powerful AI. Given the following conversation, write the next reply.
+
+{messages}
+    "
+    )
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct CompletionResponse {
+    pub response: String,
+}
+
+impl IntoResponse for CompletionResponse {
+    fn into_response(self) -> Response {
+        (StatusCode::OK, self).into_response()
+    }
+}
+
+pub async fn completetion(
+    State(state): State<Arc<Mutex<AppState>>>,
+    Json(body): Json<CompletionRequestBody>,
+) -> CompletionResponse {
+    let state = state.clone();
+    let mut state = state.lock().await;
+
+    let conversation = state
+        .conservations
+        .iter_mut()
+        .find(|conversation| conversation.id == body.conversation_id)
+        .expect(&format!(
+            "should find conversation by id {}",
+            body.conversation_id
+        ));
+
+    (*conversation).messages.push(
+        types::conversation::Message::builder()
+            .role(User)
+            .message(body.prompt.clone())
+            .build(),
+    );
+
+    let prompt = build_prompt(conversation);
+
+    if let Some(client) = &state.llm {
+        let request = CreateCompletionRequestArgs::default()
+            .prompt(prompt)
+            .max_tokens(400_u32)
+            .build()
+            .expect("should create completion request");
+
+        let response = client.completions().create(request).await;
+
+        match &response {
+            Ok(response) => {
+                let first_choice = response.choices.first().unwrap();
+
+                let conversation = state
+                    .conservations
+                    .iter_mut()
+                    .find(|t| t.id == body.conversation_id)
+                    .ok_or(StatusCode::NOT_FOUND)
+                    .unwrap();
+
+                (*conversation).messages.push(
+                    types::conversation::Message::builder()
+                        .role(Assistant)
+                        .message(first_choice.text.clone())
+                        .build(),
+                );
+
+                return CompletionResponse {
+                    response: first_choice.text.clone(),
+                };
+            }
+            Err(err) => {
+                let err_str = err.to_string();
+
+                dbg!(&err_str);
+
+                return CompletionResponse {
+                    response: err_str.clone(),
+                };
+            }
+        }
+    }
+
+    CompletionResponse {
+        response: "FALLBACK TODO!".to_string(),
+    }
 }
