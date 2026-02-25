@@ -5,6 +5,7 @@ import { useGetConservationByIdQuery } from "@/queries/conversations";
 import { useGetPersonaByIdQuery } from "@/queries/personas";
 import { useGetTemplateByIdQuery } from "@/queries/templates";
 import { Alert, Loader, Stack } from "@mantine/core";
+import { useScrollIntoView } from "@mantine/hooks";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 
@@ -31,6 +32,11 @@ function RouteComponent() {
   const getUserPersonaQuery = useGetPersonaByIdQuery(
     getConversationQuery.data?.userPersonaId ?? null,
   );
+
+  const { scrollIntoView, targetRef } = useScrollIntoView<HTMLTextAreaElement>({
+    offset: 0,
+    duration: 10,
+  });
 
   if (
     getConversationQuery.isPending &&
@@ -66,11 +72,17 @@ function RouteComponent() {
       />
 
       <UserReplyForm
+        ref={targetRef}
         isLoading={completionMutation.isPending}
         value={reply}
         onChange={setReply}
         onSubmit={() => {
-          completionMutation.mutate(reply);
+          completionMutation.mutate(reply, {
+            onSuccess() {
+              setReply("");
+              scrollIntoView();
+            },
+          });
         }}
       />
     </Stack>

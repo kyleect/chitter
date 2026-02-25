@@ -313,6 +313,18 @@ pub async fn init_server(options: InitServerOptions) -> Result<AppServer, Error>
         template
     };
 
+    let template_2 = {
+        let mut template = ConversationTemplate::new(
+            Some("Joke".to_string()),
+            assistant_persona.clone(),
+            user_persona.clone(),
+        );
+
+        template.add_assistant_message("Hello! Give me a word and I'll tell you a joke.");
+
+        template
+    };
+
     let client = Client::with_config(OpenAIConfig::new().with_api_base("http://localhost:8080/v1"));
 
     let state = AppState {
@@ -321,7 +333,7 @@ pub async fn init_server(options: InitServerOptions) -> Result<AppServer, Error>
         db_is_encrypted,
         tx: None,
         llm: Some(client),
-        conversation_templates: vec![template_1.clone()],
+        conversation_templates: vec![template_1.clone(), template_2.clone()],
         conservations: vec![template_1.into()],
         default_assistant_persona: Some(assistant_persona.id.clone()),
         default_user_persona: Some(user_persona.id.clone()),
@@ -588,21 +600,21 @@ fn build_prompt(conversation: &Conversation) -> String {
 
     format!(
         "
-You are a powerful AI. Given the following conversation, write the next reply.
+The following is a conversation between Assistant and User. You are Assistant. Write your response to the conversation. 
 
 {messages}
     "
     )
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct CompletionResponse {
     pub response: String,
 }
 
 impl IntoResponse for CompletionResponse {
     fn into_response(self) -> Response {
-        (StatusCode::OK, self).into_response()
+        (StatusCode::OK, serde_json::to_string_pretty(&self).unwrap()).into_response()
     }
 }
 
@@ -630,6 +642,8 @@ pub async fn completetion(
     );
 
     let prompt = build_prompt(conversation);
+
+    dbg!(&prompt);
 
     if let Some(client) = &state.llm {
         let request = CreateCompletionRequestArgs::default()

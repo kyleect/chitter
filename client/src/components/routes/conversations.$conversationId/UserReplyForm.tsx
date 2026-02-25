@@ -1,12 +1,13 @@
 import { Button, ButtonGroup, Group, Textarea, ThemeIcon } from "@mantine/core";
 import { IconSend } from "@tabler/icons-react";
-import { FC } from "react";
+import { FC, Ref } from "react";
 
 type Props = {
   isLoading: boolean;
   value: string;
   onChange: (newValue: string) => void;
   onSubmit: (value: string) => void;
+  ref: Ref<HTMLTextAreaElement>;
 };
 
 export const UserReplyForm: FC<Props> = ({
@@ -14,6 +15,7 @@ export const UserReplyForm: FC<Props> = ({
   value,
   onChange,
   onSubmit,
+  ref,
 }) => (
   <Group align="flex-end" mt="md">
     <Textarea
@@ -25,6 +27,7 @@ export const UserReplyForm: FC<Props> = ({
       autoFocus
       flex={1}
       disabled={isLoading}
+      ref={ref}
     />
     <ButtonGroup>
       <Button
