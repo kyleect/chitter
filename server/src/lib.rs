@@ -584,14 +584,18 @@ pub struct CompletionRequestBody {
     prompt: String,
 }
 
-fn build_prompt(conversation: &Conversation) -> String {
+fn build_prompt(conversation: &Conversation, assistant_name: &str, user_name: &str) -> String {
     let messages: Vec<String> = conversation
         .messages
         .iter()
         .map(|message| {
             format!(
                 "{:?}: {}",
-                message.role,
+                match message.role {
+                    User => user_name,
+                    Assistant => assistant_name,
+                    _ => todo!(),
+                },
                 message.message.clone().unwrap_or_default()
             )
         })
@@ -600,7 +604,7 @@ fn build_prompt(conversation: &Conversation) -> String {
 
     format!(
         "
-The following is a conversation between Assistant and User. You are Assistant. Write your response to the conversation. 
+The following is a conversation between '{assistant_name}' and '{user_name}'. You are {assistant_name}. Write your response to the conversation. 
 
 {messages}
     "
@@ -625,23 +629,48 @@ pub async fn completetion(
     let state = state.clone();
     let mut state = state.lock().await;
 
+    let (assistant_persona_id, user_persona_id) = {
+        let conversation = state
+            .conservations
+            .iter_mut()
+            .find(|c| c.id == body.conversation_id)
+            .expect(&format!(
+                "should find conversation by id {}",
+                body.conversation_id
+            ));
+
+        conversation.messages.push(
+            types::conversation::Message::builder()
+                .role(User)
+                .message(body.prompt.clone())
+                .build(),
+        );
+
+        (
+            conversation.assistant_persona_id.clone(),
+            conversation.user_persona_id.clone(),
+        )
+    };
+
+    let assistant_persona = state
+        .personass
+        .iter()
+        .find(|p| p.id == assistant_persona_id)
+        .expect("conversation should have assistant persona");
+
+    let user_persona = state
+        .personass
+        .iter()
+        .find(|p| p.id == user_persona_id)
+        .expect("conversation should have user persona");
+
     let conversation = state
         .conservations
-        .iter_mut()
-        .find(|conversation| conversation.id == body.conversation_id)
-        .expect(&format!(
-            "should find conversation by id {}",
-            body.conversation_id
-        ));
+        .iter()
+        .find(|c| c.id == body.conversation_id)
+        .unwrap();
 
-    (*conversation).messages.push(
-        types::conversation::Message::builder()
-            .role(User)
-            .message(body.prompt.clone())
-            .build(),
-    );
-
-    let prompt = build_prompt(conversation);
+    let prompt = build_prompt(conversation, &assistant_persona.name, &user_persona.name);
 
     dbg!(&prompt);
 
