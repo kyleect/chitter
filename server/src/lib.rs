@@ -1,6 +1,13 @@
 use std::{env::current_dir, path::PathBuf, sync::Arc, vec};
 
-use async_openai::{Client, config::OpenAIConfig, types::completions::CreateCompletionRequestArgs};
+use async_openai::{
+    Client,
+    config::OpenAIConfig,
+    types::{
+        chat::{ChatCompletionRequestMessage, CreateChatCompletionRequestArgs},
+        completions::CreateCompletionRequestArgs,
+    },
+};
 use axum::{
     Json, Router,
     extract::{
@@ -37,7 +44,7 @@ use types::{
     DebugInfo,
     achievement::{AchievementDto, AchievementId},
     conversation::{
-        Conversation, ConversationTemplate, Persona,
+        CompletionRequestBody, Conversation, ConversationTemplate, Persona,
         Role::{Assistant, User},
     },
     socket::ClientMessage,
@@ -389,6 +396,7 @@ pub async fn init_server(options: InitServerOptions) -> Result<AppServer, Error>
             get(get_persona).delete(delete_persona).put(update_persona),
         )
         .route("/api/completions", post(completetion))
+        .route("/api/chat_completions", post(chat_completion))
         .fallback_service(static_dir.clone())
         .with_state(state)
         .layer(compression_layer)
@@ -578,12 +586,6 @@ pub async fn get_achievements(
     )
 }
 
-#[derive(Serialize, Deserialize)]
-pub struct CompletionRequestBody {
-    conversation_id: String,
-    prompt: String,
-}
-
 fn build_prompt(conversation: &Conversation, assistant_name: &str, user_name: &str) -> String {
     let messages: Vec<String> = conversation
         .messages
@@ -604,7 +606,9 @@ fn build_prompt(conversation: &Conversation, assistant_name: &str, user_name: &s
 
     format!(
         "
-The following is a conversation between '{assistant_name}' and '{user_name}'. You are {assistant_name}. Write your response to the conversation. 
+The following is a conversation between '{assistant_name}' and '{user_name}'. You are {assistant_name}. It's your turn to respond. Write your next response.
+
+Conversation:
 
 {messages}
     "
@@ -614,6 +618,92 @@ The following is a conversation between '{assistant_name}' and '{user_name}'. Yo
 #[derive(Serialize, Deserialize, Clone)]
 pub struct CompletionResponse {
     pub response: String,
+}
+
+pub async fn chat_completion(
+    State(state): State<Arc<Mutex<AppState>>>,
+    Json(body): Json<CompletionRequestBody>,
+) -> CompletionResponse {
+    let state = state.clone();
+    let mut state = state.lock().await;
+
+    {
+        let conversation = state
+            .conservations
+            .iter_mut()
+            .find(|c| c.id == body.conversation_id)
+            .expect(&format!(
+                "should find conversation by id {}",
+                body.conversation_id
+            ));
+
+        conversation.messages.push(
+            types::conversation::Message::builder()
+                .role(User)
+                .message(body.prompt.clone())
+                .build(),
+        );
+    };
+
+    let conversation = state
+        .conservations
+        .iter()
+        .find(|c| c.id == body.conversation_id)
+        .unwrap();
+
+    if let Some(client) = &state.llm {
+        let request = CreateChatCompletionRequestArgs::default()
+            .messages(
+                conversation
+                    .messages
+                    .iter()
+                    .map(|message| {
+                        let m: ChatCompletionRequestMessage = message.clone().try_into().unwrap();
+
+                        m
+                    })
+                    .collect::<Vec<_>>(),
+            )
+            .build()
+            .expect("should build chat completion request");
+
+        let response = client.chat().create(request).await;
+
+        match &response {
+            Ok(response) => {
+                let first_choice = response.choices.first().unwrap();
+
+                let conversation = state
+                    .conservations
+                    .iter_mut()
+                    .find(|t| t.id == body.conversation_id)
+                    .ok_or(StatusCode::NOT_FOUND)
+                    .unwrap();
+
+                (*conversation).messages.push(
+                    types::conversation::Message::builder()
+                        .role(Assistant)
+                        .message(first_choice.message.content.clone().unwrap_or_default())
+                        .build(),
+                );
+
+                return CompletionResponse {
+                    response: first_choice.message.content.clone().unwrap_or_default(),
+                };
+            }
+            Err(err) => {
+                let err_str = err.to_string();
+
+                dbg!(&err_str);
+
+                return CompletionResponse {
+                    response: err_str.clone(),
+                };
+            }
+        }
+    }
+
+    todo!()
 }
 
 impl IntoResponse for CompletionResponse {
@@ -678,6 +768,7 @@ pub async fn completetion(
         let request = CreateCompletionRequestArgs::default()
             .prompt(prompt)
             .max_tokens(400_u32)
+            .temperature(body.settings.temperature.unwrap_or(0.8f32))
             .build()
             .expect("should create completion request");
 

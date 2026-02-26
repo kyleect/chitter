@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { CONSERVATION_KEYS } from "./conversations";
-import { Conversation } from "server-types";
+import { CompletionRequestBody, Conversation } from "server-types";
 
 export const useCompletionMutation = (conversationId: string) => {
   const queryClient = useQueryClient();
@@ -55,16 +55,26 @@ export const useCompletionMutation = (conversationId: string) => {
         queryKey: CONSERVATION_KEYS.detail(conversationId),
       }),
     mutationFn: async (prompt: string) => {
-      const response = await fetch(`/api/completions`, {
+      const response = await fetch(`/api/chat_completions`, {
         method: "POST",
         body: JSON.stringify({
           prompt,
           conversation_id: conversationId,
-        }),
+          settings: {
+            temperature: 1.0,
+          },
+        } as CompletionRequestBody),
         headers: {
           "content-type": "application/json",
         },
       });
+
+      if (!response.ok) {
+        const error = await response.text();
+
+        throw new Error(`Couldn't generate chat completion: ${error}`);
+      }
+
       const data = (await response.json()) as {
         response: string;
       };
