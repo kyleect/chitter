@@ -217,15 +217,22 @@ pub mod template_service {
         let state = state.clone();
         let mut state = state.lock().await;
 
-        let default_assistant_persona_id =
-            state.default_assistant_persona.clone().unwrap_or_default();
+        let default_assistant_persona_id = state
+            .settings
+            .default_assistant_persona_id
+            .clone()
+            .unwrap_or_default();
 
         let default_assistant_persona = state
             .personass
             .iter()
             .find(|t| t.id == default_assistant_persona_id);
 
-        let default_user_persona_id = state.default_user_persona.clone().unwrap_or_default();
+        let default_user_persona_id = state
+            .settings
+            .default_user_persona_id
+            .clone()
+            .unwrap_or_default();
 
         let default_user_persona = state
             .personass
@@ -290,10 +297,9 @@ pub mod persona_services {
 
     use axum::{
         Json,
-        extract::{Path, Query, State},
+        extract::{Path, State},
     };
     use hyper::StatusCode;
-    use serde::{Deserialize, Serialize};
     use tokio::sync::Mutex;
     use types::conversation::{NewPersona, Persona};
 
@@ -370,65 +376,6 @@ pub mod persona_services {
         *persona = body;
 
         Json(persona.clone())
-    }
-
-    #[derive(Deserialize, Serialize)]
-    pub struct SetDefaultPersonaQuery {
-        persona_id: String,
-    }
-
-    pub async fn set_default_user_persona(
-        State(state): State<Arc<Mutex<AppState>>>,
-        Query(params): Query<SetDefaultPersonaQuery>,
-    ) -> Json<String> {
-        let state = state.clone();
-        let mut state = state.lock().await;
-
-        state.default_user_persona = Some(params.persona_id.clone());
-
-        if let Some(default) = &state.default_assistant_persona
-            && &params.persona_id == default
-        {
-            state.default_assistant_persona = None;
-        }
-
-        Json(params.persona_id)
-    }
-
-    pub async fn set_default_assistant_persona(
-        State(state): State<Arc<Mutex<AppState>>>,
-        Query(params): Query<SetDefaultPersonaQuery>,
-    ) -> Json<String> {
-        let state = state.clone();
-        let mut state = state.lock().await;
-
-        state.default_assistant_persona = Some(params.persona_id.clone());
-
-        if let Some(default) = &state.default_user_persona
-            && &params.persona_id == default
-        {
-            state.default_user_persona = None;
-        }
-
-        Json(params.persona_id)
-    }
-
-    #[derive(Serialize, Deserialize)]
-    pub struct DefaultPersonas {
-        pub assistant: Option<String>,
-        pub user: Option<String>,
-    }
-
-    pub async fn get_default_personas(
-        State(state): State<Arc<Mutex<AppState>>>,
-    ) -> Json<DefaultPersonas> {
-        let state = state.clone();
-        let state = state.lock().await;
-
-        Json(DefaultPersonas {
-            assistant: state.default_assistant_persona.clone(),
-            user: state.default_user_persona.clone(),
-        })
     }
 }
 

@@ -47,6 +47,7 @@ use types::{
         CompletionRequestBody, Conversation, ConversationTemplate, Persona,
         Role::{Assistant, User},
     },
+    settings::{AppSettings, LLMConnection, LLMParameters},
     socket::ClientMessage,
 };
 
@@ -62,10 +63,7 @@ use tower_serve_static::ServeDir as StaticServeDir;
 use crate::services::{
     achievements_service,
     conversation_service::{get_conversations, preview_conversation, start_conversation},
-    persona_services::{
-        add_personas, delete_persona, get_default_personas, get_persona, get_personas,
-        set_default_assistant_persona, set_default_user_persona, update_persona,
-    },
+    persona_services::{add_personas, delete_persona, get_persona, get_personas, update_persona},
     template_service::{create_template, get_template, get_templates, update_template},
 };
 
@@ -118,8 +116,7 @@ pub struct AppState {
     pub conversation_templates: Vec<ConversationTemplate>,
     pub conservations: Vec<Conversation>,
     pub personass: Vec<Persona>,
-    pub default_assistant_persona: Option<String>,
-    pub default_user_persona: Option<String>,
+    pub settings: AppSettings,
 }
 
 impl AppState {
@@ -332,7 +329,36 @@ pub async fn init_server(options: InitServerOptions) -> Result<AppServer, Error>
         template
     };
 
-    let client = Client::with_config(OpenAIConfig::new().with_api_base("http://localhost:8080/v1"));
+    let app_settings = AppSettings::builder()
+        .default_assistant_persona_id(assistant_persona.id.clone())
+        .default_user_persona_id(user_persona.id.clone())
+        .connection(
+            LLMConnection::builder()
+                .maybe_api_key(None)
+                .maybe_url(Some("http://localhost:8080/v1".to_string()))
+                .build(),
+        )
+        .params(
+            LLMParameters::builder()
+                .temperature(0.8f32)
+                .system_prompt("You are a helpful AI assistant.".to_string())
+                .max_tokens(500)
+                .top_k(60)
+                .top_p(0.95)
+                .min_p(0.05)
+                .build(),
+        )
+        .build();
+
+    let client = Client::with_config(
+        OpenAIConfig::new().with_api_base(
+            &app_settings
+                .connection
+                .clone()
+                .url
+                .expect("should have url set in settings above"),
+        ),
+    );
 
     let state = AppState {
         home_dir: project_dir,
@@ -342,9 +368,8 @@ pub async fn init_server(options: InitServerOptions) -> Result<AppServer, Error>
         llm: Some(client),
         conversation_templates: vec![template_1.clone(), template_2.clone()],
         conservations: vec![template_1.into()],
-        default_assistant_persona: Some(assistant_persona.id.clone()),
-        default_user_persona: Some(user_persona.id.clone()),
         personass: vec![assistant_persona, user_persona],
+        settings: app_settings,
     };
 
     let state = Arc::new(Mutex::new(state));
@@ -385,18 +410,13 @@ pub async fn init_server(options: InitServerOptions) -> Result<AppServer, Error>
             get(get_conversations).post(start_conversation),
         )
         .route("/api/personas", get(get_personas).post(add_personas))
-        .route("/api/personas/default", get(get_default_personas))
-        .route("/api/personas/default/user", post(set_default_user_persona))
-        .route(
-            "/api/personas/default/assistant",
-            post(set_default_assistant_persona),
-        )
         .route(
             "/api/personas/{persona_id}",
             get(get_persona).delete(delete_persona).put(update_persona),
         )
         .route("/api/completions", post(completetion))
         .route("/api/chat_completions", post(chat_completion))
+        .route("/api/settings", get(get_settings).post(update_settings))
         .fallback_service(static_dir.clone())
         .with_state(state)
         .layer(compression_layer)
@@ -653,6 +673,9 @@ pub async fn chat_completion(
 
     if let Some(client) = &state.llm {
         let request = CreateChatCompletionRequestArgs::default()
+            .temperature(state.settings.params.temperature.clone().unwrap_or(0.8f32))
+            .max_tokens(state.settings.params.max_tokens.clone().unwrap_or(500))
+            .top_p(state.settings.params.top_p.clone().unwrap_or(0.95))
             .messages(
                 conversation
                     .messages
@@ -666,6 +689,8 @@ pub async fn chat_completion(
             )
             .build()
             .expect("should build chat completion request");
+
+        dbg!(&request);
 
         let response = client.chat().create(request).await;
 
@@ -762,8 +787,6 @@ pub async fn completetion(
 
     let prompt = build_prompt(conversation, &assistant_persona.name, &user_persona.name);
 
-    dbg!(&prompt);
-
     if let Some(client) = &state.llm {
         let request = CreateCompletionRequestArgs::default()
             .prompt(prompt)
@@ -811,4 +834,21 @@ pub async fn completetion(
     CompletionResponse {
         response: "FALLBACK TODO!".to_string(),
     }
+}
+
+pub async fn update_settings(
+    State(state): State<Arc<Mutex<AppState>>>,
+    Json(body): Json<AppSettings>,
+) {
+    let state = state.clone();
+    let mut state = state.lock().await;
+
+    state.settings = body;
+}
+
+pub async fn get_settings(State(state): State<Arc<Mutex<AppState>>>) -> Json<AppSettings> {
+    let state = state.clone();
+    let state = state.lock().await;
+
+    Json(state.settings.clone())
 }

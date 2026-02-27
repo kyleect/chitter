@@ -4,6 +4,7 @@ use ts_rs::TS;
 pub mod achievement;
 pub mod conversation;
 pub mod errors;
+pub mod settings;
 pub mod socket;
 pub mod utils;
 
