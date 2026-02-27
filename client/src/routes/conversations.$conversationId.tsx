@@ -1,9 +1,11 @@
 import { MessageList } from "@/components/routes/conversations.$conversationId/MessageList";
 import { UserReplyForm } from "@/components/routes/conversations.$conversationId/UserReplyForm";
+import { useCompletionMutation } from "@/queries/completions";
 import { useGetConservationByIdQuery } from "@/queries/conversations";
 import { useGetPersonaByIdQuery } from "@/queries/personas";
 import { useGetTemplateByIdQuery } from "@/queries/templates";
 import { Alert, Loader, Stack } from "@mantine/core";
+import { useScrollIntoView } from "@mantine/hooks";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 
@@ -14,6 +16,7 @@ export const Route = createFileRoute("/conversations/$conversationId")({
 function RouteComponent() {
   const [reply, setReply] = useState("");
   const params = Route.useParams();
+  const completionMutation = useCompletionMutation(params.conversationId);
   const getConversationQuery = useGetConservationByIdQuery(
     params.conversationId,
   );
@@ -29,6 +32,11 @@ function RouteComponent() {
   const getUserPersonaQuery = useGetPersonaByIdQuery(
     getConversationQuery.data?.userPersonaId ?? null,
   );
+
+  const { scrollIntoView, targetRef } = useScrollIntoView<HTMLTextAreaElement>({
+    offset: 0,
+    duration: 10,
+  });
 
   if (
     getConversationQuery.isPending &&
@@ -57,9 +65,26 @@ function RouteComponent() {
 
   return (
     <Stack gap="xl">
-      <MessageList messages={getConversationQuery.data?.messages ?? []} />
+      <MessageList
+        messages={getConversationQuery.data?.messages ?? []}
+        assistantPersona={getAssistantPersonaQuery.data}
+        userPersona={getUserPersonaQuery.data}
+      />
 
-      <UserReplyForm value={reply} onChange={setReply} />
+      <UserReplyForm
+        ref={targetRef}
+        isLoading={completionMutation.isPending}
+        value={reply}
+        onChange={setReply}
+        onSubmit={() => {
+          completionMutation.mutate(reply, {
+            onSuccess() {
+              setReply("");
+              scrollIntoView();
+            },
+          });
+        }}
+      />
     </Stack>
   );
 }

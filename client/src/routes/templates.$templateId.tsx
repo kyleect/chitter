@@ -53,11 +53,9 @@ import { modals } from "@mantine/modals";
 import { DividerBar } from "@/components/routes/templates.$templateId/DividerBar";
 import { ConversationPreviewDrawer } from "@/components/routes/templates.$templateId/ConversationPreviewDrawer";
 import { Buttons } from "@/components/routes/templates.$templateId/Buttons";
-import {
-  useGetDefaultPersonasQuery,
-  useGetPersonasQuery,
-} from "@/queries/personas";
+import { useGetPersonasQuery } from "@/queries/personas";
 import { useStartConversationMutation } from "@/queries/conversations";
+import { useGetSettingsQuery } from "@/queries/settings";
 
 type Search = {
   at?: number;
@@ -87,13 +85,13 @@ function RouteComponent() {
     at,
   );
   const startConversationMutation = useStartConversationMutation();
-  const getDefaultPersonasQuery = useGetDefaultPersonasQuery();
+  const getSettingsQuery = useGetSettingsQuery();
   const [draftUserPersonaId, setDraftUserPersonaId] = useState<string | null>(
-    getDefaultPersonasQuery.data?.user ?? null,
+    getSettingsQuery.data?.default_user_persona_id ?? null,
   );
   const [draftAssistantPersonaId, setDraftAssistantPersonaId] = useState<
     string | null
-  >(getDefaultPersonasQuery.data?.assistant ?? null);
+  >(getSettingsQuery.data?.default_assistant_persona_id ?? null);
 
   const getPersonasQuery = useGetPersonasQuery();
 
@@ -115,7 +113,7 @@ function RouteComponent() {
     getTemplateByIdQuery.isPending &&
     getTemplateByIdPreviewQuery.isPending &&
     getPersonasQuery.isPending &&
-    getDefaultPersonasQuery.isPending
+    getSettingsQuery.isPending
   ) {
     return <Loader />;
   }
@@ -145,11 +143,10 @@ function RouteComponent() {
     );
   }
 
-  if (getDefaultPersonasQuery.isError) {
+  if (getSettingsQuery.isError) {
     return (
       <Alert color="red">
-        Failed to load default personas:{" "}
-        {JSON.stringify(getDefaultPersonasQuery.error)}
+        Failed to load settings: {JSON.stringify(getSettingsQuery.error)}
       </Alert>
     );
   }
@@ -172,12 +169,10 @@ function RouteComponent() {
           isMessageItem(patch)
         ) {
           (
-                                  draftItem as {
-                                    message: Message;
-                                  }
-                                // prettier-ignore
-                              ).message.message =
-            patch.message.message;
+            draftItem as {
+              message: Message;
+            }
+          ).message.message = patch.message.message;
         }
       },
       {

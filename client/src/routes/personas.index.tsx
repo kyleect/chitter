@@ -2,12 +2,13 @@ import { ConversationPersonas } from "@/components/common/ConversationPersonas";
 import {
   useCreatePersonaMutation,
   useDeletePersonaMutation,
-  useGetDefaultPersonasQuery,
   useGetPersonaByIdQuery,
   useGetPersonasQuery,
-  useSetDefaultAssistantPersonaMutation,
-  useSetDefaultUserPersonaMutation,
 } from "@/queries/personas";
+import {
+  useGetSettingsQuery,
+  useUpdateSettingsMutation,
+} from "@/queries/settings";
 import {
   ActionIcon,
   Alert,
@@ -23,6 +24,7 @@ import {
 import { modals } from "@mantine/modals";
 import { IconRobot, IconUser } from "@tabler/icons-react";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { produce } from "immer";
 import { useState } from "react";
 
 export const Route = createFileRoute("/personas/")({
@@ -34,18 +36,16 @@ function RouteComponent() {
   const personasQuery = useGetPersonasQuery();
   const createPersonaMutation = useCreatePersonaMutation();
   const deletePersonaMutation = useDeletePersonaMutation();
-  const setDefaultAssistantPersonaMutation =
-    useSetDefaultAssistantPersonaMutation();
-  const setDefaultUserPersonaMutation = useSetDefaultUserPersonaMutation();
-  const getDefaultPersonasQuery = useGetDefaultPersonasQuery();
+  const updateSettingsMutation = useUpdateSettingsMutation();
+  const getSettingsQuery = useGetSettingsQuery();
   const getAssistantQuery = useGetPersonaByIdQuery(
-    getDefaultPersonasQuery.data?.assistant ?? null,
+    getSettingsQuery.data?.default_assistant_persona_id ?? null,
   );
   const getUserQuery = useGetPersonaByIdQuery(
-    getDefaultPersonasQuery.data?.user ?? null,
+    getSettingsQuery.data?.default_user_persona_id ?? null,
   );
 
-  if (personasQuery.isPending && getDefaultPersonasQuery.isPending) {
+  if (personasQuery.isPending && getSettingsQuery.isPending) {
     return <Loader />;
   }
 
@@ -57,11 +57,10 @@ function RouteComponent() {
     );
   }
 
-  if (getDefaultPersonasQuery.isError) {
+  if (getSettingsQuery.isError) {
     return (
       <Alert color="red">
-        Failed to load default personas:{" "}
-        {JSON.stringify(getDefaultPersonasQuery.error)}
+        Failed to load settings: {JSON.stringify(getSettingsQuery.error)}
       </Alert>
     );
   }
@@ -112,8 +111,10 @@ function RouteComponent() {
                   mb={0}
                   size="sm"
                   fw={
-                    getDefaultPersonasQuery.data?.assistant === persona.id ||
-                    getDefaultPersonasQuery.data?.user === persona.id
+                    getSettingsQuery.data?.default_assistant_persona_id ===
+                      persona.id ||
+                    getSettingsQuery.data?.default_user_persona_id ===
+                      persona.id
                       ? "bold"
                       : undefined
                   }
@@ -123,26 +124,36 @@ function RouteComponent() {
                 <ActionIcon.Group>
                   <ActionIcon
                     variant={
-                      getDefaultPersonasQuery.data?.assistant === persona.id
+                      getSettingsQuery.data?.default_assistant_persona_id ===
+                      persona.id
                         ? "filled"
                         : "outline"
                     }
                     size="md"
                     onClick={() => {
-                      setDefaultAssistantPersonaMutation.mutate(persona.id);
+                      updateSettingsMutation.mutate(
+                        produce((draft) => {
+                          draft.default_assistant_persona_id = persona.id;
+                        })(getSettingsQuery.data),
+                      );
                     }}
                   >
                     <IconRobot stroke={1} />
                   </ActionIcon>
                   <ActionIcon
                     variant={
-                      getDefaultPersonasQuery.data?.user === persona.id
+                      getSettingsQuery.data?.default_user_persona_id ===
+                      persona.id
                         ? "filled"
                         : "outline"
                     }
                     size="md"
                     onClick={() => {
-                      setDefaultUserPersonaMutation.mutate(persona.id);
+                      updateSettingsMutation.mutate(
+                        produce((draft) => {
+                          draft.default_user_persona_id = persona.id;
+                        })(getSettingsQuery.data),
+                      );
                     }}
                   >
                     <IconUser stroke={1} />

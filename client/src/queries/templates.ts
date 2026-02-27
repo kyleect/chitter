@@ -37,7 +37,7 @@ export const useGetTemplateByIdQuery = (id: string | null) =>
   useQuery({
     queryKey: TEMPLATE_KEYS.detail(id),
     queryFn: async () => {
-      if (typeof id === "undefined") return;
+      if (id === null) return;
 
       const response = await fetch(`/api/templates/${id}`);
       const data = (await response.json()) as ConversationTemplate;

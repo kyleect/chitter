@@ -1,5 +1,13 @@
 use std::{env::current_dir, path::PathBuf, sync::Arc, vec};
 
+use async_openai::{
+    Client,
+    config::OpenAIConfig,
+    types::{
+        chat::{ChatCompletionRequestMessage, CreateChatCompletionRequestArgs},
+        completions::CreateCompletionRequestArgs,
+    },
+};
 use axum::{
     Json, Router,
     extract::{
@@ -17,6 +25,7 @@ use hyper_util::{
     rt::{TokioExecutor, TokioIo},
     server,
 };
+use serde::{Deserialize, Serialize};
 use serde_json::from_str;
 use sqlx::{Pool, Sqlite, SqlitePool, migrate::Migrator, sqlite::SqliteConnectOptions};
 use tokio::{
@@ -34,7 +43,11 @@ use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use types::{
     DebugInfo,
     achievement::{AchievementDto, AchievementId},
-    conversation::{Conversation, ConversationTemplate, Persona},
+    conversation::{
+        CompletionRequestBody, Conversation, ConversationTemplate, Persona,
+        Role::{Assistant, User},
+    },
+    settings::{AppSettings, LLMConnection, LLMParameters},
     socket::ClientMessage,
 };
 
@@ -50,10 +63,7 @@ use tower_serve_static::ServeDir as StaticServeDir;
 use crate::services::{
     achievements_service,
     conversation_service::{get_conversations, preview_conversation, start_conversation},
-    persona_services::{
-        add_personas, delete_persona, get_default_personas, get_persona, get_personas,
-        set_default_assistant_persona, set_default_user_persona, update_persona,
-    },
+    persona_services::{add_personas, delete_persona, get_persona, get_personas, update_persona},
     template_service::{create_template, get_template, get_templates, update_template},
 };
 
@@ -102,11 +112,11 @@ pub struct AppState {
     pub db: Option<Pool<Sqlite>>,
     pub db_is_encrypted: bool,
     pub tx: Option<Arc<Mutex<UnboundedSender<String>>>>,
+    pub llm: Option<Client<OpenAIConfig>>,
     pub conversation_templates: Vec<ConversationTemplate>,
     pub conservations: Vec<Conversation>,
     pub personass: Vec<Persona>,
-    pub default_assistant_persona: Option<String>,
-    pub default_user_persona: Option<String>,
+    pub settings: AppSettings,
 }
 
 impl AppState {
@@ -302,34 +312,64 @@ pub async fn init_server(options: InitServerOptions) -> Result<AppServer, Error>
 
         template.end_if();
 
+        template.add_assistant_message("Send the text and I'll respond with a summary.");
+
         template
     };
+
+    let template_2 = {
+        let mut template = ConversationTemplate::new(
+            Some("Joke".to_string()),
+            assistant_persona.clone(),
+            user_persona.clone(),
+        );
+
+        template.add_assistant_message("Hello! Give me a word and I'll tell you a joke.");
+
+        template
+    };
+
+    let app_settings = AppSettings::builder()
+        .default_assistant_persona_id(assistant_persona.id.clone())
+        .default_user_persona_id(user_persona.id.clone())
+        .connection(
+            LLMConnection::builder()
+                .maybe_api_key(None)
+                .maybe_url(Some("http://localhost:8080/v1".to_string()))
+                .build(),
+        )
+        .params(
+            LLMParameters::builder()
+                .temperature(0.8f32)
+                .system_prompt("You are a helpful AI assistant.".to_string())
+                .max_tokens(500)
+                .top_k(60)
+                .top_p(0.95)
+                .min_p(0.05)
+                .build(),
+        )
+        .build();
+
+    let client = Client::with_config(
+        OpenAIConfig::new().with_api_base(
+            &app_settings
+                .connection
+                .clone()
+                .url
+                .expect("should have url set in settings above"),
+        ),
+    );
 
     let state = AppState {
         home_dir: project_dir,
         db: Some(db_pool),
         db_is_encrypted,
         tx: None,
-        conversation_templates: vec![template_1.clone(), {
-            let mut template =
-                ConversationTemplate::new(None, assistant_persona.clone(), user_persona.clone());
-
-            template.add_system_message("You are a helpful AI assistant.");
-
-            template.add_assistant_message("Hello, I'm here to help! What can I do for you today?");
-
-            template.add_user_message(
-            "I need you to summarize some text for me, highlighting the most important details.",
-        );
-
-            template.ooc_message("Only respond with the summary of the text.");
-
-            template
-        }],
+        llm: Some(client),
+        conversation_templates: vec![template_1.clone(), template_2.clone()],
         conservations: vec![template_1.into()],
-        default_assistant_persona: Some(assistant_persona.id.clone()),
-        default_user_persona: Some(user_persona.id.clone()),
         personass: vec![assistant_persona, user_persona],
+        settings: app_settings,
     };
 
     let state = Arc::new(Mutex::new(state));
@@ -370,16 +410,13 @@ pub async fn init_server(options: InitServerOptions) -> Result<AppServer, Error>
             get(get_conversations).post(start_conversation),
         )
         .route("/api/personas", get(get_personas).post(add_personas))
-        .route("/api/personas/default", get(get_default_personas))
-        .route("/api/personas/default/user", post(set_default_user_persona))
-        .route(
-            "/api/personas/default/assistant",
-            post(set_default_assistant_persona),
-        )
         .route(
             "/api/personas/{persona_id}",
             get(get_persona).delete(delete_persona).put(update_persona),
         )
+        .route("/api/completions", post(completetion))
+        .route("/api/chat_completions", post(chat_completion))
+        .route("/api/settings", get(get_settings).post(update_settings))
         .fallback_service(static_dir.clone())
         .with_state(state)
         .layer(compression_layer)
@@ -567,4 +604,251 @@ pub async fn get_achievements(
         StatusCode::OK,
         Json(achievements_service::get_achievements(state).await),
     )
+}
+
+fn build_prompt(conversation: &Conversation, assistant_name: &str, user_name: &str) -> String {
+    let messages: Vec<String> = conversation
+        .messages
+        .iter()
+        .map(|message| {
+            format!(
+                "{:?}: {}",
+                match message.role {
+                    User => user_name,
+                    Assistant => assistant_name,
+                    _ => todo!(),
+                },
+                message.message.clone().unwrap_or_default()
+            )
+        })
+        .collect();
+    let messages = messages.join("\n\n");
+
+    format!(
+        "
+The following is a conversation between '{assistant_name}' and '{user_name}'. You are {assistant_name}. It's your turn to respond. Write your next response.
+
+Conversation:
+
+{messages}
+    "
+    )
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+pub struct CompletionResponse {
+    pub response: String,
+}
+
+pub async fn chat_completion(
+    State(state): State<Arc<Mutex<AppState>>>,
+    Json(body): Json<CompletionRequestBody>,
+) -> CompletionResponse {
+    let state = state.clone();
+    let mut state = state.lock().await;
+
+    {
+        let conversation = state
+            .conservations
+            .iter_mut()
+            .find(|c| c.id == body.conversation_id)
+            .expect(&format!(
+                "should find conversation by id {}",
+                body.conversation_id
+            ));
+
+        conversation.messages.push(
+            types::conversation::Message::builder()
+                .role(User)
+                .message(body.prompt.clone())
+                .build(),
+        );
+    };
+
+    let conversation = state
+        .conservations
+        .iter()
+        .find(|c| c.id == body.conversation_id)
+        .unwrap();
+
+    if let Some(client) = &state.llm {
+        let request = CreateChatCompletionRequestArgs::default()
+            .temperature(state.settings.params.temperature.clone().unwrap_or(0.8f32))
+            .max_tokens(state.settings.params.max_tokens.clone().unwrap_or(500))
+            .top_p(state.settings.params.top_p.clone().unwrap_or(0.95))
+            .messages(
+                conversation
+                    .messages
+                    .iter()
+                    .map(|message| {
+                        let m: ChatCompletionRequestMessage = message.clone().try_into().unwrap();
+
+                        m
+                    })
+                    .collect::<Vec<_>>(),
+            )
+            .build()
+            .expect("should build chat completion request");
+
+        dbg!(&request);
+
+        let response = client.chat().create(request).await;
+
+        match &response {
+            Ok(response) => {
+                let first_choice = response.choices.first().unwrap();
+
+                let conversation = state
+                    .conservations
+                    .iter_mut()
+                    .find(|t| t.id == body.conversation_id)
+                    .ok_or(StatusCode::NOT_FOUND)
+                    .unwrap();
+
+                (*conversation).messages.push(
+                    types::conversation::Message::builder()
+                        .role(Assistant)
+                        .message(first_choice.message.content.clone().unwrap_or_default())
+                        .build(),
+                );
+
+                return CompletionResponse {
+                    response: first_choice.message.content.clone().unwrap_or_default(),
+                };
+            }
+            Err(err) => {
+                let err_str = err.to_string();
+
+                dbg!(&err_str);
+
+                return CompletionResponse {
+                    response: err_str.clone(),
+                };
+            }
+        }
+    }
+
+    todo!()
+}
+
+impl IntoResponse for CompletionResponse {
+    fn into_response(self) -> Response {
+        (StatusCode::OK, serde_json::to_string_pretty(&self).unwrap()).into_response()
+    }
+}
+
+pub async fn completetion(
+    State(state): State<Arc<Mutex<AppState>>>,
+    Json(body): Json<CompletionRequestBody>,
+) -> CompletionResponse {
+    let state = state.clone();
+    let mut state = state.lock().await;
+
+    let (assistant_persona_id, user_persona_id) = {
+        let conversation = state
+            .conservations
+            .iter_mut()
+            .find(|c| c.id == body.conversation_id)
+            .expect(&format!(
+                "should find conversation by id {}",
+                body.conversation_id
+            ));
+
+        conversation.messages.push(
+            types::conversation::Message::builder()
+                .role(User)
+                .message(body.prompt.clone())
+                .build(),
+        );
+
+        (
+            conversation.assistant_persona_id.clone(),
+            conversation.user_persona_id.clone(),
+        )
+    };
+
+    let assistant_persona = state
+        .personass
+        .iter()
+        .find(|p| p.id == assistant_persona_id)
+        .expect("conversation should have assistant persona");
+
+    let user_persona = state
+        .personass
+        .iter()
+        .find(|p| p.id == user_persona_id)
+        .expect("conversation should have user persona");
+
+    let conversation = state
+        .conservations
+        .iter()
+        .find(|c| c.id == body.conversation_id)
+        .unwrap();
+
+    let prompt = build_prompt(conversation, &assistant_persona.name, &user_persona.name);
+
+    if let Some(client) = &state.llm {
+        let request = CreateCompletionRequestArgs::default()
+            .prompt(prompt)
+            .max_tokens(400_u32)
+            .temperature(body.settings.temperature.unwrap_or(0.8f32))
+            .build()
+            .expect("should create completion request");
+
+        let response = client.completions().create(request).await;
+
+        match &response {
+            Ok(response) => {
+                let first_choice = response.choices.first().unwrap();
+
+                let conversation = state
+                    .conservations
+                    .iter_mut()
+                    .find(|t| t.id == body.conversation_id)
+                    .ok_or(StatusCode::NOT_FOUND)
+                    .unwrap();
+
+                (*conversation).messages.push(
+                    types::conversation::Message::builder()
+                        .role(Assistant)
+                        .message(first_choice.text.clone())
+                        .build(),
+                );
+
+                return CompletionResponse {
+                    response: first_choice.text.clone(),
+                };
+            }
+            Err(err) => {
+                let err_str = err.to_string();
+
+                dbg!(&err_str);
+
+                return CompletionResponse {
+                    response: err_str.clone(),
+                };
+            }
+        }
+    }
+
+    CompletionResponse {
+        response: "FALLBACK TODO!".to_string(),
+    }
+}
+
+pub async fn update_settings(
+    State(state): State<Arc<Mutex<AppState>>>,
+    Json(body): Json<AppSettings>,
+) {
+    let state = state.clone();
+    let mut state = state.lock().await;
+
+    state.settings = body;
+}
+
+pub async fn get_settings(State(state): State<Arc<Mutex<AppState>>>) -> Json<AppSettings> {
+    let state = state.clone();
+    let state = state.lock().await;
+
+    Json(state.settings.clone())
 }
