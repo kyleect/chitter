@@ -446,6 +446,13 @@ function RouteComponent() {
         <Divider label={"Blocks"} labelPosition="left" mt="md" mb="md" />
 
         <Stack gap="xs">
+          <DividerBar
+            index={-1}
+            isEditing={isEditing}
+            patchItemsWithInsertAt={patchItemsWithInsertAt(patchItems)}
+            setAt={setAt}
+            open={open}
+          />
           {draftTemplateItems.length > 0 ? (
             draftTemplateItems.map((item, index) => {
               if (isMessageItem(item)) {
