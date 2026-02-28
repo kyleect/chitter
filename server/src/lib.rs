@@ -16,7 +16,7 @@ use axum::{
     },
     http::StatusCode,
     response::{IntoResponse, Response},
-    routing::{any, get, post},
+    routing::{any, delete, get, post},
 };
 use clap::Parser;
 use futures_util::{SinkExt, StreamExt};
@@ -62,7 +62,9 @@ use tower_serve_static::ServeDir as StaticServeDir;
 
 use crate::services::{
     achievements_service,
-    conversation_service::{get_conversations, preview_conversation, start_conversation},
+    conversation_service::{
+        delete_conversation, get_conversations, preview_conversation, start_conversation,
+    },
     persona_services::{add_personas, delete_persona, get_persona, get_personas, update_persona},
     template_service::{
         create_template, delete_template, get_template, get_templates, update_template,
@@ -412,6 +414,10 @@ pub async fn init_server(options: InitServerOptions) -> Result<AppServer, Error>
         .route(
             "/api/conversations",
             get(get_conversations).post(start_conversation),
+        )
+        .route(
+            "/api/conversations/{conversation_id}",
+            delete(delete_conversation),
         )
         .route("/api/personas", get(get_personas).post(add_personas))
         .route(

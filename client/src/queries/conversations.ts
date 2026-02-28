@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Conversation,
   ConversationItem,
@@ -113,3 +113,20 @@ export function isIfEqItem(item: ConversationItem): item is {
 
   return key === "ifEq";
 }
+
+export const useDeleteConversationMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (conversationId: Conversation["id"]) => {
+      await fetch(`/api/conversations/${conversationId}`, {
+        method: "DELETE",
+      });
+    },
+    onSuccess() {
+      queryClient.invalidateQueries({
+        queryKey: CONSERVATION_KEYS.all,
+      });
+    },
+  });
+};

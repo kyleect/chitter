@@ -1,7 +1,10 @@
 import { ConversationPersonas } from "@/components/common/ConversationPersonas";
 import { LinkToConversation } from "@/components/common/LinkToConversation";
 import { LinkToTemplate } from "@/components/common/LinkToTemplate";
-import { useGetConservationsQuery } from "@/queries/conversations";
+import {
+  useDeleteConversationMutation,
+  useGetConservationsQuery,
+} from "@/queries/conversations";
 import { useGetPersonasQuery } from "@/queries/personas";
 import { useGetTemplatesQuery } from "@/queries/templates";
 import {
@@ -13,6 +16,7 @@ import {
   Stack,
   Text,
 } from "@mantine/core";
+import { modals } from "@mantine/modals";
 import { createFileRoute } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/conversations/")({
@@ -23,6 +27,7 @@ function RouteComponent() {
   const getConversationsQuery = useGetConservationsQuery();
   const getPersonasQuery = useGetPersonasQuery();
   const getTemplatesQuery = useGetTemplatesQuery();
+  const deleteConversationMutation = useDeleteConversationMutation();
 
   if (
     getConversationsQuery.isPending &&
@@ -92,7 +97,23 @@ function RouteComponent() {
                   assistantPersona={assistant}
                 />
 
-                <CloseButton />
+                <CloseButton
+                  onClick={() => {
+                    modals.openConfirmModal({
+                      title: "Delete Conversation",
+                      labels: {
+                        confirm: "Delete",
+                        cancel: "Cancel",
+                      },
+                      confirmProps: {
+                        color: "red",
+                      },
+                      onConfirm() {
+                        deleteConversationMutation.mutate(conversation.id);
+                      },
+                    });
+                  }}
+                />
               </Group>
             </Group>
           </Card>

@@ -471,4 +471,19 @@ pub mod conversation_service {
 
         Json(conversation)
     }
+
+    pub async fn delete_conversation(
+        State(state): State<Arc<Mutex<AppState>>>,
+        Path(conversation_id): Path<String>,
+    ) {
+        let state = state.clone();
+        let mut state = state.lock().await;
+
+        state.conservations = state
+            .conservations
+            .iter()
+            .filter(|x| x.id != conversation_id)
+            .cloned()
+            .collect();
+    }
 }
