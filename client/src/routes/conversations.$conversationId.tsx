@@ -1,10 +1,11 @@
+import { LinkToTemplate } from "@/components/common/LinkToTemplate";
 import { MessageList } from "@/components/routes/conversations.$conversationId/MessageList";
 import { UserReplyForm } from "@/components/routes/conversations.$conversationId/UserReplyForm";
 import { useCompletionMutation } from "@/queries/completions";
 import { useGetConservationByIdQuery } from "@/queries/conversations";
 import { useGetPersonaByIdQuery } from "@/queries/personas";
 import { useGetTemplateByIdQuery } from "@/queries/templates";
-import { Alert, Loader, Stack } from "@mantine/core";
+import { Alert, Group, Loader, Stack, Text } from "@mantine/core";
 import { useScrollIntoView } from "@mantine/hooks";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
@@ -85,6 +86,14 @@ function RouteComponent() {
           });
         }}
       />
+
+      {getConversationQuery.data && (
+        <Group m={0}>
+          <Text mb={0}>Template:</Text>
+
+          <LinkToTemplate templateId={getConversationQuery.data.templateId} />
+        </Group>
+      )}
     </Stack>
   );
 }

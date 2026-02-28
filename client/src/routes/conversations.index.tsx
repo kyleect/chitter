@@ -1,4 +1,6 @@
 import { ConversationPersonas } from "@/components/common/ConversationPersonas";
+import { LinkToConversation } from "@/components/common/LinkToConversation";
+import { LinkToTemplate } from "@/components/common/LinkToTemplate";
 import { useGetConservationsQuery } from "@/queries/conversations";
 import { useGetPersonasQuery } from "@/queries/personas";
 import { useGetTemplatesQuery } from "@/queries/templates";
@@ -11,7 +13,7 @@ import {
   Stack,
   Text,
 } from "@mantine/core";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/conversations/")({
   component: RouteComponent,
@@ -74,14 +76,7 @@ function RouteComponent() {
         return (
           <Card key={conversation.id}>
             <Group justify="space-between">
-              <Link
-                to="/conversations/$conversationId"
-                params={{
-                  conversationId: conversation.id,
-                }}
-              >
-                {conversation.title ?? conversation.id}
-              </Link>
+              <LinkToConversation conversationId={conversation.id} />
 
               <Group gap="xl">
                 <Group gap="md">
@@ -89,16 +84,7 @@ function RouteComponent() {
                     Template:
                   </Text>
 
-                  {template && (
-                    <Link
-                      to="/templates/$templateId"
-                      params={{
-                        templateId: template?.id,
-                      }}
-                    >
-                      {template?.title ?? template?.id}
-                    </Link>
-                  )}
+                  {template && <LinkToTemplate templateId={template.id} />}
                 </Group>
 
                 <ConversationPersonas
