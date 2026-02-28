@@ -3,6 +3,7 @@ import { useStartConversationMutation } from "@/queries/conversations";
 import { useGetPersonasQuery } from "@/queries/personas";
 import {
   useCreateTemplateMutation,
+  useDeleteTemplateMutation,
   useGetTemplatesQuery,
 } from "@/queries/templates";
 import {
@@ -15,6 +16,7 @@ import {
   Stack,
   TextInput,
 } from "@mantine/core";
+import { modals } from "@mantine/modals";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 
@@ -29,6 +31,7 @@ function RouteComponent() {
   const getPersonasQuery = useGetPersonasQuery();
   const nav = Route.useNavigate();
   const startConversationMutation = useStartConversationMutation();
+  const deleteTemplateMutation = useDeleteTemplateMutation();
 
   if (templatesQuery.isPending && getPersonasQuery.isPending) {
     return <Loader />;
@@ -94,7 +97,23 @@ function RouteComponent() {
                 >
                   Chat
                 </Button>
-                <CloseButton />
+                <CloseButton
+                  onClick={() => {
+                    modals.openConfirmModal({
+                      title: "Delete Template",
+                      labels: {
+                        confirm: "Delete",
+                        cancel: "Cancel",
+                      },
+                      confirmProps: {
+                        color: "red",
+                      },
+                      onConfirm() {
+                        deleteTemplateMutation.mutate(template.id);
+                      },
+                    });
+                  }}
+                />
               </Group>
             </Group>
           </Card>

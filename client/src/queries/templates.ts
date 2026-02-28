@@ -220,3 +220,20 @@ type PatchItemsFn = (patchFn: PatchItemsPatchFn) => void;
 export const patchItemsWithInsertAt =
   (patchItems: PatchItemsFn) => (index: number, newItem: ConversationItem) =>
     patchItems((items) => items.splice(index, 0, newItem));
+
+export const useDeleteTemplateMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (templateId: ConversationTemplate["id"]) => {
+      await fetch(`/api/templates/${templateId}`, {
+        method: "DELETE",
+      });
+    },
+    onSuccess() {
+      queryClient.invalidateQueries({
+        queryKey: TEMPLATE_KEYS.all,
+      });
+    },
+  });
+};

@@ -64,7 +64,9 @@ use crate::services::{
     achievements_service,
     conversation_service::{get_conversations, preview_conversation, start_conversation},
     persona_services::{add_personas, delete_persona, get_persona, get_personas, update_persona},
-    template_service::{create_template, get_template, get_templates, update_template},
+    template_service::{
+        create_template, delete_template, get_template, get_templates, update_template,
+    },
 };
 
 pub mod services;
@@ -395,7 +397,9 @@ pub async fn init_server(options: InitServerOptions) -> Result<AppServer, Error>
         .route("/api/templates", get(get_templates).post(create_template))
         .route(
             "/api/templates/{template_id}",
-            get(get_template).put(update_template),
+            get(get_template)
+                .put(update_template)
+                .delete(delete_template),
         )
         .route(
             "/api/templates/{template_id}/preview",

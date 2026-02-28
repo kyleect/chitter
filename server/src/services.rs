@@ -290,6 +290,21 @@ pub mod template_service {
 
         *template = body;
     }
+
+    pub async fn delete_template(
+        State(state): State<Arc<Mutex<AppState>>>,
+        Path(template_id): Path<String>,
+    ) {
+        let state = state.clone();
+        let mut state = state.lock().await;
+
+        state.conversation_templates = state
+            .conversation_templates
+            .iter()
+            .filter(|x| x.id != template_id)
+            .cloned()
+            .collect();
+    }
 }
 
 pub mod persona_services {
