@@ -1,13 +1,9 @@
-import { Group, Text, ThemeIcon } from "@mantine/core";
-import {
-  IconRobot,
-  IconRobotOff,
-  IconUser,
-  IconUserOff,
-} from "@tabler/icons-react";
-import { Link } from "@tanstack/react-router";
+import { Group } from "@mantine/core";
 import { FC } from "react";
 import { Persona } from "server-types";
+import { LinkToPersonaWithIcon } from "./LinkToPersonaWithIcon";
+import { AssistantIcon, AssistantMissingIcon } from "./AssistantIcon";
+import { UserIcon, UserMissingIcon } from "./UserIcon";
 
 type Props = {
   assistantPersona?: Persona;
@@ -20,45 +16,17 @@ export const ConversationPersonas: FC<Props> = ({
 }) => {
   return (
     <Group gap="xl">
-      <Group gap="xs">
-        <ThemeIcon variant="subtle">
-          {assistantPersona ? (
-            <IconRobot stroke={1.5} color="white" />
-          ) : (
-            <IconRobotOff stroke={1.5} color="white" />
-          )}
-        </ThemeIcon>
-        <Text>
-          <Link
-            to="/personas/$personaId"
-            params={{
-              personaId: assistantPersona?.id ?? "",
-            }}
-          >
-            {assistantPersona?.name}
-          </Link>
-        </Text>
-      </Group>
+      <LinkToPersonaWithIcon
+        personaId={assistantPersona?.id}
+        onIcon={<AssistantIcon color="white" />}
+        offIcon={<AssistantMissingIcon color="white" />}
+      />
 
-      <Group gap="xs">
-        <ThemeIcon variant="subtle">
-          {userPersona ? (
-            <IconUser stroke={1.5} color="white" />
-          ) : (
-            <IconUserOff stroke={1.5} color="white" />
-          )}
-        </ThemeIcon>
-        <Text>
-          <Link
-            to="/personas/$personaId"
-            params={{
-              personaId: userPersona?.id ?? "",
-            }}
-          >
-            {userPersona?.name}
-          </Link>
-        </Text>
-      </Group>
+      <LinkToPersonaWithIcon
+        personaId={userPersona?.id}
+        onIcon={<UserIcon color="white" />}
+        offIcon={<UserMissingIcon color="white" />}
+      />
     </Group>
   );
 };

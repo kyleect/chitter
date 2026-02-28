@@ -8,15 +8,13 @@ import {
   Text,
   ThemeIcon,
 } from "@mantine/core";
-import {
-  IconCodeDots,
-  IconCpu,
-  IconRobot,
-  IconUser,
-} from "@tabler/icons-react";
+import { IconCodeDots } from "@tabler/icons-react";
 import { TemplateBlock } from "./TemplateBlock";
 import { FC } from "react";
 import { Conversation, ConversationItem } from "server-types";
+import { AssistantIcon } from "@/components/common/AssistantIcon";
+import { UserIcon } from "@/components/common/UserIcon";
+import { SystemIcon } from "@/components/common/SystemIcon";
 
 type Props = {
   opened: boolean;
@@ -71,13 +69,13 @@ export const ConversationPreviewDrawer: FC<Props> = ({
 
             switch (message.role.kind) {
               case "user":
-                icon = <IconUser stroke={1.5} />;
+                icon = <UserIcon />;
                 break;
               case "assistant":
-                icon = <IconRobot stroke={1.5} />;
+                icon = <AssistantIcon />;
                 break;
               case "system":
-                icon = <IconCpu stroke={1.5} />;
+                icon = <SystemIcon />;
                 break;
             }
 

@@ -1,16 +1,12 @@
+import { AssistantIcon } from "@/components/common/AssistantIcon";
+import { IfEqIcon } from "@/components/common/IfEqIcon";
+import { InnerThoughtsIcon } from "@/components/common/InnerThoughtsIcon";
+import { OOCIcon } from "@/components/common/OOCIcon";
+import { SetVarIcon } from "@/components/common/SetVarIcon";
+import { SystemIcon } from "@/components/common/SystemIcon";
+import { UserIcon } from "@/components/common/UserIcon";
 import { ActionIcon, Divider, Menu } from "@mantine/core";
-import {
-  IconBrain,
-  IconCode,
-  IconCodeDots,
-  IconCompass,
-  IconCpu,
-  IconMail,
-  IconPlus,
-  IconRobot,
-  IconUser,
-  IconVariablePlus,
-} from "@tabler/icons-react";
+import { IconCodeDots, IconMail, IconPlus } from "@tabler/icons-react";
 import { ConversationItem } from "server-types";
 
 type Props = {
@@ -62,7 +58,7 @@ export const DividerBar: React.FC<Props> = ({
 
                 <Menu.Sub.Dropdown>
                   <Menu.Item
-                    leftSection={<IconRobot />}
+                    leftSection={<AssistantIcon />}
                     onClick={() => {
                       patchItemsWithInsertAt(index + 1, {
                         message: {
@@ -78,7 +74,7 @@ export const DividerBar: React.FC<Props> = ({
                     Assistant
                   </Menu.Item>
                   <Menu.Item
-                    leftSection={<IconUser />}
+                    leftSection={<UserIcon />}
                     onClick={() => {
                       patchItemsWithInsertAt(index + 1, {
                         message: {
@@ -94,7 +90,7 @@ export const DividerBar: React.FC<Props> = ({
                     User
                   </Menu.Item>
                   <Menu.Item
-                    leftSection={<IconCpu />}
+                    leftSection={<SystemIcon />}
                     onClick={() => {
                       patchItemsWithInsertAt(index + 1, {
                         message: {
@@ -113,7 +109,7 @@ export const DividerBar: React.FC<Props> = ({
               </Menu.Sub>
 
               <Menu.Item
-                leftSection={<IconVariablePlus />}
+                leftSection={<SetVarIcon />}
                 onClick={() => {
                   patchItemsWithInsertAt(index + 1, {
                     setVar: ["foo", { string: "bar" }],
@@ -123,7 +119,7 @@ export const DividerBar: React.FC<Props> = ({
                 Set Variable
               </Menu.Item>
               <Menu.Item
-                leftSection={<IconCode />}
+                leftSection={<IfEqIcon />}
                 onClick={() => {
                   patchItemsWithInsertAt(index + 1, {
                     ifEq: ["foo", { string: "bar" }],
@@ -133,7 +129,7 @@ export const DividerBar: React.FC<Props> = ({
                 If Equals
               </Menu.Item>
               <Menu.Item
-                leftSection={<IconCompass />}
+                leftSection={<OOCIcon />}
                 onClick={() => {
                   patchItemsWithInsertAt(index + 1, {
                     oOC: "",
@@ -143,7 +139,7 @@ export const DividerBar: React.FC<Props> = ({
                 OOC
               </Menu.Item>
               <Menu.Item
-                leftSection={<IconBrain />}
+                leftSection={<InnerThoughtsIcon />}
                 onClick={() => {
                   patchItemsWithInsertAt(index + 1, {
                     innerThoughts: "",

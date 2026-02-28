@@ -1,3 +1,5 @@
+import { AssistantIcon } from "@/components/common/AssistantIcon";
+import { UserIcon } from "@/components/common/UserIcon";
 import { useGetPersonasQuery } from "@/queries/personas";
 import {
   useGetSettingsQuery,
@@ -17,7 +19,6 @@ import {
   ThemeIcon,
   Title,
 } from "@mantine/core";
-import { IconRobot, IconUser } from "@tabler/icons-react";
 import { createFileRoute } from "@tanstack/react-router";
 import { produce } from "immer";
 import { useEffect, useState } from "react";
@@ -75,7 +76,7 @@ function RouteComponent() {
           <Group gap="xl">
             <Group gap="xs">
               <ThemeIcon variant="subtle">
-                <IconRobot stroke={1.5} color="white" />
+                <AssistantIcon color="white" />
               </ThemeIcon>
               <Select
                 size="md"
@@ -98,7 +99,7 @@ function RouteComponent() {
 
             <Group>
               <ThemeIcon variant="subtle">
-                <IconUser stroke={1.5} color="white" />
+                <UserIcon color="white" />
               </ThemeIcon>
               <Select
                 size="md"

@@ -1,8 +1,9 @@
-import { IconRobot, IconUser } from "@tabler/icons-react";
 import { FC } from "react";
 import { ConversationBlock } from "./ConversationBlock";
 import { Stack, Text } from "@mantine/core";
 import { Message, Persona } from "server-types";
+import { AssistantIcon } from "@/components/common/AssistantIcon";
+import { UserIcon } from "@/components/common/UserIcon";
 
 type Props = {
   messages: Message[];
@@ -21,11 +22,11 @@ export const MessageList: FC<Props> = ({
 
     switch (message.role.kind) {
       case "user":
-        icon = <IconUser stroke={1.5} />;
+        icon = <UserIcon />;
         from = userPersona?.name ?? message.role.kind;
         break;
       case "assistant":
-        icon = <IconRobot stroke={1.5} />;
+        icon = <AssistantIcon />;
         from = assistantPersona?.name ?? message.role.kind;
         break;
       case "system":

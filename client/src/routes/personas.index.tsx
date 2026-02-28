@@ -1,4 +1,6 @@
+import { AssistantIcon } from "@/components/common/AssistantIcon";
 import { ConversationPersonas } from "@/components/common/ConversationPersonas";
+import { UserIcon } from "@/components/common/UserIcon";
 import {
   useCreatePersonaMutation,
   useDeletePersonaMutation,
@@ -22,7 +24,6 @@ import {
   TextInput,
 } from "@mantine/core";
 import { modals } from "@mantine/modals";
-import { IconRobot, IconUser } from "@tabler/icons-react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { produce } from "immer";
 import { useState } from "react";
@@ -138,7 +139,7 @@ function RouteComponent() {
                       );
                     }}
                   >
-                    <IconRobot stroke={1} />
+                    <AssistantIcon />
                   </ActionIcon>
                   <ActionIcon
                     variant={
@@ -156,7 +157,7 @@ function RouteComponent() {
                       );
                     }}
                   >
-                    <IconUser stroke={1} />
+                    <UserIcon />
                   </ActionIcon>
                 </ActionIcon.Group>
                 <CloseButton

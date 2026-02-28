@@ -31,16 +31,6 @@ import {
   Transition,
 } from "@mantine/core";
 import { useDisclosure, useWindowScroll } from "@mantine/hooks";
-import {
-  IconBrain,
-  IconCode,
-  IconCodeOff,
-  IconCompass,
-  IconCpu,
-  IconRobot,
-  IconUser,
-  IconVariablePlus,
-} from "@tabler/icons-react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import {
@@ -56,6 +46,13 @@ import { Buttons } from "@/components/routes/templates.$templateId/Buttons";
 import { useGetPersonasQuery } from "@/queries/personas";
 import { useStartConversationMutation } from "@/queries/conversations";
 import { useGetSettingsQuery } from "@/queries/settings";
+import { AssistantIcon } from "@/components/common/AssistantIcon";
+import { UserIcon } from "@/components/common/UserIcon";
+import { SetVarIcon } from "@/components/common/SetVarIcon";
+import { InnerThoughtsIcon } from "@/components/common/InnerThoughtsIcon";
+import { OOCIcon } from "@/components/common/OOCIcon";
+import { EndIfIcon, IfEqIcon } from "@/components/common/IfEqIcon";
+import { SystemIcon } from "@/components/common/SystemIcon";
 
 type Search = {
   at?: number;
@@ -373,7 +370,7 @@ function RouteComponent() {
         <Group gap="xl">
           <Group gap="xs">
             <ThemeIcon variant="subtle">
-              <IconRobot stroke={1.5} color="white" />
+              <AssistantIcon color="white" />
             </ThemeIcon>
             {isEditing ? (
               <Select
@@ -405,7 +402,7 @@ function RouteComponent() {
 
           <Group>
             <ThemeIcon variant="subtle">
-              <IconUser stroke={1.5} color="white" />
+              <UserIcon color="white" />
             </ThemeIcon>
             {isEditing ? (
               <Select
@@ -460,13 +457,13 @@ function RouteComponent() {
 
                 switch (item.message.role.kind) {
                   case "user":
-                    icon = <IconUser stroke={1.5} />;
+                    icon = <UserIcon />;
                     break;
                   case "assistant":
-                    icon = <IconRobot stroke={1.5} />;
+                    icon = <AssistantIcon />;
                     break;
                   case "system":
-                    icon = <IconCpu stroke={1.5} />;
+                    icon = <SystemIcon />;
                     break;
                 }
 
@@ -558,7 +555,7 @@ function RouteComponent() {
                 return (
                   <>
                     <TemplateBlock
-                      icon={<IconCompass stroke={1.5} />}
+                      icon={<OOCIcon />}
                       title="OOC"
                       level={1}
                       isEditing={isEditing}
@@ -596,7 +593,7 @@ function RouteComponent() {
                 return (
                   <>
                     <TemplateBlock
-                      icon={<IconBrain stroke={1.5} />}
+                      icon={<InnerThoughtsIcon />}
                       title="Inner Thoughts"
                       level={1}
                       isEditing={isEditing}
@@ -644,7 +641,7 @@ function RouteComponent() {
                 return (
                   <>
                     <TemplateBlock
-                      icon={<IconVariablePlus stroke={1.5} />}
+                      icon={<SetVarIcon />}
                       title="Set Variable"
                       inline
                       isEditing={isEditing}
@@ -694,7 +691,7 @@ function RouteComponent() {
                 return (
                   <>
                     <TemplateBlock
-                      icon={<IconCode stroke={1.5} />}
+                      icon={<IfEqIcon />}
                       title="If Eq"
                       inline
                       isEditing={isEditing}
@@ -734,7 +731,7 @@ function RouteComponent() {
                 return (
                   <>
                     <TemplateBlock
-                      icon={<IconCodeOff stroke={1.5} />}
+                      icon={<EndIfIcon />}
                       title="End If"
                       isEditing={isEditing}
                       onClose={handleDeleteAtIndex(index)}
