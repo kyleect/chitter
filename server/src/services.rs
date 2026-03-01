@@ -401,6 +401,7 @@ pub mod conversation_service {
         Json,
         extract::{Path, Query, State},
     };
+    use hyper::StatusCode;
     use serde::{Deserialize, Serialize};
     use tokio::sync::Mutex;
     use types::conversation::Conversation;
@@ -485,5 +486,25 @@ pub mod conversation_service {
             .filter(|x| x.id != conversation_id)
             .cloned()
             .collect();
+    }
+
+    pub async fn update_conversation(
+        State(state): State<Arc<Mutex<AppState>>>,
+        Path(conversation_id): Path<String>,
+        Json(body): Json<Conversation>,
+    ) -> Json<Conversation> {
+        let state = state.clone();
+        let mut state = state.lock().await;
+
+        let conversation = state
+            .conservations
+            .iter_mut()
+            .find(|t| t.id == conversation_id)
+            .ok_or(StatusCode::NOT_FOUND)
+            .unwrap();
+
+        *conversation = body;
+
+        Json(conversation.clone())
     }
 }

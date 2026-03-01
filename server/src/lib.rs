@@ -64,6 +64,7 @@ use crate::services::{
     achievements_service,
     conversation_service::{
         delete_conversation, get_conversations, preview_conversation, start_conversation,
+        update_conversation,
     },
     persona_services::{add_personas, delete_persona, get_persona, get_personas, update_persona},
     template_service::{
@@ -417,7 +418,7 @@ pub async fn init_server(options: InitServerOptions) -> Result<AppServer, Error>
         )
         .route(
             "/api/conversations/{conversation_id}",
-            delete(delete_conversation),
+            delete(delete_conversation).put(update_conversation),
         )
         .route("/api/personas", get(get_personas).post(add_personas))
         .route(

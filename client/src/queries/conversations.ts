@@ -130,3 +130,27 @@ export const useDeleteConversationMutation = () => {
     },
   });
 };
+
+export const useUpdateConversationMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (update: Conversation) => {
+      const response = await fetch(`/api/conversations/${update.id}`, {
+        method: "PUT",
+        body: JSON.stringify(update),
+        headers: {
+          "content-type": "application/json",
+        },
+      });
+      const data = (await response.json()) as Conversation;
+
+      return data;
+    },
+    onSuccess(data) {
+      queryClient.invalidateQueries({
+        queryKey: CONSERVATION_KEYS.detail(data.id),
+      });
+    },
+  });
+};
