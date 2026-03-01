@@ -11,6 +11,7 @@ type Props = {
   userPersona?: Persona;
   assistantPersona?: Persona;
   onEditMessage?: (index: number, message: Message) => void;
+  onDeleteMessage?: (index: number) => void;
 };
 
 export const MessageList: FC<Props> = ({
@@ -18,6 +19,7 @@ export const MessageList: FC<Props> = ({
   assistantPersona,
   userPersona,
   onEditMessage,
+  onDeleteMessage,
 }) => {
   const [isEditingMessageIndex, setIsEditingMessageIndex] = useState<
     number | null
@@ -83,6 +85,9 @@ export const MessageList: FC<Props> = ({
           </Text>
         }
         isEditing={editingThisMessage}
+        onClose={() => {
+          onDeleteMessage?.call(null, messageIndex);
+        }}
       >
         <Stack
           mt="md"

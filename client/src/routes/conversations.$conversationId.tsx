@@ -89,6 +89,21 @@ function RouteComponent() {
     updateConversation && updateConversationMutation.mutate(updateConversation);
   };
 
+  const handleDeletedMessage = (messageIndex: number) => {
+    notifications.show({
+      message: "Message deleted!",
+    });
+
+    const updatedConversation = produce((draft) => {
+      if (draft === null || typeof draft === "undefined") return;
+
+      draft.messages.splice(messageIndex, 1);
+    }, getConversationQuery.data)();
+
+    updatedConversation &&
+      updateConversationMutation.mutate(updatedConversation);
+  };
+
   return (
     <Stack gap="xl">
       <MessageList
@@ -96,6 +111,7 @@ function RouteComponent() {
         assistantPersona={getAssistantPersonaQuery.data}
         userPersona={getUserPersonaQuery.data}
         onEditMessage={handleUpdatedMessage}
+        onDeleteMessage={handleDeletedMessage}
       />
 
       <UserReplyForm

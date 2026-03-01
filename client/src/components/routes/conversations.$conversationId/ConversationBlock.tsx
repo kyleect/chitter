@@ -6,6 +6,7 @@ import {
   CloseButton,
   Text,
 } from "@mantine/core";
+import { modals } from "@mantine/modals";
 
 type TemplateBlockProps = {
   children?: React.ReactNode;
@@ -65,7 +66,21 @@ export const ConversationBlock: React.FC<TemplateBlockProps> = ({
           style={{
             visibility: isEditing ? undefined : "hidden",
           }}
-          onClick={() => onClose?.call(null)}
+          onClick={() => {
+            modals.openConfirmModal({
+              title: "Delete message from conversation?",
+              labels: {
+                confirm: "Delete Message",
+                cancel: "Cancel",
+              },
+              confirmProps: {
+                color: "red",
+              },
+              onConfirm() {
+                onClose?.call(null);
+              },
+            });
+          }}
         />
       </Group>
 
