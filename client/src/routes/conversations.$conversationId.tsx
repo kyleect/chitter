@@ -110,8 +110,8 @@ function RouteComponent() {
         messages={getConversationQuery.data?.messages ?? []}
         assistantPersona={getAssistantPersonaQuery.data}
         userPersona={getUserPersonaQuery.data}
-        onEditMessage={handleUpdatedMessage}
-        onDeleteMessage={handleDeletedMessage}
+        onMessageChange={handleUpdatedMessage}
+        onMessageDelete={handleDeletedMessage}
       />
 
       <UserReplyForm
