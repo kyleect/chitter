@@ -53,6 +53,19 @@ pub struct CompletionSettings {
 
 #[derive(TS, Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 #[ts(export)]
+pub struct GenerateResponseRequestBody {
+    pub conversation_id: String,
+}
+
+#[derive(TS, Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[ts(export)]
+pub struct RegenerateResponseRequestBody {
+    pub conversation_id: String,
+    pub message_index: usize,
+}
+
+#[derive(TS, Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[ts(export)]
 pub struct Persona {
     pub id: String,
     pub name: String,

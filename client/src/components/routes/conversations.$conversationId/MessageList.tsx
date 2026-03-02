@@ -1,6 +1,6 @@
 import { FC, SyntheticEvent, useEffect, useState } from "react";
 import { ConversationBlock } from "./ConversationBlock";
-import { Button, Stack, Text, Textarea } from "@mantine/core";
+import { Button, Group, Stack, Text, Textarea } from "@mantine/core";
 import { Message, Persona } from "server-types";
 import { AssistantIcon } from "@/components/common/AssistantIcon";
 import { UserIcon } from "@/components/common/UserIcon";
@@ -12,6 +12,7 @@ type Props = {
   assistantPersona?: Persona;
   onEditMessage?: (index: number, message: Message) => void;
   onDeleteMessage?: (index: number) => void;
+  onRegenerateMessage?: (index: number) => void;
 };
 
 export const MessageList: FC<Props> = ({
@@ -20,6 +21,7 @@ export const MessageList: FC<Props> = ({
   userPersona,
   onEditMessage,
   onDeleteMessage,
+  onRegenerateMessage,
 }) => {
   const [isEditingMessageIndex, setIsEditingMessageIndex] = useState<
     number | null
@@ -108,14 +110,30 @@ export const MessageList: FC<Props> = ({
                 onChange={(e) => setDraftMessage(e.target.value)}
               />
 
-              <Button.Group>
-                <Button size="compact-sm" onClick={onSave(messageIndex)}>
-                  Save
+              <Group>
+                <Button.Group>
+                  <Button size="compact-sm" onClick={onSave(messageIndex)}>
+                    Save
+                  </Button>
+                  <Button
+                    size="compact-sm"
+                    variant="outline"
+                    onClick={onCancel}
+                  >
+                    Cancel
+                  </Button>
+                </Button.Group>
+
+                <Button
+                  size="compact-sm"
+                  variant="gradient"
+                  onClick={() => {
+                    onRegenerateMessage?.call(null, messageIndex);
+                  }}
+                >
+                  Regenerate
                 </Button>
-                <Button size="compact-sm" variant="outline" onClick={onCancel}>
-                  Cancel
-                </Button>
-              </Button.Group>
+              </Group>
             </Stack>
           ) : (
             message.message

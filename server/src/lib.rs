@@ -44,7 +44,8 @@ use types::{
     DebugInfo,
     achievement::{AchievementDto, AchievementId},
     conversation::{
-        CompletionRequestBody, Conversation, ConversationTemplate, Persona,
+        CompletionRequestBody, Conversation, ConversationTemplate, GenerateResponseRequestBody,
+        Persona, RegenerateResponseRequestBody,
         Role::{Assistant, User},
     },
     settings::{AppSettings, LLMConnection, LLMParameters},
@@ -427,6 +428,14 @@ pub async fn init_server(options: InitServerOptions) -> Result<AppServer, Error>
         )
         .route("/api/completions", post(completetion))
         .route("/api/chat_completions", post(chat_completion))
+        .route(
+            "/api/chat_completions/generate_response",
+            post(generate_response),
+        )
+        .route(
+            "/api/chat_completions/regenerate_response",
+            post(regenerate_response),
+        )
         .route("/api/settings", get(get_settings).post(update_settings))
         .fallback_service(static_dir.clone())
         .with_state(state)
@@ -722,6 +731,153 @@ pub async fn chat_completion(
                         .message(first_choice.message.content.clone().unwrap_or_default())
                         .build(),
                 );
+
+                return CompletionResponse {
+                    response: first_choice.message.content.clone().unwrap_or_default(),
+                };
+            }
+            Err(err) => {
+                let err_str = err.to_string();
+
+                dbg!(&err_str);
+
+                return CompletionResponse {
+                    response: err_str.clone(),
+                };
+            }
+        }
+    }
+
+    todo!()
+}
+
+pub async fn generate_response(
+    State(state): State<Arc<Mutex<AppState>>>,
+    Json(body): Json<GenerateResponseRequestBody>,
+) -> CompletionResponse {
+    let state = state.clone();
+    let mut state = state.lock().await;
+
+    let conversation = state
+        .conservations
+        .iter()
+        .find(|c| c.id == body.conversation_id)
+        .unwrap();
+
+    if let Some(client) = &state.llm {
+        let request = CreateChatCompletionRequestArgs::default()
+            .temperature(state.settings.params.temperature.clone().unwrap_or(0.8f32))
+            .max_tokens(state.settings.params.max_tokens.clone().unwrap_or(500))
+            .top_p(state.settings.params.top_p.clone().unwrap_or(0.95))
+            .messages(
+                conversation
+                    .messages
+                    .iter()
+                    .map(|message| {
+                        let m: ChatCompletionRequestMessage = message.clone().try_into().unwrap();
+
+                        m
+                    })
+                    .collect::<Vec<_>>(),
+            )
+            .build()
+            .expect("should build chat completion request");
+
+        dbg!(&request);
+
+        let response = client.chat().create(request).await;
+
+        match &response {
+            Ok(response) => {
+                let first_choice = response.choices.first().unwrap();
+
+                let conversation = state
+                    .conservations
+                    .iter_mut()
+                    .find(|t| t.id == body.conversation_id)
+                    .ok_or(StatusCode::NOT_FOUND)
+                    .unwrap();
+
+                (*conversation).messages.push(
+                    types::conversation::Message::builder()
+                        .role(Assistant)
+                        .message(first_choice.message.content.clone().unwrap_or_default())
+                        .build(),
+                );
+
+                return CompletionResponse {
+                    response: first_choice.message.content.clone().unwrap_or_default(),
+                };
+            }
+            Err(err) => {
+                let err_str = err.to_string();
+
+                dbg!(&err_str);
+
+                return CompletionResponse {
+                    response: err_str.clone(),
+                };
+            }
+        }
+    }
+
+    todo!()
+}
+
+pub async fn regenerate_response(
+    State(state): State<Arc<Mutex<AppState>>>,
+    Json(body): Json<RegenerateResponseRequestBody>,
+) -> CompletionResponse {
+    let state = state.clone();
+    let mut state = state.lock().await;
+
+    let conversation = state
+        .conservations
+        .iter()
+        .find(|c| c.id == body.conversation_id)
+        .unwrap();
+
+    if let Some(client) = &state.llm {
+        let request = CreateChatCompletionRequestArgs::default()
+            .temperature(state.settings.params.temperature.clone().unwrap_or(0.8f32))
+            .max_tokens(state.settings.params.max_tokens.clone().unwrap_or(500))
+            .top_p(state.settings.params.top_p.clone().unwrap_or(0.95))
+            .messages(
+                conversation
+                    .messages
+                    .iter()
+                    .map(|message| {
+                        let m: ChatCompletionRequestMessage = message.clone().try_into().unwrap();
+
+                        m
+                    })
+                    .collect::<Vec<_>>(),
+            )
+            .build()
+            .expect("should build chat completion request");
+
+        dbg!(&request);
+
+        let response = client.chat().create(request).await;
+
+        match &response {
+            Ok(response) => {
+                let first_choice = response.choices.first().unwrap();
+
+                let conversation = state
+                    .conservations
+                    .iter_mut()
+                    .find(|t| t.id == body.conversation_id)
+                    .ok_or(StatusCode::NOT_FOUND)
+                    .unwrap();
+
+                let message = (*conversation)
+                    .messages
+                    .get_mut(body.message_index)
+                    .ok_or(StatusCode::NOT_FOUND)
+                    .unwrap();
+
+                (*message).message = first_choice.message.content.clone();
 
                 return CompletionResponse {
                     response: first_choice.message.content.clone().unwrap_or_default(),

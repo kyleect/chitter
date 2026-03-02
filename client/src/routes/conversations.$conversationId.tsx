@@ -1,14 +1,26 @@
 import { LinkToTemplate } from "@/components/common/LinkToTemplate";
 import { MessageList } from "@/components/routes/conversations.$conversationId/MessageList";
 import { UserReplyForm } from "@/components/routes/conversations.$conversationId/UserReplyForm";
-import { useCompletionMutation } from "@/queries/completions";
+import {
+  useCompletionMutation,
+  useGenerateResponseMutation,
+  useRegenerateResponseMutation,
+} from "@/queries/completions";
 import {
   useGetConservationByIdQuery,
   useUpdateConversationMutation,
 } from "@/queries/conversations";
 import { useGetPersonaByIdQuery } from "@/queries/personas";
 import { useGetTemplateByIdQuery } from "@/queries/templates";
-import { Alert, Group, Loader, Stack, Text } from "@mantine/core";
+import {
+  Alert,
+  Button,
+  ButtonGroup,
+  Group,
+  Loader,
+  Stack,
+  Text,
+} from "@mantine/core";
 import { useScrollIntoView } from "@mantine/hooks";
 import { notifications } from "@mantine/notifications";
 import { createFileRoute } from "@tanstack/react-router";
@@ -24,6 +36,12 @@ function RouteComponent() {
   const [reply, setReply] = useState("");
   const params = Route.useParams();
   const completionMutation = useCompletionMutation(params.conversationId);
+  const generateResponseMutation = useGenerateResponseMutation(
+    params.conversationId,
+  );
+  const regenerateResponseMutation = useRegenerateResponseMutation(
+    params.conversationId,
+  );
   const getConversationQuery = useGetConservationByIdQuery(
     params.conversationId,
   );
@@ -72,6 +90,8 @@ function RouteComponent() {
     return <Alert color="red">Failed to user persona</Alert>;
   }
 
+  const lastMessageRole = getConversationQuery.data?.messages.at(-1)?.role.kind;
+
   const handleUpdatedMessage = (
     messageIndex: number,
     updatedMessage: Message,
@@ -112,22 +132,42 @@ function RouteComponent() {
         userPersona={getUserPersonaQuery.data}
         onEditMessage={handleUpdatedMessage}
         onDeleteMessage={handleDeletedMessage}
-      />
-
-      <UserReplyForm
-        ref={targetRef}
-        isLoading={completionMutation.isPending}
-        value={reply}
-        onChange={setReply}
-        onSubmit={() => {
-          completionMutation.mutate(reply, {
-            onSuccess() {
-              setReply("");
-              scrollIntoView();
-            },
-          });
+        onRegenerateMessage={(index) => {
+          regenerateResponseMutation.mutate(index);
         }}
       />
+
+      {lastMessageRole === "assistant" ? (
+        <UserReplyForm
+          ref={targetRef}
+          isLoading={
+            completionMutation.isPending || regenerateResponseMutation.isPending
+          }
+          value={reply}
+          onChange={setReply}
+          onSubmit={() => {
+            completionMutation.mutate(reply, {
+              onSuccess() {
+                setReply("");
+                scrollIntoView();
+              },
+            });
+          }}
+        />
+      ) : (
+        <ButtonGroup>
+          <Button
+            size="md"
+            variant="gradient"
+            loading={generateResponseMutation.isPending}
+            onClick={() => {
+              generateResponseMutation.mutate();
+            }}
+          >
+            Generate Response
+          </Button>
+        </ButtonGroup>
+      )}
 
       {getConversationQuery.data && (
         <Group m={0}>

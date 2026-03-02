@@ -1,6 +1,11 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { CONSERVATION_KEYS } from "./conversations";
-import { CompletionRequestBody, Conversation } from "server-types";
+import {
+  CompletionRequestBody,
+  Conversation,
+  GenerateResponseRequestBody,
+  RegenerateResponseRequestBody,
+} from "server-types";
 
 export const useCompletionMutation = (conversationId: string) => {
   const queryClient = useQueryClient();
@@ -73,6 +78,78 @@ export const useCompletionMutation = (conversationId: string) => {
         const error = await response.text();
 
         throw new Error(`Couldn't generate chat completion: ${error}`);
+      }
+
+      const data = (await response.json()) as {
+        response: string;
+      };
+
+      return data.response;
+    },
+  });
+};
+
+export const useGenerateResponseMutation = (conversationId: string) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    onSettled: () =>
+      queryClient.invalidateQueries({
+        queryKey: CONSERVATION_KEYS.detail(conversationId),
+      }),
+    mutationFn: async () => {
+      const response = await fetch(`/api/chat_completions/generate_response`, {
+        method: "POST",
+        body: JSON.stringify({
+          conversation_id: conversationId,
+        } as GenerateResponseRequestBody),
+        headers: {
+          "content-type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        const error = await response.text();
+
+        throw new Error(`Couldn't generate response: ${error}`);
+      }
+
+      const data = (await response.json()) as {
+        response: string;
+      };
+
+      return data.response;
+    },
+  });
+};
+
+export const useRegenerateResponseMutation = (conversationId: string) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    onSettled: () =>
+      queryClient.invalidateQueries({
+        queryKey: CONSERVATION_KEYS.detail(conversationId),
+      }),
+    mutationFn: async (messageIndex: number) => {
+      const response = await fetch(
+        `/api/chat_completions/regenerate_response`,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            conversation_id: conversationId,
+            message_index: messageIndex,
+          } as RegenerateResponseRequestBody),
+          headers: {
+            "content-type": "application/json",
+          },
+        },
+      );
+
+      if (!response.ok) {
+        const error = await response.text();
+
+        throw new Error(`Couldn't generate response: ${error}`);
       }
 
       const data = (await response.json()) as {
