@@ -1,13 +1,22 @@
 import { FC } from "react";
-import { ConversationBlock } from "./ConversationBlock";
-import { Stack } from "@mantine/core";
+import {
+  ActionIcon,
+  ActionIconGroup,
+  Group,
+  Stack,
+  Text,
+  ThemeIcon,
+  Transition,
+} from "@mantine/core";
 import { EditingMessageForm } from "./EditingMessageForm";
 import { TextToParagraphs } from "@/components/common/TextToParagraphs";
 import { UserIcon } from "@/components/common/UserIcon";
 import { AssistantIcon } from "@/components/common/AssistantIcon";
 import { Message } from "server-types";
-import { AuthorName } from "./AuthorName";
 import { SystemIcon } from "@/components/common/SystemIcon";
+import { useHover } from "@mantine/hooks";
+import { modals } from "@mantine/modals";
+import { IconEdit, IconX } from "@tabler/icons-react";
 
 type MessageInListProps = {
   value: Message;
@@ -30,17 +39,62 @@ export const MessageInList: FC<MessageInListProps> = ({
   assistantName,
   onClick,
 }) => {
+  const { hovered, ref } = useHover();
   let icon = getMesssageAuthorIcon(value);
   let author: string = getMessageAuthorName(value, userName, assistantName);
 
   return (
-    <ConversationBlock
-      icon={icon}
-      title={<AuthorName name={author} />}
-      isEditing={isEditing}
-      onDelete={onDeleteMessage}
-    >
-      <Stack mt="md" onClick={onClick}>
+    <Stack gap="xs" ref={ref}>
+      <Group justify="space-between">
+        <Group gap="xs">
+          <ThemeIcon variant="subtle">{icon}</ThemeIcon>
+          <Text mb={0} fw="bold">
+            {author}
+          </Text>
+        </Group>
+
+        <Transition
+          mounted={hovered && !isEditing}
+          transition="pop-top-right"
+          enterDelay={0}
+          exitDelay={125}
+        >
+          {(styles) => (
+            <ActionIconGroup style={styles}>
+              <ActionIcon
+                variant="subtle"
+                color="gray"
+                mb={0}
+                onClick={onClick}
+              >
+                <IconEdit stroke={1} />
+              </ActionIcon>
+              <ActionIcon
+                variant="subtle"
+                color="gray"
+                mb={0}
+                onClick={() => {
+                  modals.openConfirmModal({
+                    title: "Delete message from conversation?",
+                    labels: {
+                      confirm: "Delete Message",
+                      cancel: "Cancel",
+                    },
+                    confirmProps: {
+                      color: "red",
+                    },
+                    onConfirm: onDeleteMessage,
+                  });
+                }}
+              >
+                <IconX stroke={1} />
+              </ActionIcon>
+            </ActionIconGroup>
+          )}
+        </Transition>
+      </Group>
+
+      <Stack mt="md">
         {isEditing ? (
           <EditingMessageForm
             value={value}
@@ -51,7 +105,7 @@ export const MessageInList: FC<MessageInListProps> = ({
           <TextToParagraphs text={value.message ?? ""} />
         )}
       </Stack>
-    </ConversationBlock>
+    </Stack>
   );
 };
 

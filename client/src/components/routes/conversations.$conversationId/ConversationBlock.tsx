@@ -1,5 +1,6 @@
 import { Stack, Group, ThemeIcon, CloseButton, Text } from "@mantine/core";
 import { modals } from "@mantine/modals";
+import { Ref } from "react";
 
 type TemplateBlockProps = {
   children?: React.ReactNode;
@@ -7,6 +8,7 @@ type TemplateBlockProps = {
   title: React.ReactNode;
   isEditing: boolean;
   onDelete?: () => void;
+  ref: Ref<HTMLDivElement>;
 };
 
 export const ConversationBlock: React.FC<TemplateBlockProps> = ({
@@ -14,10 +16,11 @@ export const ConversationBlock: React.FC<TemplateBlockProps> = ({
   title,
   children,
   isEditing,
-  onDelete: onClose,
+  onDelete,
+  ref,
 }) => {
   return (
-    <Stack gap="xs">
+    <Stack gap="xs" ref={ref}>
       <Group justify="space-between">
         <Group gap="xs">
           <ThemeIcon variant="subtle">{icon}</ThemeIcon>
@@ -40,9 +43,7 @@ export const ConversationBlock: React.FC<TemplateBlockProps> = ({
               confirmProps: {
                 color: "red",
               },
-              onConfirm() {
-                onClose?.call(null);
-              },
+              onConfirm: onDelete,
             });
           }}
         />

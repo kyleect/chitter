@@ -2,10 +2,10 @@ import { Text } from "@mantine/core";
 import { FC } from "react";
 
 export const TextToParagraphs: FC<{
-  text: string;
+  text?: string;
   textProps?: React.ComponentProps<typeof Text>;
   splitOn?: string;
-}> = ({ text, textProps, splitOn = "\n" }) =>
+}> = ({ text = "", textProps, splitOn = "\n" }) =>
   text
     .split(splitOn)
     .filter(Boolean)
