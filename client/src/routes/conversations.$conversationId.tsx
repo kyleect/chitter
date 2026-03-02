@@ -26,7 +26,7 @@ import { notifications } from "@mantine/notifications";
 import { createFileRoute } from "@tanstack/react-router";
 import { produce } from "immer";
 import { useState } from "react";
-import { Message } from "server-types";
+import { Conversation, Message } from "server-types";
 
 export const Route = createFileRoute("/conversations/$conversationId")({
   component: RouteComponent,
@@ -45,19 +45,15 @@ function RouteComponent() {
   const getConversationQuery = useGetConservationByIdQuery(
     params.conversationId,
   );
-
   const getTemplateByIdQuery = useGetTemplateByIdQuery(
     getConversationQuery.data?.templateId ?? null,
   );
-
   const getAssistantPersonaQuery = useGetPersonaByIdQuery(
     getConversationQuery.data?.assistantPersonaId ?? null,
   );
-
   const getUserPersonaQuery = useGetPersonaByIdQuery(
     getConversationQuery.data?.userPersonaId ?? null,
   );
-
   const updateConversationMutation = useUpdateConversationMutation();
 
   const { scrollIntoView, targetRef } = useScrollIntoView<HTMLTextAreaElement>({
@@ -91,83 +87,67 @@ function RouteComponent() {
   }
 
   const lastMessageRole = getConversationQuery.data?.messages.at(-1)?.role.kind;
+  const isWaitingForResponse =
+    completionMutation.isPending || regenerateResponseMutation.isPending;
+  const isUsersTurnToRespond =
+    lastMessageRole === "assistant" && !isWaitingForResponse;
 
-  const handleUpdatedMessage = (
-    messageIndex: number,
-    updatedMessage: Message,
-  ) => {
-    notifications.show({
-      message: "Message updated!",
-    });
+  const messageList = (
+    <MessageList
+      messages={getConversationQuery.data?.messages ?? []}
+      assistantPersona={getAssistantPersonaQuery.data}
+      userPersona={getUserPersonaQuery.data}
+      onEditMessage={handleUpdatedMessage(
+        getConversationQuery.data,
+        updateConversationMutation.mutate,
+      )}
+      onDeleteMessage={handleDeletedMessage(
+        getConversationQuery.data,
+        updateConversationMutation.mutate,
+      )}
+      onRegenerateMessage={handleRegenerateMessage(
+        regenerateResponseMutation.mutate,
+      )}
+    />
+  );
 
-    const updateConversation = produce((draft) => {
-      if (draft === null || typeof draft === "undefined") return;
+  const userReplyForm = (
+    <UserReplyForm
+      ref={targetRef}
+      isLoading={isWaitingForResponse}
+      value={reply}
+      onChange={setReply}
+      onSubmit={() => {
+        completionMutation.mutate(reply, {
+          onSuccess() {
+            setReply("");
+            scrollIntoView();
+          },
+        });
+      }}
+    />
+  );
 
-      draft.messages[messageIndex] = updatedMessage;
-    }, getConversationQuery.data)();
-
-    updateConversation && updateConversationMutation.mutate(updateConversation);
-  };
-
-  const handleDeletedMessage = (messageIndex: number) => {
-    notifications.show({
-      message: "Message deleted!",
-    });
-
-    const updatedConversation = produce((draft) => {
-      if (draft === null || typeof draft === "undefined") return;
-
-      draft.messages.splice(messageIndex, 1);
-    }, getConversationQuery.data)();
-
-    updatedConversation &&
-      updateConversationMutation.mutate(updatedConversation);
-  };
+  const generateResponseButton = (
+    <ButtonGroup>
+      <Button
+        size="md"
+        variant="gradient"
+        loading={generateResponseMutation.isPending}
+        onClick={() => {
+          generateResponseMutation.mutate();
+        }}
+      >
+        Generate Response
+      </Button>
+    </ButtonGroup>
+  );
 
   return (
     <Stack gap="xl">
-      <MessageList
-        messages={getConversationQuery.data?.messages ?? []}
-        assistantPersona={getAssistantPersonaQuery.data}
-        userPersona={getUserPersonaQuery.data}
-        onEditMessage={handleUpdatedMessage}
-        onDeleteMessage={handleDeletedMessage}
-        onRegenerateMessage={(index) => {
-          regenerateResponseMutation.mutate(index);
-        }}
-      />
+      {messageList}
 
-      {lastMessageRole === "assistant" ? (
-        <UserReplyForm
-          ref={targetRef}
-          isLoading={
-            completionMutation.isPending || regenerateResponseMutation.isPending
-          }
-          value={reply}
-          onChange={setReply}
-          onSubmit={() => {
-            completionMutation.mutate(reply, {
-              onSuccess() {
-                setReply("");
-                scrollIntoView();
-              },
-            });
-          }}
-        />
-      ) : (
-        <ButtonGroup>
-          <Button
-            size="md"
-            variant="gradient"
-            loading={generateResponseMutation.isPending}
-            onClick={() => {
-              generateResponseMutation.mutate();
-            }}
-          >
-            Generate Response
-          </Button>
-        </ButtonGroup>
-      )}
+      {isUsersTurnToRespond ? userReplyForm : generateResponseButton}
 
       {getConversationQuery.data && (
         <Group m={0}>
@@ -179,3 +159,46 @@ function RouteComponent() {
     </Stack>
   );
 }
+
+const handleRegenerateMessage =
+  (regenerateMessage: (index: number) => void) => (index: number) => {
+    regenerateMessage(index);
+  };
+
+const handleUpdatedMessage =
+  (
+    conversation: Conversation | null | undefined,
+    updateConversation: (updatedConversation: Conversation) => void,
+  ) =>
+  (messageIndex: number, updatedMessage: Message) => {
+    notifications.show({
+      message: "Message updated!",
+    });
+
+    const updatedConversation = produce((draft) => {
+      if (draft === null || typeof draft === "undefined") return;
+
+      draft.messages[messageIndex] = updatedMessage;
+    }, conversation)();
+
+    updatedConversation && updateConversation(updatedConversation);
+  };
+
+const handleDeletedMessage =
+  (
+    conversation: Conversation | null | undefined,
+    updateConversation: (updatedConversation: Conversation) => void,
+  ) =>
+  (messageIndex: number) => {
+    notifications.show({
+      message: "Message deleted!",
+    });
+
+    const updatedConversation = produce((draft) => {
+      if (draft === null || typeof draft === "undefined") return;
+
+      draft.messages.splice(messageIndex, 1);
+    }, conversation)();
+
+    updatedConversation && updateConversation(updatedConversation);
+  };
