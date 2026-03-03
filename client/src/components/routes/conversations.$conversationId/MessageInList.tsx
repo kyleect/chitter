@@ -44,7 +44,7 @@ export const MessageInList: FC<MessageInListProps> = ({
   let author: string = getMessageAuthorName(value, userName, assistantName);
 
   return (
-    <Stack gap="xs" ref={ref}>
+    <Stack gap="xs" ref={ref} bg={hovered ? "gray" : undefined} p="sm">
       <Group justify="space-between">
         <Group gap="xs">
           <ThemeIcon variant="subtle">{icon}</ThemeIcon>
@@ -58,6 +58,7 @@ export const MessageInList: FC<MessageInListProps> = ({
           transition="pop-top-right"
           enterDelay={0}
           exitDelay={125}
+          duration={100}
         >
           {(styles) => (
             <ActionIconGroup style={styles}>

@@ -1,6 +1,7 @@
 import { Button, ButtonGroup, Group, Textarea, ThemeIcon } from "@mantine/core";
 import { IconSend } from "@tabler/icons-react";
-import { FC, Ref } from "react";
+import { FC, Ref, useContext } from "react";
+import { ConversationContext } from "./ConversationContext";
 
 type Props = {
   isLoading: boolean;
@@ -16,35 +17,40 @@ export const UserReplyForm: FC<Props> = ({
   onChange,
   onSubmit,
   ref,
-}) => (
-  <Group align="flex-end" mt="md">
-    <Textarea
-      size="md"
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      autosize
-      minRows={0}
-      autoFocus
-      flex={1}
-      disabled={isLoading}
-      ref={ref}
-    />
-    <ButtonGroup>
-      <Button
+}) => {
+  const conversationContext = useContext(ConversationContext);
+
+  return (
+    <Group align="flex-end" mt="md">
+      <Textarea
         size="md"
-        variant="gradient"
-        loading={isLoading}
-        leftSection={
-          <ThemeIcon size="xs">
-            <IconSend />
-          </ThemeIcon>
-        }
-        onClick={() => {
-          onSubmit?.(value);
-        }}
-      >
-        Reply
-      </Button>
-    </ButtonGroup>
-  </Group>
-);
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        autosize
+        minRows={0}
+        autoFocus
+        flex={1}
+        disabled={isLoading || conversationContext?.isEditingMessage}
+        ref={ref}
+      />
+      <ButtonGroup>
+        <Button
+          size="md"
+          variant="gradient"
+          loading={isLoading}
+          disabled={conversationContext?.isEditingMessage}
+          leftSection={
+            <ThemeIcon size="xs">
+              <IconSend />
+            </ThemeIcon>
+          }
+          onClick={() => {
+            onSubmit?.(value);
+          }}
+        >
+          Reply
+        </Button>
+      </ButtonGroup>
+    </Group>
+  );
+};

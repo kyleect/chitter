@@ -1,4 +1,5 @@
 import { LinkToTemplate } from "@/components/common/LinkToTemplate";
+import { ConversationContext } from "@/components/routes/conversations.$conversationId/ConversationContext";
 import { MessageList } from "@/components/routes/conversations.$conversationId/MessageList";
 import { UserReplyForm } from "@/components/routes/conversations.$conversationId/UserReplyForm";
 import { useCompletionMutation } from "@/queries/completions";
@@ -21,6 +22,7 @@ export const Route = createFileRoute("/conversations/$conversationId")({
 });
 
 function RouteComponent() {
+  const [isEditingMessage, setIsEditingMessage] = useState(false);
   const [reply, setReply] = useState("");
   const params = Route.useParams();
   const completionMutation = useCompletionMutation(params.conversationId);
@@ -106,28 +108,30 @@ function RouteComponent() {
 
   return (
     <Stack gap="xl">
-      <MessageList
-        messages={getConversationQuery.data?.messages ?? []}
-        assistantPersona={getAssistantPersonaQuery.data}
-        userPersona={getUserPersonaQuery.data}
-        onMessageChange={handleUpdatedMessage}
-        onMessageDelete={handleDeletedMessage}
-      />
+      <ConversationContext value={{ isEditingMessage, setIsEditingMessage }}>
+        <MessageList
+          messages={getConversationQuery.data?.messages ?? []}
+          assistantPersona={getAssistantPersonaQuery.data}
+          userPersona={getUserPersonaQuery.data}
+          onMessageChange={handleUpdatedMessage}
+          onMessageDelete={handleDeletedMessage}
+        />
 
-      <UserReplyForm
-        ref={targetRef}
-        isLoading={completionMutation.isPending}
-        value={reply}
-        onChange={setReply}
-        onSubmit={() => {
-          completionMutation.mutate(reply, {
-            onSuccess() {
-              setReply("");
-              scrollIntoView();
-            },
-          });
-        }}
-      />
+        <UserReplyForm
+          ref={targetRef}
+          isLoading={completionMutation.isPending}
+          value={reply}
+          onChange={setReply}
+          onSubmit={() => {
+            completionMutation.mutate(reply, {
+              onSuccess() {
+                setReply("");
+                scrollIntoView();
+              },
+            });
+          }}
+        />
+      </ConversationContext>
 
       {getConversationQuery.data && (
         <Group m={0}>
