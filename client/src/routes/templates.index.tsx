@@ -12,6 +12,7 @@ import {
 import {
   ActionIcon,
   Alert,
+  Badge,
   Button,
   Card,
   Code,
@@ -244,9 +245,9 @@ function RouteComponent() {
 
           {uploadedTemplate && (
             <Stack mt="lg" gap="xs">
-              <Text mb={0} size="sm">
-                File: {file?.name}
-              </Text>
+              <Badge color="gray" variant="transparent">
+                {file?.name}
+              </Badge>
               <Code block>{JSON.stringify(uploadedTemplate, null, 2)}</Code>
             </Stack>
           )}
