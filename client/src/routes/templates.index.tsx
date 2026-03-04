@@ -20,7 +20,6 @@ import {
   Group,
   Loader,
   Stack,
-  Text,
   TextInput,
   ThemeIcon,
 } from "@mantine/core";
