@@ -91,7 +91,14 @@ export const useUpdateTemplateByIdMutation = () => {
           "content-type": "application/json",
         },
       });
-      const data = (await response.json()) as ConversationTemplate;
+
+      const responseBody = await response.text();
+
+      if (!response.ok) {
+        throw Error(`Error updating template: ${responseBody}`);
+      }
+
+      const data = JSON.parse(responseBody) as ConversationTemplate;
 
       return data ?? null;
     },

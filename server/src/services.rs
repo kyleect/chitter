@@ -271,24 +271,30 @@ pub mod template_service {
         )
     }
 
-    //
-
     pub async fn update_template(
         State(state): State<Arc<Mutex<AppState>>>,
         Path(template_id): Path<String>,
         Json(body): Json<ConversationTemplate>,
-    ) {
+    ) -> Json<ConversationTemplate> {
         let state = state.clone();
         let mut state = state.lock().await;
 
         let template = state
             .conversation_templates
             .iter_mut()
-            .find(|t| t.id == template_id)
-            .ok_or(StatusCode::NOT_FOUND)
-            .unwrap();
+            .find(|t| t.id == template_id);
 
-        *template = body;
+        match template {
+            Some(template) => {
+                *template = body;
+
+                Json(template.clone())
+            }
+            None => {
+                state.conversation_templates.push(body.clone());
+                Json(body)
+            }
+        }
     }
 
     pub async fn delete_template(
@@ -381,16 +387,19 @@ pub mod persona_services {
         let state = state.clone();
         let mut state = state.lock().await;
 
-        let persona = state
-            .personass
-            .iter_mut()
-            .find(|t| t.id == persona_id)
-            .ok_or(StatusCode::NOT_FOUND)
-            .unwrap();
+        let persona = state.personass.iter_mut().find(|t| t.id == persona_id);
 
-        *persona = body;
+        match persona {
+            Some(persona) => {
+                *persona = body;
 
-        Json(persona.clone())
+                Json(persona.clone())
+            }
+            None => {
+                state.personass.push(body.clone());
+                Json(body)
+            }
+        }
     }
 }
 

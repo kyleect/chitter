@@ -7,21 +7,28 @@ import {
   useCreateTemplateMutation,
   useDeleteTemplateMutation,
   useGetTemplatesQuery,
+  useUpdateTemplateByIdMutation,
 } from "@/queries/templates";
 import {
   ActionIcon,
   Alert,
   Button,
   Card,
+  Code,
+  FileButton,
   Group,
   Loader,
   Stack,
+  Text,
   TextInput,
+  ThemeIcon,
 } from "@mantine/core";
 import { modals } from "@mantine/modals";
-import { IconDownload, IconX } from "@tabler/icons-react";
+import { notifications } from "@mantine/notifications";
+import { IconDownload, IconUpload, IconX } from "@tabler/icons-react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { ConversationTemplate } from "server-types";
 
 export const Route = createFileRoute("/templates/")({
   component: RouteComponent,
@@ -31,11 +38,29 @@ function RouteComponent() {
   const templatesQuery = useGetTemplatesQuery();
   const [draftName, setDraftName] = useState("");
   const createTemplateMutation = useCreateTemplateMutation();
+  const updateTemplateMutation = useUpdateTemplateByIdMutation();
   const getPersonasQuery = useGetPersonasQuery();
   const nav = Route.useNavigate();
   const startConversationMutation = useStartConversationMutation();
   const deleteTemplateMutation = useDeleteTemplateMutation();
   const download = useStringDownload();
+  const [file, setFile] = useState<File | null>(null);
+  const [uploadedTemplate, setUploadedTemplate] =
+    useState<ConversationTemplate | null>();
+
+  useEffect(() => {
+    if (!file) return;
+
+    (async () => {
+      const template: ConversationTemplate = JSON.parse(
+        (await file?.text()) ?? "{}",
+      );
+
+      setUploadedTemplate(template);
+
+      setDraftName(template.title ?? "");
+    })();
+  }, [file]);
 
   if (templatesQuery.isPending && getPersonasQuery.isPending) {
     return <Loader />;
@@ -143,35 +168,89 @@ function RouteComponent() {
       })}
 
       <Card>
-        <Group>
-          <TextInput
-            flex={1}
-            value={draftName}
-            size="md"
-            placeholder="Template Name"
-            autoFocus
-            onChange={(e) => setDraftName(e.target.value)}
-          />
+        <Stack>
+          <Group>
+            <Button.Group>
+              <FileButton onChange={setFile} accept="application/json">
+                {(props) => (
+                  <Button
+                    leftSection={
+                      <ThemeIcon size="xs">
+                        <IconUpload />
+                      </ThemeIcon>
+                    }
+                    {...props}
+                  >
+                    Upload
+                  </Button>
+                )}
+              </FileButton>
+            </Button.Group>
+            <TextInput
+              flex={1}
+              value={draftName}
+              size="md"
+              placeholder="Template Name"
+              autoFocus
+              onChange={(e) => setDraftName(e.target.value)}
+            />
 
-          <Button.Group>
-            <Button
-              onClick={() => {
-                createTemplateMutation.mutate(draftName, {
-                  onSuccess(data) {
-                    nav({
-                      to: "/templates/$templateId",
-                      params: {
-                        templateId: data.id,
+            <Button.Group>
+              {!uploadedTemplate && (
+                <Button
+                  onClick={() => {
+                    createTemplateMutation.mutate(draftName, {
+                      onSuccess(data) {
+                        nav({
+                          to: "/templates/$templateId",
+                          params: {
+                            templateId: data.id,
+                          },
+                        });
                       },
                     });
-                  },
-                });
-              }}
-            >
-              Add
-            </Button>
-          </Button.Group>
-        </Group>
+                  }}
+                >
+                  Add
+                </Button>
+              )}
+
+              {uploadedTemplate && (
+                <Button
+                  onClick={() => {
+                    updateTemplateMutation.mutate(uploadedTemplate, {
+                      onError() {
+                        notifications.show({
+                          color: "red",
+                          message: "Error saving uploaded template",
+                        });
+                      },
+                      onSuccess(data) {
+                        nav({
+                          to: "/templates/$templateId",
+                          params: {
+                            templateId: data.id,
+                          },
+                        });
+                      },
+                    });
+                  }}
+                >
+                  Save
+                </Button>
+              )}
+            </Button.Group>
+          </Group>
+
+          {uploadedTemplate && (
+            <Stack mt="lg" gap="xs">
+              <Text mb={0} size="sm">
+                File: {file?.name}
+              </Text>
+              <Code block>{JSON.stringify(uploadedTemplate, null, 2)}</Code>
+            </Stack>
+          )}
+        </Stack>
       </Card>
     </Stack>
   );
