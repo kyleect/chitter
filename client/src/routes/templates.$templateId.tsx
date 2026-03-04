@@ -14,6 +14,7 @@ import {
   useUpdateTemplateByIdMutation,
 } from "@/queries/templates";
 import {
+  ActionIcon,
   Affix,
   Alert,
   Button,
@@ -53,6 +54,9 @@ import { InnerThoughtsIcon } from "@/components/common/InnerThoughtsIcon";
 import { OOCIcon } from "@/components/common/OOCIcon";
 import { EndIfIcon, IfEqIcon } from "@/components/common/IfEqIcon";
 import { SystemIcon } from "@/components/common/SystemIcon";
+import { slugify } from "@/lib/slugify";
+import { useStringDownload } from "@/hooks/useDownload";
+import { IconDownload } from "@tabler/icons-react";
 
 type Search = {
   at?: number;
@@ -81,6 +85,7 @@ function RouteComponent() {
     params.templateId,
     at,
   );
+  const download = useStringDownload();
   const startConversationMutation = useStartConversationMutation();
   const getSettingsQuery = useGetSettingsQuery();
   const [draftUserPersonaId, setDraftUserPersonaId] = useState<string | null>(
@@ -356,13 +361,28 @@ function RouteComponent() {
               </Text>
             )}
           </Group>
-          <Buttons
-            isEditing={isEditing}
-            handleCancel={handleCancel}
-            handleEdit={handleEdit}
-            handleSave={handleSave}
-            handleDelete={handleDelete}
-          />
+          <Group>
+            <Buttons
+              isEditing={isEditing}
+              handleCancel={handleCancel}
+              handleEdit={handleEdit}
+              handleSave={handleSave}
+              handleDelete={handleDelete}
+            />
+
+            <ActionIcon
+              variant="subtle"
+              color="gray"
+              onClick={() => {
+                download(
+                  JSON.stringify(template),
+                  `${slugify(template.title)}-template_${template.id}.json`,
+                );
+              }}
+            >
+              <IconDownload />
+            </ActionIcon>
+          </Group>
         </Group>
 
         <Divider label={"Personas"} labelPosition="left" mt="md" mb="md" />

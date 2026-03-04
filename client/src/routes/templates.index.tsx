@@ -1,4 +1,6 @@
 import { ConversationPersonas } from "@/components/common/ConversationPersonas";
+import { useStringDownload } from "@/hooks/useDownload";
+import { slugify } from "@/lib/slugify";
 import { useStartConversationMutation } from "@/queries/conversations";
 import { useGetPersonasQuery } from "@/queries/personas";
 import {
@@ -7,16 +9,17 @@ import {
   useGetTemplatesQuery,
 } from "@/queries/templates";
 import {
+  ActionIcon,
   Alert,
   Button,
   Card,
-  CloseButton,
   Group,
   Loader,
   Stack,
   TextInput,
 } from "@mantine/core";
 import { modals } from "@mantine/modals";
+import { IconDownload, IconX } from "@tabler/icons-react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 
@@ -32,6 +35,7 @@ function RouteComponent() {
   const nav = Route.useNavigate();
   const startConversationMutation = useStartConversationMutation();
   const deleteTemplateMutation = useDeleteTemplateMutation();
+  const download = useStringDownload();
 
   if (templatesQuery.isPending && getPersonasQuery.isPending) {
     return <Loader />;
@@ -97,23 +101,41 @@ function RouteComponent() {
                 >
                   Chat
                 </Button>
-                <CloseButton
-                  onClick={() => {
-                    modals.openConfirmModal({
-                      title: "Delete Template",
-                      labels: {
-                        confirm: "Delete",
-                        cancel: "Cancel",
-                      },
-                      confirmProps: {
-                        color: "red",
-                      },
-                      onConfirm() {
-                        deleteTemplateMutation.mutate(template.id);
-                      },
-                    });
-                  }}
-                />
+                <ActionIcon.Group>
+                  <ActionIcon
+                    variant="subtle"
+                    color="gray"
+                    onClick={() => {
+                      download(
+                        JSON.stringify(template),
+                        `${slugify(template.title)}-template_${template.id}.json`,
+                      );
+                    }}
+                  >
+                    <IconDownload />
+                  </ActionIcon>
+                  <ActionIcon
+                    variant="subtle"
+                    color="gray"
+                    onClick={() => {
+                      modals.openConfirmModal({
+                        title: "Delete Template",
+                        labels: {
+                          confirm: "Delete",
+                          cancel: "Cancel",
+                        },
+                        confirmProps: {
+                          color: "red",
+                        },
+                        onConfirm() {
+                          deleteTemplateMutation.mutate(template.id);
+                        },
+                      });
+                    }}
+                  >
+                    <IconX />
+                  </ActionIcon>
+                </ActionIcon.Group>
               </Group>
             </Group>
           </Card>
