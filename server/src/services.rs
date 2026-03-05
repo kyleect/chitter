@@ -189,7 +189,6 @@ pub mod template_service {
         Json,
         extract::{Path, State},
     };
-    use hyper::StatusCode;
     use serde::{Deserialize, Serialize};
     use tokio::sync::Mutex;
     use types::conversation::{ConversationTemplate, Persona};
