@@ -9,13 +9,16 @@ import {
 } from "@/queries/conversations";
 import { useGetPersonaByIdQuery } from "@/queries/personas";
 import { useGetTemplateByIdQuery } from "@/queries/templates";
-import { Alert, Group, Loader, Stack, Text } from "@mantine/core";
+import { ActionIcon, Alert, Group, Loader, Stack, Text } from "@mantine/core";
 import { useScrollIntoView } from "@mantine/hooks";
 import { notifications } from "@mantine/notifications";
+import { IconDownload } from "@tabler/icons-react";
 import { createFileRoute } from "@tanstack/react-router";
 import { produce } from "immer";
 import { useState } from "react";
 import { Message } from "server-types";
+import { useStringDownload } from "@/hooks/useDownload";
+import { slugify } from "@/lib/slugify";
 
 export const Route = createFileRoute("/conversations/$conversationId")({
   component: RouteComponent,
@@ -43,6 +46,7 @@ function RouteComponent() {
   );
 
   const updateConversationMutation = useUpdateConversationMutation();
+  const download = useStringDownload();
 
   const { scrollIntoView, targetRef } = useScrollIntoView<HTMLTextAreaElement>({
     offset: 0,
@@ -132,6 +136,19 @@ function RouteComponent() {
           }}
         />
       </ConversationContext>
+
+      <ActionIcon
+        variant="subtle"
+        color="gray"
+        onClick={() => {
+          download(
+            JSON.stringify(getConversationQuery.data),
+            `${slugify(getConversationQuery.data?.title)}-conversation_${getConversationQuery.data?.id}.json`,
+          );
+        }}
+      >
+        <IconDownload />
+      </ActionIcon>
 
       {getConversationQuery.data && (
         <Group m={0}>
