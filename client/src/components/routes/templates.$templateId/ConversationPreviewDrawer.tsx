@@ -10,39 +10,39 @@ import {
 } from "@mantine/core";
 import { IconCodeDots } from "@tabler/icons-react";
 import { TemplateBlock } from "./TemplateBlock";
-import { FC } from "react";
-import { Conversation, ConversationItem } from "server-types";
+import { FC, useContext } from "react";
+import { Conversation } from "server-types";
 import { AssistantIcon } from "@/components/common/AssistantIcon";
 import { UserIcon } from "@/components/common/UserIcon";
 import { SystemIcon } from "@/components/common/SystemIcon";
+import { TemplateContext } from "./TemplateContext";
 
 type Props = {
-  opened: boolean;
-  close: () => void;
   templateByIdPreview?: Conversation;
-  templateByIdItems: ConversationItem[];
-  at?: number;
 };
 
 export const ConversationPreviewDrawer: FC<Props> = ({
-  opened,
-  close,
   templateByIdPreview,
-  at,
 }) => {
+  const context = useContext(TemplateContext)!;
+
+  const { previewConversationAtIndexState, previewConversationModal } = context;
+
+  const [previewConversationAtIndex] = previewConversationAtIndexState;
+
   return (
     <Drawer
       zIndex={10000}
       keepMounted={false}
       position="bottom"
-      opened={opened}
-      onClose={close}
+      opened={previewConversationModal.opened}
+      onClose={previewConversationModal.close}
       title={
         <Group>
           <Group>
             <Text fw="bold">Conversation Preview</Text>
             <Badge radius="xs" variant="outline" color="gray">
-              Index: {at}
+              Index: {previewConversationAtIndex}
             </Badge>
           </Group>
         </Group>

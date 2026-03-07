@@ -215,6 +215,7 @@ pub struct ConversationTemplate {
     pub assistant_persona_id: String,
     pub user_persona_id: String,
     pub items: Vec<ConversationItem>,
+    pub insertable_system_prompts: HashMap<String, String>,
 }
 
 impl ConversationTemplate {
@@ -225,6 +226,7 @@ impl ConversationTemplate {
             assistant_persona_id: assistant.id,
             user_persona_id: user.id,
             items: vec![],
+            insertable_system_prompts: Default::default(),
         }
     }
 
@@ -529,7 +531,8 @@ mod conversation_template_tests {
                     ConversationItem::IfEq(summarize_as_list_var.clone(), true.into()),
                     ConversationItem::ooc("Format the summary as a bulleted list"),
                     ConversationItem::EndIf
-                ]
+                ],
+                insertable_system_prompts: Default::default()
             },
             conversation
         );

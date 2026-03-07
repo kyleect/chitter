@@ -684,6 +684,7 @@ pub async fn chat_completion(
 
     if let Some(client) = &state.llm {
         let request = CreateChatCompletionRequestArgs::default()
+            .frequency_penalty(1.0)
             .temperature(state.settings.params.temperature.clone().unwrap_or(0.8f32))
             .max_tokens(state.settings.params.max_tokens.clone().unwrap_or(500))
             .top_p(state.settings.params.top_p.clone().unwrap_or(0.95))
