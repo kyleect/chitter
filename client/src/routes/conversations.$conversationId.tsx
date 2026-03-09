@@ -184,108 +184,121 @@ function RouteComponent() {
           }}
         />
 
-        <ActionIcon
-          variant="subtle"
-          color="gray"
-          onClick={() => {
-            download(
-              JSON.stringify(getConversationQuery.data),
-              `${slugify(getConversationQuery.data?.title)}-conversation_${getConversationQuery.data?.id}.json`,
-            );
-          }}
-        >
-          <IconDownload />
-        </ActionIcon>
-
-        {getConversationQuery.data && (
-          <Group m={0}>
-            <Text mb={0}>Template:</Text>
-
-            <LinkToTemplate templateId={getConversationQuery.data.templateId} />
-          </Group>
-        )}
-
-        <Divider label="Template Insertables" />
-
-        <Button.Group>
-          <Button
-            mr="md"
-            size="compact-xs"
-            color="violet"
-            disabled={!!isEditingMessageIndex || completionMutation.isPending}
+        <Group justify="space-between">
+          <ActionIcon
+            variant="subtle"
+            color="gray"
             onClick={() => {
-              handleInsertInsertable("");
+              download(
+                JSON.stringify(getConversationQuery.data),
+                `${slugify(getConversationQuery.data?.title)}-conversation_${getConversationQuery.data?.id}.json`,
+              );
             }}
-            leftSection={
-              <ThemeIcon size="compact-xs" color="violet">
-                <IconPlus />
-              </ThemeIcon>
-            }
           >
-            New
-          </Button>
-          {(getTemplateByIdQuery.data?.insertableSystemPrompts ?? []).map(
-            ([key, value]) => (
-              <HoverCard width={280} shadow="md">
-                <HoverCard.Target>
-                  <Button
-                    size="compact-xs"
-                    color="violet"
-                    variant="subtle"
-                    disabled={
-                      !!isEditingMessageIndex || completionMutation.isPending
-                    }
-                    onClick={() => {
-                      if (value) handleInsertInsertable(value);
-                    }}
-                  >
-                    {key}
-                  </Button>
-                </HoverCard.Target>
-                <HoverCard.Dropdown>
-                  <TextToParagraphs
-                    text={value}
-                    textProps={{
-                      size: "sm",
-                    }}
-                  />
-                </HoverCard.Dropdown>
-              </HoverCard>
-            ),
+            <IconDownload />
+          </ActionIcon>
+
+          {getConversationQuery.data && (
+            <Group m={0}>
+              <Text mb={0}>Template:</Text>
+
+              <LinkToTemplate
+                templateId={getConversationQuery.data.templateId}
+              />
+            </Group>
           )}
-        </Button.Group>
+        </Group>
 
-        <Divider label="Global Insertables" />
+        <Group align="top">
+          <Stack flex={1}>
+            <Divider label="Template Insertables" />
 
-        <Button.Group>
-          {(getInsertablesQuery.data ?? []).map(([key, value]) => (
-            <HoverCard width={280} shadow="md">
-              <HoverCard.Target>
-                <Button
-                  size="compact-xs"
-                  color="violet"
-                  variant="subtle"
-                  disabled={
-                    !!isEditingMessageIndex || completionMutation.isPending
-                  }
-                  onClick={() => {
-                    if (value) handleInsertInsertable(value);
-                  }}
-                >
-                  {key}
-                </Button>
-              </HoverCard.Target>
-              <HoverCard.Dropdown>
-                <TextToParagraphs
-                  text={value}
-                  textProps={{
-                    size: "sm",
-                  }}
-                />
-              </HoverCard.Dropdown>
-            </HoverCard>
-          ))}
-        </Button.Group>
+            <Group>
+              <Button
+                mr="md"
+                size="compact-xs"
+                color="violet"
+                disabled={
+                  !!isEditingMessageIndex || completionMutation.isPending
+                }
+                onClick={() => {
+                  handleInsertInsertable("");
+                }}
+                leftSection={
+                  <ThemeIcon size="compact-xs" color="violet">
+                    <IconPlus />
+                  </ThemeIcon>
+                }
+              >
+                New
+              </Button>
+              {(getTemplateByIdQuery.data?.insertableSystemPrompts ?? []).map(
+                ([key, value]) => (
+                  <HoverCard width={280} shadow="md">
+                    <HoverCard.Target>
+                      <Button
+                        size="compact-xs"
+                        color="violet"
+                        variant="subtle"
+                        disabled={
+                          !!isEditingMessageIndex ||
+                          completionMutation.isPending
+                        }
+                        onClick={() => {
+                          if (value) handleInsertInsertable(value);
+                        }}
+                      >
+                        {key}
+                      </Button>
+                    </HoverCard.Target>
+                    <HoverCard.Dropdown>
+                      <TextToParagraphs
+                        text={value}
+                        textProps={{
+                          size: "sm",
+                        }}
+                      />
+                    </HoverCard.Dropdown>
+                  </HoverCard>
+                ),
+              )}
+            </Group>
+          </Stack>
+
+          <Stack flex={1}>
+            <Divider label="Global Insertables" />
+
+            <Group>
+              {(getInsertablesQuery.data ?? []).map(([key, value]) => (
+                <HoverCard width={280} shadow="md">
+                  <HoverCard.Target>
+                    <Button
+                      size="compact-xs"
+                      color="violet"
+                      variant="subtle"
+                      disabled={
+                        !!isEditingMessageIndex || completionMutation.isPending
+                      }
+                      onClick={() => {
+                        if (value) handleInsertInsertable(value);
+                      }}
+                    >
+                      {key}
+                    </Button>
+                  </HoverCard.Target>
+                  <HoverCard.Dropdown>
+                    <TextToParagraphs
+                      text={value}
+                      textProps={{
+                        size: "sm",
+                      }}
+                    />
+                  </HoverCard.Dropdown>
+                </HoverCard>
+              ))}
+            </Group>
+          </Stack>
+        </Group>
       </ConversationContext>
     </Stack>
   );
