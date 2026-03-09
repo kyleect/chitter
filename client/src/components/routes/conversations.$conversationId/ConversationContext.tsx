@@ -1,8 +1,8 @@
+import { StatePair } from "@/lib/statePair";
 import { createContext } from "react";
 
 type ContextType = {
-  isEditingMessage: boolean;
-  setIsEditingMessage: React.Dispatch<React.SetStateAction<boolean>>;
+  editingMessageIndexState: StatePair<number | null>;
 };
 
 export const ConversationContext = createContext<ContextType | null>(null);

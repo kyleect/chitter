@@ -38,8 +38,10 @@ export const Route = createFileRoute("/conversations/$conversationId")({
 });
 
 function RouteComponent() {
-  const [isEditingMessage, setIsEditingMessage] = useState(false);
   const [reply, setReply] = useState("");
+  const [isEditingMessageIndex, setIsEditingMessageIndex] = useState<
+    number | null
+  >(null);
   const params = Route.useParams();
   const getInsertablesQuery = useGetInsertablesQuery();
   const completionMutation = useCompletionMutation(params.conversationId);
@@ -151,7 +153,14 @@ function RouteComponent() {
 
   return (
     <Stack gap="xs">
-      <ConversationContext value={{ isEditingMessage, setIsEditingMessage }}>
+      <ConversationContext
+        value={{
+          editingMessageIndexState: [
+            isEditingMessageIndex,
+            setIsEditingMessageIndex,
+          ],
+        }}
+      >
         <MessageList
           messages={getConversationQuery.data?.messages ?? []}
           assistantPersona={getAssistantPersonaQuery.data}
@@ -203,7 +212,7 @@ function RouteComponent() {
             mr="md"
             size="compact-xs"
             color="violet"
-            disabled={isEditingMessage || completionMutation.isPending}
+            disabled={!!isEditingMessageIndex || completionMutation.isPending}
             onClick={() => {
               handleInsertInsertable("");
             }}
@@ -223,7 +232,9 @@ function RouteComponent() {
                     size="compact-xs"
                     color="violet"
                     variant="subtle"
-                    disabled={isEditingMessage || completionMutation.isPending}
+                    disabled={
+                      !!isEditingMessageIndex || completionMutation.isPending
+                    }
                     onClick={() => {
                       if (value) handleInsertInsertable(value);
                     }}
@@ -254,7 +265,9 @@ function RouteComponent() {
                   size="compact-xs"
                   color="violet"
                   variant="subtle"
-                  disabled={isEditingMessage || completionMutation.isPending}
+                  disabled={
+                    !!isEditingMessageIndex || completionMutation.isPending
+                  }
                   onClick={() => {
                     if (value) handleInsertInsertable(value);
                   }}

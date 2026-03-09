@@ -1,7 +1,6 @@
+import { StatePair } from "@/lib/statePair";
 import { createContext } from "react";
 import { ConversationTemplate } from "server-types";
-
-type StatePair<T> = [T, React.Dispatch<React.SetStateAction<T>>];
 
 type ContextType = {
   template: ConversationTemplate;

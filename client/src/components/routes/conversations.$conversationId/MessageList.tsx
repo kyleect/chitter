@@ -1,4 +1,4 @@
-import { FC, useContext, useState } from "react";
+import { FC, useContext } from "react";
 import { Message, Persona } from "server-types";
 import { MessageInList } from "./MessageInList";
 import { ConversationContext } from "./ConversationContext";
@@ -18,10 +18,10 @@ export const MessageList: FC<Props> = ({
   onMessageChange,
   onMessageDelete,
 }) => {
-  const [editingMessageIndex, setEditingMessageIndex] = useState<number | null>(
-    null,
-  );
-  const conversationContext = useContext(ConversationContext);
+  const conversationContext = useContext(ConversationContext)!;
+
+  const [editingMessageIndex, setEditingMessageIndex] =
+    conversationContext?.editingMessageIndexState;
 
   return messages.map((message, messageIndex) => (
     <MessageInList
@@ -34,12 +34,10 @@ export const MessageList: FC<Props> = ({
       assistantName={assistantPersona?.name ?? message.role.kind}
       onClick={() => {
         setEditingMessageIndex(messageIndex);
-        conversationContext?.setIsEditingMessage(true);
       }}
       isEditing={messageIndex === editingMessageIndex}
       onCancelEdit={() => {
         setEditingMessageIndex(null);
-        conversationContext?.setIsEditingMessage(false);
       }}
       onDeleteMessage={() => {
         onMessageDelete?.(messageIndex);

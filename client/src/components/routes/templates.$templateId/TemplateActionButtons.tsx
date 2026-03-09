@@ -36,8 +36,12 @@ export const TemplateActionButtons = () => {
       insertableSystemPrompts: draftInsertables,
     });
 
-    updateTemplateMutation.mutate(updatedTemplate);
-    setIsEditing(!isEditing);
+    updateTemplateMutation.mutate(updatedTemplate, {
+      onSuccess() {
+        debugger;
+        setIsEditing(!isEditing);
+      },
+    });
   };
 
   const handleCancel = () => {

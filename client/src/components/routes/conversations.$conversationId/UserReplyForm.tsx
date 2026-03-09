@@ -18,7 +18,10 @@ export const UserReplyForm: FC<Props> = ({
   onSubmit,
   ref,
 }) => {
-  const conversationContext = useContext(ConversationContext);
+  const conversationContext = useContext(ConversationContext)!;
+  const [editingMessageIndex] = conversationContext?.editingMessageIndexState;
+
+  const isEditingMessage = !!editingMessageIndex;
 
   return (
     <Group align="flex-end" mt="md">
@@ -30,7 +33,7 @@ export const UserReplyForm: FC<Props> = ({
         minRows={0}
         autoFocus
         flex={1}
-        disabled={isLoading || conversationContext?.isEditingMessage}
+        disabled={isLoading || isEditingMessage}
         ref={ref}
       />
       <ButtonGroup>
@@ -38,7 +41,7 @@ export const UserReplyForm: FC<Props> = ({
           size="md"
           variant="gradient"
           loading={isLoading}
-          disabled={conversationContext?.isEditingMessage}
+          disabled={isEditingMessage}
           leftSection={
             <ThemeIcon size="xs">
               <IconSend />
