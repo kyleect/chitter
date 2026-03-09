@@ -44,7 +44,15 @@ export const MessageInList: FC<MessageInListProps> = ({
   let author: string = getMessageAuthorName(value, userName, assistantName);
 
   return (
-    <Stack gap="xs" ref={ref} bg={hovered ? "gray" : undefined} p="sm">
+    <Stack
+      gap="xs"
+      ref={ref}
+      bg={hovered ? "gray" : undefined}
+      style={{
+        border: value.role.kind === "system" ? `1px solid violet` : undefined,
+      }}
+      p="sm"
+    >
       <Group justify="space-between">
         <Group gap="xs">
           <ThemeIcon variant="subtle">{icon}</ThemeIcon>
