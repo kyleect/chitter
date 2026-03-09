@@ -122,6 +122,7 @@ pub struct AppState {
     pub conservations: Vec<Conversation>,
     pub personass: Vec<Persona>,
     pub settings: AppSettings,
+    pub insertable_system_prompts: Vec<(String, String)>,
 }
 
 impl AppState {
@@ -385,6 +386,7 @@ pub async fn init_server(options: InitServerOptions) -> Result<AppServer, Error>
         conservations: vec![template_1.into()],
         personass: vec![assistant_persona, user_persona],
         settings: app_settings,
+        insertable_system_prompts: vec![],
     };
 
     let state = Arc::new(Mutex::new(state));
@@ -407,6 +409,10 @@ pub async fn init_server(options: InitServerOptions) -> Result<AppServer, Error>
         .route("/api/debug/achievement", post(trigger_test_achievement))
         .route("/api/achievements", get(get_achievements))
         .route("/api/ws", any(ws_handler))
+        .route(
+            "/api/insertables",
+            get(get_insertables).put(update_insertables),
+        )
         .route("/api/templates", get(get_templates).post(create_template))
         .route(
             "/api/templates/{template_id}",
@@ -654,6 +660,27 @@ Conversation:
 {messages}
     "
     )
+}
+
+pub async fn get_insertables(
+    State(state): State<Arc<Mutex<AppState>>>,
+) -> Json<Vec<(String, String)>> {
+    let state = state.clone();
+    let state = state.lock().await;
+
+    Json(state.insertable_system_prompts.clone())
+}
+
+pub async fn update_insertables(
+    State(state): State<Arc<Mutex<AppState>>>,
+    Json(body): Json<Vec<(String, String)>>,
+) -> Json<Vec<(String, String)>> {
+    let state = state.clone();
+    let mut state = state.lock().await;
+
+    state.insertable_system_prompts = body.clone();
+
+    Json(body)
 }
 
 #[derive(Serialize, Deserialize, Clone)]

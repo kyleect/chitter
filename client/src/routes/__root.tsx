@@ -108,6 +108,16 @@ export const Route = createRootRoute({
           />
 
           <NavLink
+            label="Insertables"
+            component={Link}
+            to="/insertables"
+            activeProps={{
+              style: { fontWeight: "bold" },
+            }}
+            aria-label="Insertables"
+          />
+
+          <NavLink
             label="Templates"
             component={Link}
             to="/templates"

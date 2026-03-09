@@ -11,6 +11,7 @@
 // Import Routes
 
 import { Route as rootRoute } from './routes/__root'
+import { Route as InsertablesImport } from './routes/insertables'
 import { Route as DebugImport } from './routes/debug'
 import { Route as AchievementsImport } from './routes/achievements'
 import { Route as IndexImport } from './routes/index'
@@ -23,6 +24,12 @@ import { Route as PersonasPersonaIdImport } from './routes/personas.$personaId'
 import { Route as ConversationsConversationIdImport } from './routes/conversations.$conversationId'
 
 // Create/Update Routes
+
+const InsertablesRoute = InsertablesImport.update({
+  id: '/insertables',
+  path: '/insertables',
+  getParentRoute: () => rootRoute,
+} as any)
 
 const DebugRoute = DebugImport.update({
   id: '/debug',
@@ -110,6 +117,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DebugImport
       parentRoute: typeof rootRoute
     }
+    '/insertables': {
+      id: '/insertables'
+      path: '/insertables'
+      fullPath: '/insertables'
+      preLoaderRoute: typeof InsertablesImport
+      parentRoute: typeof rootRoute
+    }
     '/conversations/$conversationId': {
       id: '/conversations/$conversationId'
       path: '/conversations/$conversationId'
@@ -168,6 +182,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/achievements': typeof AchievementsRoute
   '/debug': typeof DebugRoute
+  '/insertables': typeof InsertablesRoute
   '/conversations/$conversationId': typeof ConversationsConversationIdRoute
   '/personas/$personaId': typeof PersonasPersonaIdRoute
   '/templates/$templateId': typeof TemplatesTemplateIdRoute
@@ -181,6 +196,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/achievements': typeof AchievementsRoute
   '/debug': typeof DebugRoute
+  '/insertables': typeof InsertablesRoute
   '/conversations/$conversationId': typeof ConversationsConversationIdRoute
   '/personas/$personaId': typeof PersonasPersonaIdRoute
   '/templates/$templateId': typeof TemplatesTemplateIdRoute
@@ -195,6 +211,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/achievements': typeof AchievementsRoute
   '/debug': typeof DebugRoute
+  '/insertables': typeof InsertablesRoute
   '/conversations/$conversationId': typeof ConversationsConversationIdRoute
   '/personas/$personaId': typeof PersonasPersonaIdRoute
   '/templates/$templateId': typeof TemplatesTemplateIdRoute
@@ -210,6 +227,7 @@ export interface FileRouteTypes {
     | '/'
     | '/achievements'
     | '/debug'
+    | '/insertables'
     | '/conversations/$conversationId'
     | '/personas/$personaId'
     | '/templates/$templateId'
@@ -222,6 +240,7 @@ export interface FileRouteTypes {
     | '/'
     | '/achievements'
     | '/debug'
+    | '/insertables'
     | '/conversations/$conversationId'
     | '/personas/$personaId'
     | '/templates/$templateId'
@@ -234,6 +253,7 @@ export interface FileRouteTypes {
     | '/'
     | '/achievements'
     | '/debug'
+    | '/insertables'
     | '/conversations/$conversationId'
     | '/personas/$personaId'
     | '/templates/$templateId'
@@ -248,6 +268,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AchievementsRoute: typeof AchievementsRoute
   DebugRoute: typeof DebugRoute
+  InsertablesRoute: typeof InsertablesRoute
   ConversationsConversationIdRoute: typeof ConversationsConversationIdRoute
   PersonasPersonaIdRoute: typeof PersonasPersonaIdRoute
   TemplatesTemplateIdRoute: typeof TemplatesTemplateIdRoute
@@ -261,6 +282,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AchievementsRoute: AchievementsRoute,
   DebugRoute: DebugRoute,
+  InsertablesRoute: InsertablesRoute,
   ConversationsConversationIdRoute: ConversationsConversationIdRoute,
   PersonasPersonaIdRoute: PersonasPersonaIdRoute,
   TemplatesTemplateIdRoute: TemplatesTemplateIdRoute,
@@ -283,6 +305,7 @@ export const routeTree = rootRoute
         "/",
         "/achievements",
         "/debug",
+        "/insertables",
         "/conversations/$conversationId",
         "/personas/$personaId",
         "/templates/$templateId",
@@ -300,6 +323,9 @@ export const routeTree = rootRoute
     },
     "/debug": {
       "filePath": "debug.tsx"
+    },
+    "/insertables": {
+      "filePath": "insertables.tsx"
     },
     "/conversations/$conversationId": {
       "filePath": "conversations.$conversationId.tsx"

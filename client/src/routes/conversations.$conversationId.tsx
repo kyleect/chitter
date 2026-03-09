@@ -13,6 +13,7 @@ import {
   ActionIcon,
   Alert,
   Button,
+  Divider,
   Group,
   HoverCard,
   Loader,
@@ -30,6 +31,7 @@ import { Message } from "server-types";
 import { useStringDownload } from "@/hooks/useDownload";
 import { slugify } from "@/lib/slugify";
 import { TextToParagraphs } from "@/components/common/TextToParagraphs";
+import { useGetInsertablesQuery } from "@/queries/insertables";
 
 export const Route = createFileRoute("/conversations/$conversationId")({
   component: RouteComponent,
@@ -39,6 +41,7 @@ function RouteComponent() {
   const [isEditingMessage, setIsEditingMessage] = useState(false);
   const [reply, setReply] = useState("");
   const params = Route.useParams();
+  const getInsertablesQuery = useGetInsertablesQuery();
   const completionMutation = useCompletionMutation(params.conversationId);
   const getConversationQuery = useGetConservationByIdQuery(
     params.conversationId,
@@ -68,7 +71,8 @@ function RouteComponent() {
     getConversationQuery.isPending &&
     getTemplateByIdQuery.isPending &&
     getAssistantPersonaQuery.isPending &&
-    getUserPersonaQuery.isPending
+    getUserPersonaQuery.isPending &&
+    getInsertablesQuery.isPending
   ) {
     return <Loader />;
   }
@@ -87,6 +91,10 @@ function RouteComponent() {
 
   if (getUserPersonaQuery.isError) {
     return <Alert color="red">Failed to user persona</Alert>;
+  }
+
+  if (getInsertablesQuery.isError) {
+    return <Alert color="red">Failed to fetch insertables</Alert>;
   }
 
   const handleInsertInsertable = (message: string) => {
@@ -140,7 +148,7 @@ function RouteComponent() {
   };
 
   return (
-    <Stack gap="xl">
+    <Stack gap="xs">
       <ConversationContext value={{ isEditingMessage, setIsEditingMessage }}>
         <MessageList
           messages={getConversationQuery.data?.messages ?? []}
@@ -164,6 +172,29 @@ function RouteComponent() {
             });
           }}
         />
+
+        <ActionIcon
+          variant="subtle"
+          color="gray"
+          onClick={() => {
+            download(
+              JSON.stringify(getConversationQuery.data),
+              `${slugify(getConversationQuery.data?.title)}-conversation_${getConversationQuery.data?.id}.json`,
+            );
+          }}
+        >
+          <IconDownload />
+        </ActionIcon>
+
+        {getConversationQuery.data && (
+          <Group m={0}>
+            <Text mb={0}>Template:</Text>
+
+            <LinkToTemplate templateId={getConversationQuery.data.templateId} />
+          </Group>
+        )}
+
+        <Divider label="Template Insertables" />
 
         <Button.Group>
           <Button
@@ -210,28 +241,37 @@ function RouteComponent() {
             ),
           )}
         </Button.Group>
+
+        <Divider label="Global Insertables" />
+
+        <Button.Group>
+          {(getInsertablesQuery.data ?? []).map(([key, value]) => (
+            <HoverCard width={280} shadow="md">
+              <HoverCard.Target>
+                <Button
+                  size="compact-xs"
+                  color="violet"
+                  variant="subtle"
+                  disabled={isEditingMessage || completionMutation.isPending}
+                  onClick={() => {
+                    if (value) handleInsertInsertable(value);
+                  }}
+                >
+                  {key}
+                </Button>
+              </HoverCard.Target>
+              <HoverCard.Dropdown>
+                <TextToParagraphs
+                  text={value}
+                  textProps={{
+                    size: "sm",
+                  }}
+                />
+              </HoverCard.Dropdown>
+            </HoverCard>
+          ))}
+        </Button.Group>
       </ConversationContext>
-
-      <ActionIcon
-        variant="subtle"
-        color="gray"
-        onClick={() => {
-          download(
-            JSON.stringify(getConversationQuery.data),
-            `${slugify(getConversationQuery.data?.title)}-conversation_${getConversationQuery.data?.id}.json`,
-          );
-        }}
-      >
-        <IconDownload />
-      </ActionIcon>
-
-      {getConversationQuery.data && (
-        <Group m={0}>
-          <Text mb={0}>Template:</Text>
-
-          <LinkToTemplate templateId={getConversationQuery.data.templateId} />
-        </Group>
-      )}
     </Stack>
   );
 }
