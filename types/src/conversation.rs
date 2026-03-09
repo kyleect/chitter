@@ -215,7 +215,7 @@ pub struct ConversationTemplate {
     pub assistant_persona_id: String,
     pub user_persona_id: String,
     pub items: Vec<ConversationItem>,
-    pub insertable_system_prompts: HashMap<String, String>,
+    pub insertable_system_prompts: Vec<(String, String)>,
 }
 
 impl ConversationTemplate {

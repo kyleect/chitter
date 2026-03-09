@@ -210,13 +210,7 @@ export const patchItemImmer =
       produce((draftItems) => {
         const draftItem = draftItems[draftItemIndex];
 
-        debugger;
-
         patchFn(draftItem, patch);
-
-        console.log(draftItem);
-
-        debugger;
       }),
     );
   };

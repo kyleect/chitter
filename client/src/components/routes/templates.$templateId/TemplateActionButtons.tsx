@@ -2,6 +2,7 @@ import { Button } from "@mantine/core";
 import { useContext } from "react";
 import { TemplateContext } from "./TemplateContext";
 import { useUpdateTemplateByIdMutation } from "@/queries/templates";
+import { ConversationTemplate } from "server-types";
 
 export const TemplateActionButtons = () => {
   const updateTemplateMutation = useUpdateTemplateByIdMutation();
@@ -14,6 +15,7 @@ export const TemplateActionButtons = () => {
     draftAssistantPersonaIdState,
     draftUserPersonaIdState,
     isEditingState,
+    draftInsertablesState,
   } = context;
 
   const [draftTitle] = draftTitleState;
@@ -21,15 +23,17 @@ export const TemplateActionButtons = () => {
   const [isEditing, setIsEditing] = isEditingState;
   const [draftAssistantPersonaId] = draftAssistantPersonaIdState;
   const [draftUserPersonaId] = draftUserPersonaIdState;
+  const [draftInsertables, setDraftInsertables] = draftInsertablesState;
 
   const handleSave = () => {
     template.items = draftTemplateItems;
 
-    let updatedTemplate = Object.assign({}, template, {
+    let updatedTemplate: ConversationTemplate = Object.assign({}, template, {
       title: draftTitle,
       assistantPersonaId: draftAssistantPersonaId,
       userPersonaId: draftUserPersonaId,
       items: draftTemplateItems,
+      insertableSystemPrompts: draftInsertables,
     });
 
     updateTemplateMutation.mutate(updatedTemplate);
@@ -38,6 +42,7 @@ export const TemplateActionButtons = () => {
 
   const handleCancel = () => {
     setDraftTemplateItems(template.items);
+    setDraftInsertables(template.insertableSystemPrompts);
     setIsEditing(false);
   };
 

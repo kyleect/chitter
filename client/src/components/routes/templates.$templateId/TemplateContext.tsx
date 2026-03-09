@@ -8,6 +8,7 @@ type ContextType = {
 
   isEditingState: StatePair<boolean>;
   draftTitleState: StatePair<string>;
+  draftInsertablesState: StatePair<[string, string][]>;
 
   draftAssistantPersonaIdState: StatePair<string | null>;
   draftUserPersonaIdState: StatePair<string | null>;

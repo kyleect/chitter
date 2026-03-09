@@ -15,6 +15,7 @@ import { TemplateFormHeader } from "@/components/routes/templates.$templateId/Te
 import { TemplateFormPersonas } from "@/components/routes/templates.$templateId/TemplateFormPersonas";
 import { TemplateFormAffix } from "@/components/routes/templates.$templateId/TemplateFormAffix";
 import { TemplateFormBlocks } from "@/components/routes/templates.$templateId/TemplateFormBlocks";
+import { TemplateFormInsertable } from "@/components/routes/templates.$templateId/TemplateFormInsertable";
 
 type Search = {
   at?: number;
@@ -38,6 +39,9 @@ function RouteComponent() {
   const [draftTemplateItems, setDraftTemplateItems] = useState<
     ConversationTemplate["items"]
   >([]);
+  const [draftInsertables, setDraftInsertables] = useState<[string, string][]>(
+    [],
+  );
   const getTemplateByIdPreviewQuery = useGetTemplateByIdPreviewQuery(
     params.templateId,
     previewConversationAtIndex,
@@ -62,6 +66,9 @@ function RouteComponent() {
       setDraftAssistantPersonaId(getTemplateByIdQuery.data.assistantPersonaId);
       setDraftUserPersonaId(getTemplateByIdQuery.data.userPersonaId);
       setDraftTitle(getTemplateByIdQuery.data.title ?? "");
+      setDraftInsertables(
+        getTemplateByIdQuery.data.insertableSystemPrompts ?? [],
+      );
     }
   }, [getTemplateByIdQuery.data]);
 
@@ -124,6 +131,7 @@ function RouteComponent() {
           draftAssistantPersonaId,
           setDraftAssistantPersonaId,
         ],
+        draftInsertablesState: [draftInsertables, setDraftInsertables],
         draftTemplateItemsState: [draftTemplateItems, setDraftTemplateItems],
         previewConversationAtIndexState: [
           previewConversationAtIndex,
@@ -147,6 +155,15 @@ function RouteComponent() {
           <Divider label={"Blocks"} labelPosition="left" mt="md" mb="md" />
 
           <TemplateFormBlocks />
+
+          <Divider
+            label={"Insertable System Prompts"}
+            labelPosition="left"
+            mt="md"
+            mb="md"
+          />
+
+          <TemplateFormInsertable />
         </Stack>
 
         <ConversationPreviewDrawer

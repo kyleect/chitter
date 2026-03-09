@@ -102,8 +102,10 @@ export const MessageInList: FC<MessageInListProps> = ({
             onChange={onChange}
             onCancel={onCancelEdit}
           />
+        ) : value.message?.length === 0 ? (
+          <Text>[EMPTY]</Text>
         ) : (
-          <TextToParagraphs text={value.message ?? ""} />
+          <TextToParagraphs text={value.message ?? "[EMPTY]"} />
         )}
       </Stack>
     </Stack>
@@ -121,7 +123,7 @@ function getMesssageAuthorIcon(message: Message): React.ReactNode | null {
       icon = <AssistantIcon />;
       break;
     case "system":
-      return <SystemIcon />;
+      return <SystemIcon color="violet" />;
   }
 
   return icon;

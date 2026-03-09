@@ -28,6 +28,7 @@ import { UserIcon } from "@/components/common/UserIcon";
 import { AssistantIcon } from "@/components/common/AssistantIcon";
 import { SystemIcon } from "@/components/common/SystemIcon";
 import { isMessageItem } from "@/queries/conversations";
+import { TextToParagraphs } from "@/components/common/TextToParagraphs";
 
 type TemplateBlockProps = {
   children?: React.ReactNode;
@@ -323,7 +324,7 @@ export const MessageTemplateBlock: FC<MessageTemplateBlockProps> = ({
       icon = <AssistantIcon />;
       break;
     case "system":
-      icon = <SystemIcon />;
+      icon = <SystemIcon color="violet" />;
       break;
   }
 
@@ -390,7 +391,7 @@ export const MessageTemplateBlock: FC<MessageTemplateBlockProps> = ({
           onChange={(e) => patchMessageItem(index, e.target.value)}
         />
       ) : (
-        <Text>{item.message.message}</Text>
+        <TextToParagraphs text={item.message.message ?? undefined} />
       )}
     </TemplateBlock>
   );

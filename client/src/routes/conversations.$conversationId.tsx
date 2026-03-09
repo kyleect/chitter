@@ -9,16 +9,27 @@ import {
 } from "@/queries/conversations";
 import { useGetPersonaByIdQuery } from "@/queries/personas";
 import { useGetTemplateByIdQuery } from "@/queries/templates";
-import { ActionIcon, Alert, Group, Loader, Stack, Text } from "@mantine/core";
+import {
+  ActionIcon,
+  Alert,
+  Button,
+  Group,
+  HoverCard,
+  Loader,
+  Stack,
+  Text,
+  ThemeIcon,
+} from "@mantine/core";
 import { useScrollIntoView } from "@mantine/hooks";
 import { notifications } from "@mantine/notifications";
-import { IconDownload } from "@tabler/icons-react";
+import { IconDownload, IconPlus } from "@tabler/icons-react";
 import { createFileRoute } from "@tanstack/react-router";
 import { produce } from "immer";
 import { useState } from "react";
 import { Message } from "server-types";
 import { useStringDownload } from "@/hooks/useDownload";
 import { slugify } from "@/lib/slugify";
+import { TextToParagraphs } from "@/components/common/TextToParagraphs";
 
 export const Route = createFileRoute("/conversations/$conversationId")({
   component: RouteComponent,
@@ -78,6 +89,24 @@ function RouteComponent() {
     return <Alert color="red">Failed to user persona</Alert>;
   }
 
+  const handleInsertInsertable = (message: string) => {
+    notifications.show({
+      message: "Message updated!",
+    });
+
+    const updateConversation = produce((draft) => {
+      draft?.messages.push({
+        kind: "Message",
+        role: {
+          kind: "system",
+        },
+        message,
+      });
+    }, getConversationQuery.data)();
+
+    updateConversation && updateConversationMutation.mutate(updateConversation);
+  };
+
   const handleUpdatedMessage = (
     messageIndex: number,
     updatedMessage: Message,
@@ -135,6 +164,52 @@ function RouteComponent() {
             });
           }}
         />
+
+        <Button.Group>
+          <Button
+            mr="md"
+            size="compact-xs"
+            color="violet"
+            disabled={isEditingMessage || completionMutation.isPending}
+            onClick={() => {
+              handleInsertInsertable("");
+            }}
+            leftSection={
+              <ThemeIcon size="compact-xs" color="violet">
+                <IconPlus />
+              </ThemeIcon>
+            }
+          >
+            New
+          </Button>
+          {(getTemplateByIdQuery.data?.insertableSystemPrompts ?? []).map(
+            ([key, value]) => (
+              <HoverCard width={280} shadow="md">
+                <HoverCard.Target>
+                  <Button
+                    size="compact-xs"
+                    color="violet"
+                    variant="subtle"
+                    disabled={isEditingMessage || completionMutation.isPending}
+                    onClick={() => {
+                      if (value) handleInsertInsertable(value);
+                    }}
+                  >
+                    {key}
+                  </Button>
+                </HoverCard.Target>
+                <HoverCard.Dropdown>
+                  <TextToParagraphs
+                    text={value}
+                    textProps={{
+                      size: "sm",
+                    }}
+                  />
+                </HoverCard.Dropdown>
+              </HoverCard>
+            ),
+          )}
+        </Button.Group>
       </ConversationContext>
 
       <ActionIcon

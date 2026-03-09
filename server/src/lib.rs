@@ -297,6 +297,16 @@ pub async fn init_server(options: InitServerOptions) -> Result<AppServer, Error>
             user_persona.clone(),
         );
 
+        template.insertable_system_prompts.push((
+            "test".to_string(),
+            "A test insertable system prompt".to_string(),
+        ));
+
+        template.insertable_system_prompts.push((
+            "test2".to_string(),
+            "Another test insertable system prompt".to_string(),
+        ));
+
         let summarize_as_list_var = template.set_var("summaryAsList", true.into());
 
         template.add_system_message("You are a helpful AI assistant.");
