@@ -102,13 +102,15 @@ function RouteComponent() {
       message: "Message updated!",
     });
 
+    let message_processed = message;
+
     const updateConversation = produce((draft) => {
       draft?.messages.push({
         kind: "Message",
         role: {
           kind: "system",
         },
-        message,
+        message: message_processed,
       });
     }, getConversationQuery.data)();
 

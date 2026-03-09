@@ -376,6 +376,21 @@ pub async fn init_server(options: InitServerOptions) -> Result<AppServer, Error>
         ),
     );
 
+    let personas_insertable = "
+You are {{CHAR}}. I am {{USER}}.
+
+---
+{{CHAR}}'s Description:
+
+{{CHAR_DESCRIPTION}}
+---
+{{USER}}'s Description:
+
+{{USER_DESCRIPTION}}
+---
+
+    ";
+
     let state = AppState {
         home_dir: project_dir,
         db: Some(db_pool),
@@ -386,7 +401,7 @@ pub async fn init_server(options: InitServerOptions) -> Result<AppServer, Error>
         conservations: vec![template_1.into()],
         personass: vec![assistant_persona, user_persona],
         settings: app_settings,
-        insertable_system_prompts: vec![],
+        insertable_system_prompts: vec![("Personas".to_string(), personas_insertable.to_string())],
     };
 
     let state = Arc::new(Mutex::new(state));
@@ -719,6 +734,18 @@ pub async fn chat_completion(
         .find(|c| c.id == body.conversation_id)
         .unwrap();
 
+    let assistant_persona = state
+        .personass
+        .iter()
+        .find(|persona| persona.id == conversation.assistant_persona_id)
+        .expect("should have an assistant persona");
+
+    let user_persona = state
+        .personass
+        .iter()
+        .find(|persona| persona.id == conversation.user_persona_id)
+        .expect("should have a user persona");
+
     if let Some(client) = &state.llm {
         let request = CreateChatCompletionRequestArgs::default()
             .frequency_penalty(1.0)
@@ -730,7 +757,22 @@ pub async fn chat_completion(
                     .messages
                     .iter()
                     .map(|message| {
-                        let m: ChatCompletionRequestMessage = message.clone().try_into().unwrap();
+                        // Update message.message if is Some
+                        let new_message_string = message.message.as_ref().map(|message| {
+                            message
+                                .replace("{{CHAR}}", &assistant_persona.name)
+                                .replace("{{CHAR_DESCRIPTION}}", &assistant_persona.description)
+                                .replace("{{USER}}", &assistant_persona.name)
+                                .replace("{{USER_DESCRIPTION}}", &user_persona.description)
+                        });
+
+                        let mut new_message = message.clone();
+
+                        new_message.message = new_message_string;
+
+                        let m: ChatCompletionRequestMessage = new_message.try_into().unwrap();
+
+                        dbg!(&m);
 
                         m
                     })
