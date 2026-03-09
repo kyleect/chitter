@@ -315,6 +315,7 @@ pub struct Conversation {
     pub user_persona_id: String,
     pub messages: Vec<Message>,
     pub variables: HashMap<VariableKey, VariableValue>,
+    pub insertable_system_prompts: Vec<(String, String)>,
 }
 
 impl From<ConversationTemplate> for Conversation {
@@ -393,6 +394,7 @@ impl From<ConversationTemplate> for Conversation {
             user_persona_id: template.user_persona_id,
             messages,
             variables,
+            insertable_system_prompts: template.insertable_system_prompts.clone(),
         }
     }
 }
@@ -411,6 +413,10 @@ mod conversation_tests {
         user.id = "userId".to_string();
 
         let mut template = ConversationTemplate::new(None, assistant.clone(), user.clone());
+
+        template
+            .insertable_system_prompts
+            .push(("Test".to_string(), "Test Message".to_string()));
 
         template.id = "expectedTemplateId".to_string();
 
@@ -463,7 +469,8 @@ mod conversation_tests {
                         )
                     }
                 ],
-                variables: HashMap::from([(summarize_as_list_var, false.into())])
+                variables: HashMap::from([(summarize_as_list_var, false.into())]),
+                insertable_system_prompts: vec![("Test".to_string(), "Test Message".to_string())]
             },
             conservation
         );

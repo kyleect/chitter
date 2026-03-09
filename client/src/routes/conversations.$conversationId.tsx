@@ -99,6 +99,8 @@ function RouteComponent() {
     return <Alert color="red">Failed to fetch insertables</Alert>;
   }
 
+  const conversation = getConversationQuery.data;
+
   const handleInsertInsertable = (message: string) => {
     notifications.show({
       message: "Message updated!",
@@ -145,7 +147,7 @@ function RouteComponent() {
       if (draft === null || typeof draft === "undefined") return;
 
       draft.messages.splice(messageIndex, 1);
-    }, getConversationQuery.data)();
+    }, conversation)();
 
     updatedConversation &&
       updateConversationMutation.mutate(updatedConversation);
@@ -162,7 +164,7 @@ function RouteComponent() {
         }}
       >
         <MessageList
-          messages={getConversationQuery.data?.messages ?? []}
+          messages={conversation?.messages ?? []}
           assistantPersona={getAssistantPersonaQuery.data}
           userPersona={getUserPersonaQuery.data}
           onMessageChange={handleUpdatedMessage}
@@ -191,25 +193,23 @@ function RouteComponent() {
             onClick={() => {
               download(
                 JSON.stringify(getConversationQuery.data),
-                `${slugify(getConversationQuery.data?.title)}-conversation_${getConversationQuery.data?.id}.json`,
+                `${slugify(conversation?.title)}-conversation_${conversation?.id}.json`,
               );
             }}
           >
             <IconDownload />
           </ActionIcon>
 
-          {getConversationQuery.data && (
+          {conversation && (
             <Group m={0}>
               <Text mb={0}>Template:</Text>
 
-              <LinkToTemplate
-                templateId={getConversationQuery.data.templateId}
-              />
+              <LinkToTemplate templateId={conversation.templateId} />
             </Group>
           )}
         </Group>
 
-        <Group align="top">
+        <Group align="top" mt="md">
           <Stack flex={1}>
             <Divider label="Template Insertables" />
 
@@ -232,7 +232,7 @@ function RouteComponent() {
               >
                 New
               </Button>
-              {(getTemplateByIdQuery.data?.insertableSystemPrompts ?? []).map(
+              {(conversation?.insertableSystemPrompts ?? []).map(
                 ([key, value]) => (
                   <HoverCard width={280} shadow="md">
                     <HoverCard.Target>
