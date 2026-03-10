@@ -285,7 +285,7 @@ pub async fn init_server(options: InitServerOptions) -> Result<AppServer, Error>
 
     let db_pool = connect_to_db(options.db_options, default_db_path).await;
 
-    let user_persona = Persona::new("You", None);
+    let user_persona = Persona::new("User", Some("The user being responded to"));
     let assistant_persona = Persona::new(
         "AI Assistant",
         Some("The default AI assistant in the Chitter app."),
@@ -389,7 +389,23 @@ You are {{CHAR}}. I am {{USER}}.
 {{USER_DESCRIPTION}}
 ---
 
-    ";
+    "
+    .trim();
+
+    let text_message_insertable = "
+This is a text message conversation.
+    "
+    .trim();
+
+    let in_person_insertable = "
+This is an in person conversation.
+    "
+    .trim();
+
+    let video_call_insertable = "
+This is video call.
+    "
+    .trim();
 
     let state = AppState {
         home_dir: project_dir,
@@ -401,7 +417,21 @@ You are {{CHAR}}. I am {{USER}}.
         conservations: vec![template_1.into()],
         personass: vec![assistant_persona, user_persona],
         settings: app_settings,
-        insertable_system_prompts: vec![("Personas".to_string(), personas_insertable.to_string())],
+        insertable_system_prompts: vec![
+            ("Personas".to_string(), personas_insertable.to_string()),
+            (
+                "Type: Text Message".to_string(),
+                text_message_insertable.to_string(),
+            ),
+            (
+                "Type: In Person Conversation".to_string(),
+                in_person_insertable.to_string(),
+            ),
+            (
+                "Type: Video Call".to_string(),
+                video_call_insertable.to_string(),
+            ),
+        ],
     };
 
     let state = Arc::new(Mutex::new(state));

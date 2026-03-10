@@ -8,6 +8,10 @@ import {
   Textarea,
   Code,
   Select,
+  HoverCard,
+  Button,
+  Loader,
+  Alert,
 } from "@mantine/core";
 import { FC, useContext } from "react";
 import { TemplateContext } from "./TemplateContext";
@@ -29,6 +33,7 @@ import { AssistantIcon } from "@/components/common/AssistantIcon";
 import { SystemIcon } from "@/components/common/SystemIcon";
 import { isMessageItem } from "@/queries/conversations";
 import { TextToParagraphs } from "@/components/common/TextToParagraphs";
+import { useGetInsertablesQuery } from "@/queries/insertables";
 
 type TemplateBlockProps = {
   children?: React.ReactNode;
@@ -309,8 +314,9 @@ export const MessageTemplateBlock: FC<MessageTemplateBlockProps> = ({
   item,
   handleDeleteAtIndex,
 }) => {
+  const getInsertablesQuery = useGetInsertablesQuery();
   const context = useContext(TemplateContext)!;
-  const [isEditing] = context.isEditingState;
+  const [isEditing, setIsEditing] = context.isEditingState;
   const patchItem = usePatchTemplateItem();
   const patchMessageItem = usePatchMessageItem();
 
@@ -327,6 +333,25 @@ export const MessageTemplateBlock: FC<MessageTemplateBlockProps> = ({
       icon = <SystemIcon color="violet" />;
       break;
   }
+
+  if (getInsertablesQuery.isPending) {
+    return <Loader />;
+  }
+
+  if (getInsertablesQuery.isError) {
+    return (
+      <Alert color="red">
+        Error fetching insertables: {getInsertablesQuery.error.message}
+      </Alert>
+    );
+  }
+
+  const isSystemMessage = item.message.role.kind === "system";
+  const isMessageEmpty = (item.message.message?.length ?? 0) === 0;
+
+  debugger;
+
+  console.log(JSON.stringify({ isSystemMessage, isMessageEmpty }));
 
   return (
     <TemplateBlock
@@ -392,6 +417,35 @@ export const MessageTemplateBlock: FC<MessageTemplateBlockProps> = ({
         />
       ) : (
         <TextToParagraphs text={item.message.message ?? undefined} />
+      )}
+      {isSystemMessage && isMessageEmpty && (
+        <Group>
+          {(getInsertablesQuery.data ?? []).map(([key, value]) => (
+            <HoverCard width={280} shadow="md">
+              <HoverCard.Target>
+                <Button
+                  size="compact-xs"
+                  color="violet"
+                  variant="subtle"
+                  onClick={() => {
+                    setIsEditing(true);
+                    patchMessageItem(index, value);
+                  }}
+                >
+                  {key}
+                </Button>
+              </HoverCard.Target>
+              <HoverCard.Dropdown>
+                <TextToParagraphs
+                  text={value}
+                  textProps={{
+                    size: "sm",
+                  }}
+                />
+              </HoverCard.Dropdown>
+            </HoverCard>
+          ))}
+        </Group>
       )}
     </TemplateBlock>
   );
