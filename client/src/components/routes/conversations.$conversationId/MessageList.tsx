@@ -23,26 +23,35 @@ export const MessageList: FC<Props> = ({
   const [editingMessageIndex, setEditingMessageIndex] =
     conversationContext?.editingMessageIndexState;
 
-  return messages.map((message, messageIndex) => (
-    <MessageInList
-      value={message}
-      onChange={(updatedMessage) => {
-        onMessageChange?.(messageIndex, updatedMessage);
-        setEditingMessageIndex(null);
-      }}
-      userName={userPersona?.name ?? message.role.kind}
-      assistantName={assistantPersona?.name ?? message.role.kind}
-      onClick={() => {
-        setEditingMessageIndex(messageIndex);
-      }}
-      isEditing={messageIndex === editingMessageIndex}
-      onCancelEdit={() => {
-        setEditingMessageIndex(null);
-      }}
-      onDeleteMessage={() => {
-        onMessageDelete?.(messageIndex);
-        setEditingMessageIndex(null);
-      }}
-    />
-  ));
+  const [systemMessagesAreVisible] =
+    conversationContext?.systemMessagesAreVisibleState;
+
+  return messages
+    .filter((message) => {
+      let isSystemMessage = message.role.kind === "system";
+
+      return systemMessagesAreVisible ? true : !isSystemMessage;
+    })
+    .map((message, messageIndex) => (
+      <MessageInList
+        value={message}
+        onChange={(updatedMessage) => {
+          onMessageChange?.(messageIndex, updatedMessage);
+          setEditingMessageIndex(null);
+        }}
+        userName={userPersona?.name ?? message.role.kind}
+        assistantName={assistantPersona?.name ?? message.role.kind}
+        onClick={() => {
+          setEditingMessageIndex(messageIndex);
+        }}
+        isEditing={messageIndex === editingMessageIndex}
+        onCancelEdit={() => {
+          setEditingMessageIndex(null);
+        }}
+        onDeleteMessage={() => {
+          onMessageDelete?.(messageIndex);
+          setEditingMessageIndex(null);
+        }}
+      />
+    ));
 };

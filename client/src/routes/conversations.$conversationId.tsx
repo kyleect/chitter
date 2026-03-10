@@ -18,6 +18,7 @@ import {
   HoverCard,
   Loader,
   Stack,
+  Switch,
   Text,
   ThemeIcon,
 } from "@mantine/core";
@@ -42,6 +43,8 @@ function RouteComponent() {
   const [isEditingMessageIndex, setIsEditingMessageIndex] = useState<
     number | null
   >(null);
+  const [systemMessagesAreVisible, setSystemMessagesAreVisible] =
+    useState<boolean>(false);
   const params = Route.useParams();
   const getInsertablesQuery = useGetInsertablesQuery();
   const completionMutation = useCompletionMutation(params.conversationId);
@@ -161,6 +164,10 @@ function RouteComponent() {
             isEditingMessageIndex,
             setIsEditingMessageIndex,
           ],
+          systemMessagesAreVisibleState: [
+            systemMessagesAreVisible,
+            setSystemMessagesAreVisible,
+          ],
         }}
       >
         <MessageList
@@ -170,6 +177,30 @@ function RouteComponent() {
           onMessageChange={handleUpdatedMessage}
           onMessageDelete={handleDeletedMessage}
         />
+
+        <Group justify="space-between" mt="xl">
+          <Switch
+            label="Show System Messages"
+            checked={systemMessagesAreVisible}
+            disabled={completionMutation.isPending}
+            color="violet"
+            onChange={(event) =>
+              setSystemMessagesAreVisible(event.currentTarget.checked)
+            }
+          />
+          <ActionIcon
+            variant="subtle"
+            color="gray"
+            onClick={() => {
+              download(
+                JSON.stringify(getConversationQuery.data),
+                `${slugify(conversation?.title)}-conversation_${conversation?.id}.json`,
+              );
+            }}
+          >
+            <IconDownload />
+          </ActionIcon>
+        </Group>
 
         <UserReplyForm
           ref={targetRef}
@@ -187,19 +218,6 @@ function RouteComponent() {
         />
 
         <Group justify="space-between">
-          <ActionIcon
-            variant="subtle"
-            color="gray"
-            onClick={() => {
-              download(
-                JSON.stringify(getConversationQuery.data),
-                `${slugify(conversation?.title)}-conversation_${conversation?.id}.json`,
-              );
-            }}
-          >
-            <IconDownload />
-          </ActionIcon>
-
           {conversation && (
             <Group m={0}>
               <Text mb={0}>Template:</Text>
@@ -245,7 +263,8 @@ function RouteComponent() {
                           completionMutation.isPending
                         }
                         onClick={() => {
-                          if (value) handleInsertInsertable(value);
+                          setSystemMessagesAreVisible(true);
+                          handleInsertInsertable(value);
                         }}
                       >
                         {key}
