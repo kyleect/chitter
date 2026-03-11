@@ -6,7 +6,8 @@ import { SetVarIcon } from "@/components/common/SetVarIcon";
 import { SystemIcon } from "@/components/common/SystemIcon";
 import { UserIcon } from "@/components/common/UserIcon";
 import { usePatchItemsWithInsertAt } from "@/hooks/usePatchTemplateItems";
-import { Menu } from "@mantine/core";
+import { useGetInsertablesQuery } from "@/queries/insertables";
+import { Alert, Button, Loader, Menu } from "@mantine/core";
 import { IconMail } from "@tabler/icons-react";
 import { FC, ReactNode } from "react";
 
@@ -18,6 +19,15 @@ type Props = {
 
 export const DividerBarMenu: FC<Props> = ({ children, index }) => {
   const patchItemsWithInsertAt = usePatchItemsWithInsertAt();
+  const getInsertablesQuery = useGetInsertablesQuery();
+
+  if (getInsertablesQuery.isPending) {
+    return <Loader />;
+  }
+
+  if (getInsertablesQuery.isError) {
+    return <Alert color="red">Error fetching insertables</Alert>;
+  }
 
   return (
     <Menu shadow="md" width={200} position="right-start">
@@ -80,6 +90,39 @@ export const DividerBarMenu: FC<Props> = ({ children, index }) => {
             >
               System
             </Menu.Item>
+
+            <Menu.Sub>
+              <Menu.Sub.Target>
+                <Menu.Sub.Item>Insertables</Menu.Sub.Item>
+              </Menu.Sub.Target>
+
+              <Menu.Sub.Dropdown>
+                {getInsertablesQuery.data.map(
+                  ([insertableName, insertableContent]) => (
+                    <Menu.Item>
+                      <Button
+                        size="compact-xs"
+                        color="violet"
+                        variant="subtle"
+                        onClick={() => {
+                          patchItemsWithInsertAt(index + 1, {
+                            message: {
+                              role: {
+                                kind: "system",
+                              },
+                              message: insertableContent,
+                              kind: "Message",
+                            },
+                          });
+                        }}
+                      >
+                        {insertableName}
+                      </Button>
+                    </Menu.Item>
+                  ),
+                )}
+              </Menu.Sub.Dropdown>
+            </Menu.Sub>
           </Menu.Sub.Dropdown>
         </Menu.Sub>
 
