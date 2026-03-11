@@ -101,9 +101,9 @@ export const DividerBarMenu: FC<Props> = ({ children, index }) => {
                   ([insertableName, insertableContent]) => (
                     <Menu.Item>
                       <Button
-                        size="compact-xs"
+                        size="compact-sm"
                         color="violet"
-                        variant="subtle"
+                        variant="transparent"
                         onClick={() => {
                           patchItemsWithInsertAt(index + 1, {
                             message: {
