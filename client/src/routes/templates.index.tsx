@@ -1,4 +1,3 @@
-import { ConversationPersonas } from "@/components/common/ConversationPersonas";
 import { useStringDownload } from "@/hooks/useDownload";
 import { slugify } from "@/lib/slugify";
 import { useStartConversationMutation } from "@/queries/conversations";
@@ -85,13 +84,8 @@ function RouteComponent() {
   return (
     <Stack>
       {templatesQuery.data?.map((template) => {
-        const assistantPersona = getPersonasQuery.data?.find(
-          (persona) => persona.id === template.assistantPersonaId,
-        );
-
-        const userPersona = getPersonasQuery.data?.find(
-          (persona) => persona.id === template.userPersonaId,
-        );
+        const missingPersonas =
+          template.assistantPersona === null || template.userPersona === null;
 
         return (
           <Card p="sm" key={template.id}>
@@ -105,12 +99,14 @@ function RouteComponent() {
                 {template.title ?? template.id}
               </Link>
               <Group gap="xl">
-                <ConversationPersonas
-                  assistantPersona={assistantPersona}
-                  userPersona={userPersona}
-                />
+                {missingPersonas && (
+                  <Alert title="Missing Personas" color="yellow" p="xs">
+                    This template is missing one or both personas
+                  </Alert>
+                )}
                 <Button
                   variant="gradient"
+                  disabled={missingPersonas}
                   onClick={() => {
                     startConversationMutation.mutate(template.id, {
                       onSuccess(data) {

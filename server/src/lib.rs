@@ -292,11 +292,15 @@ pub async fn init_server(options: InitServerOptions) -> Result<AppServer, Error>
     );
 
     let template_1 = {
-        let mut template = ConversationTemplate::new(
-            Some("Example".to_string()),
-            assistant_persona.clone(),
-            user_persona.clone(),
-        );
+        let mut template = ConversationTemplate::new(Some("Example".to_string()));
+
+        template.assistant_persona = Some(types::conversation::TemplatePersona::Id(
+            assistant_persona.id.clone(),
+        ));
+
+        template.user_persona = Some(types::conversation::TemplatePersona::Id(
+            user_persona.id.clone(),
+        ));
 
         template.insertable_system_prompts.push((
             "test".to_string(),
@@ -334,11 +338,15 @@ pub async fn init_server(options: InitServerOptions) -> Result<AppServer, Error>
     };
 
     let template_2 = {
-        let mut template = ConversationTemplate::new(
-            Some("Joke".to_string()),
-            assistant_persona.clone(),
-            user_persona.clone(),
-        );
+        let mut template = ConversationTemplate::new(Some("Joke".to_string()));
+
+        template.assistant_persona = Some(types::conversation::TemplatePersona::Id(
+            assistant_persona.id.clone(),
+        ));
+
+        template.user_persona = Some(types::conversation::TemplatePersona::Id(
+            user_persona.id.clone(),
+        ));
 
         template.add_assistant_message("Hello! Give me a word and I'll tell you a joke.");
 
@@ -414,7 +422,7 @@ This is video call.
         tx: None,
         llm: Some(client),
         conversation_templates: vec![template_1.clone(), template_2.clone()],
-        conservations: vec![template_1.into()],
+        conservations: vec![],
         personass: vec![assistant_persona, user_persona],
         settings: app_settings,
         insertable_system_prompts: vec![
@@ -764,17 +772,9 @@ pub async fn chat_completion(
         .find(|c| c.id == body.conversation_id)
         .unwrap();
 
-    let assistant_persona = state
-        .personass
-        .iter()
-        .find(|persona| persona.id == conversation.assistant_persona_id)
-        .expect("should have an assistant persona");
+    let assistant_persona = &conversation.assistant_persona;
 
-    let user_persona = state
-        .personass
-        .iter()
-        .find(|persona| persona.id == conversation.user_persona_id)
-        .expect("should have a user persona");
+    let user_persona = &conversation.user_persona;
 
     if let Some(client) = &state.llm {
         let request = CreateChatCompletionRequestArgs::default()
@@ -883,8 +883,8 @@ pub async fn completetion(
         );
 
         (
-            conversation.assistant_persona_id.clone(),
-            conversation.user_persona_id.clone(),
+            conversation.assistant_persona.id.clone(),
+            conversation.user_persona.id.clone(),
         )
     };
 

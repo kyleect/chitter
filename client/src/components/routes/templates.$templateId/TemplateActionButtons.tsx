@@ -12,8 +12,8 @@ export const TemplateActionButtons = () => {
     template,
     draftTitleState,
     draftTemplateItemsState,
-    draftAssistantPersonaIdState,
-    draftUserPersonaIdState,
+    draftAssistantPersonaState,
+    draftUserPersonaState,
     isEditingState,
     draftInsertablesState,
   } = context;
@@ -21,8 +21,8 @@ export const TemplateActionButtons = () => {
   const [draftTitle] = draftTitleState;
   const [draftTemplateItems, setDraftTemplateItems] = draftTemplateItemsState;
   const [isEditing, setIsEditing] = isEditingState;
-  const [draftAssistantPersonaId] = draftAssistantPersonaIdState;
-  const [draftUserPersonaId] = draftUserPersonaIdState;
+  const [draftAssistantPersona] = draftAssistantPersonaState;
+  const [draftUserPersona] = draftUserPersonaState;
   const [draftInsertables, setDraftInsertables] = draftInsertablesState;
 
   const handleSave = () => {
@@ -30,15 +30,16 @@ export const TemplateActionButtons = () => {
 
     let updatedTemplate: ConversationTemplate = Object.assign({}, template, {
       title: draftTitle,
-      assistantPersonaId: draftAssistantPersonaId,
-      userPersonaId: draftUserPersonaId,
+      assistantPersona: draftAssistantPersona,
+      userPersona: draftUserPersona,
       items: draftTemplateItems,
       insertableSystemPrompts: draftInsertables,
-    });
+    } as ConversationTemplate);
+
+    console.log(updatedTemplate);
 
     updateTemplateMutation.mutate(updatedTemplate, {
       onSuccess() {
-        debugger;
         setIsEditing(!isEditing);
       },
     });

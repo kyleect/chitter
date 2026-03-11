@@ -1,4 +1,3 @@
-import { ConversationPersonas } from "@/components/common/ConversationPersonas";
 import { LinkToConversation } from "@/components/common/LinkToConversation";
 import { LinkToTemplate } from "@/components/common/LinkToTemplate";
 import { useStringDownload } from "@/hooks/useDownload";
@@ -101,13 +100,6 @@ function RouteComponent() {
   return (
     <Stack>
       {getConversationsQuery.data?.map((conversation) => {
-        const user = getPersonasQuery.data?.find(
-          (persona) => persona.id === conversation.userPersonaId,
-        );
-        const assistant = getPersonasQuery.data?.find(
-          (persona) => persona.id === conversation.assistantPersonaId,
-        );
-
         const template = getTemplatesQuery.data?.find(
           (template) => template.id === conversation.templateId,
         );
@@ -125,11 +117,6 @@ function RouteComponent() {
 
                   {template && <LinkToTemplate templateId={template.id} />}
                 </Group>
-
-                <ConversationPersonas
-                  userPersona={user}
-                  assistantPersona={assistant}
-                />
 
                 <ActionIcon.Group>
                   <ActionIcon

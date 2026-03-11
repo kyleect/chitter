@@ -6,7 +6,7 @@ import { Alert, Divider, Loader, Stack } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { ConversationTemplate } from "server-types";
+import { ConversationTemplate, TemplatePersona } from "server-types";
 import { ConversationPreviewDrawer } from "@/components/routes/templates.$templateId/ConversationPreviewDrawer";
 import { useGetPersonasQuery } from "@/queries/personas";
 import { useGetSettingsQuery } from "@/queries/settings";
@@ -48,12 +48,10 @@ function RouteComponent() {
   );
 
   const getSettingsQuery = useGetSettingsQuery();
-  const [draftUserPersonaId, setDraftUserPersonaId] = useState<string | null>(
-    getSettingsQuery.data?.default_user_persona_id ?? null,
-  );
-  const [draftAssistantPersonaId, setDraftAssistantPersonaId] = useState<
-    string | null
-  >(getSettingsQuery.data?.default_assistant_persona_id ?? null);
+  const [draftUserPersona, setDraftUserPersona] =
+    useState<TemplatePersona | null>(null);
+  const [draftAssistantPersona, setDraftAssistantPersona] =
+    useState<TemplatePersona | null>(null);
 
   const getPersonasQuery = useGetPersonasQuery();
 
@@ -63,8 +61,8 @@ function RouteComponent() {
 
   useEffect(() => {
     if (getTemplateByIdQuery.data) {
-      setDraftAssistantPersonaId(getTemplateByIdQuery.data.assistantPersonaId);
-      setDraftUserPersonaId(getTemplateByIdQuery.data.userPersonaId);
+      setDraftAssistantPersona(getTemplateByIdQuery.data.assistantPersona);
+      setDraftUserPersona(getTemplateByIdQuery.data.userPersona);
       setDraftTitle(getTemplateByIdQuery.data.title ?? "");
       setDraftInsertables(
         getTemplateByIdQuery.data.insertableSystemPrompts ?? [],
@@ -126,10 +124,10 @@ function RouteComponent() {
         template,
         isEditingState: [isEditing, setIsEditing],
         draftTitleState: [draftTitle, setDraftTitle],
-        draftUserPersonaIdState: [draftUserPersonaId, setDraftUserPersonaId],
-        draftAssistantPersonaIdState: [
-          draftAssistantPersonaId,
-          setDraftAssistantPersonaId,
+        draftUserPersonaState: [draftUserPersona, setDraftUserPersona],
+        draftAssistantPersonaState: [
+          draftAssistantPersona,
+          setDraftAssistantPersona,
         ],
         draftInsertablesState: [draftInsertables, setDraftInsertables],
         draftTemplateItemsState: [draftTemplateItems, setDraftTemplateItems],

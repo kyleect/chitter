@@ -6,6 +6,7 @@ import {
   ConversationItem,
   ConversationTemplate,
   Message,
+  Persona,
   VariableKey,
   VariableValue,
 } from "server-types";
@@ -115,6 +116,30 @@ export const useUpdateTemplateByIdMutation = () => {
     },
   });
 };
+
+export function isPersonaId(persona: unknown): persona is {
+  type: "Id";
+  data: string;
+} {
+  if (typeof persona === "undefined") return false;
+  if (persona === null) return false;
+
+  const type = (persona as any)["type"];
+
+  return typeof type !== "undefined" && type === "Id";
+}
+
+export function isEmbeddedPersona(persona: unknown): persona is {
+  type: "Embedded";
+  data: Persona;
+} {
+  if (typeof persona === "undefined") return false;
+  if (persona === null) return false;
+
+  const type = (persona as any)["type"];
+
+  return typeof type !== "undefined" && type === "Embedded";
+}
 
 export function isMessageItem(
   item: RecursivePartial<ConversationItem>,

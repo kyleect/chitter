@@ -51,7 +51,7 @@ pub struct CompletionSettings {
     pub frequency_penalty: Option<f32>, // min: -2.0, max: 2.0, default: 0
 }
 
-#[derive(TS, Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(TS, Clone, Eq, Debug, PartialEq, Hash, Serialize, Deserialize, Default)]
 #[ts(export)]
 pub struct Persona {
     pub id: String,
@@ -206,25 +206,33 @@ impl From<f64> for VariableValue {
 #[ts(export)]
 pub struct VariableKey(pub String);
 
+#[derive(TS, Clone, Debug, Eq, Hash, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type", content = "data")]
+#[ts(export)]
+pub enum TemplatePersona {
+    Id(String),
+    Embedded(Persona),
+}
+
 #[derive(TS, Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 #[ts(export)]
 pub struct ConversationTemplate {
     pub id: String,
     pub title: Option<String>,
-    pub assistant_persona_id: String,
-    pub user_persona_id: String,
+    pub assistant_persona: Option<TemplatePersona>,
+    pub user_persona: Option<TemplatePersona>,
     pub items: Vec<ConversationItem>,
     pub insertable_system_prompts: Vec<(String, String)>,
 }
 
 impl ConversationTemplate {
-    pub fn new(title: Option<String>, assistant: Persona, user: Persona) -> Self {
+    pub fn new(title: Option<String>) -> Self {
         Self {
             id: uuid::Uuid::new_v4().to_string(),
             title,
-            assistant_persona_id: assistant.id,
-            user_persona_id: user.id,
+            assistant_persona: None,
+            user_persona: None,
             items: vec![],
             insertable_system_prompts: Default::default(),
         }
@@ -311,15 +319,19 @@ pub struct Conversation {
     pub id: String,
     pub title: Option<String>,
     pub template_id: String,
-    pub assistant_persona_id: String,
-    pub user_persona_id: String,
+    pub assistant_persona: Persona,
+    pub user_persona: Persona,
     pub messages: Vec<Message>,
     pub variables: HashMap<VariableKey, VariableValue>,
     pub insertable_system_prompts: Vec<(String, String)>,
 }
 
-impl From<ConversationTemplate> for Conversation {
-    fn from(template: ConversationTemplate) -> Self {
+impl Conversation {
+    pub fn from_template(
+        template: &ConversationTemplate,
+        assistant_persona_from_id: Option<&Persona>,
+        user_persona_from_id: Option<&Persona>,
+    ) -> Self {
         let mut messages: Vec<Message> = vec![];
         let mut variables: HashMap<VariableKey, VariableValue> = HashMap::new();
         let mut in_if_eq = false;
@@ -386,12 +398,42 @@ impl From<ConversationTemplate> for Conversation {
             }
         }
 
+        let assistant_persona = template
+            .assistant_persona
+            .clone()
+            .and_then(
+                |template_assistant_persona| match template_assistant_persona {
+                    TemplatePersona::Id(_) => match assistant_persona_from_id {
+                        Some(persona) => Some(persona.clone()),
+                        None => {
+                            panic!("No assistant persona")
+                        }
+                    },
+                    TemplatePersona::Embedded(persona) => Some(persona.clone()),
+                },
+            )
+            .expect("should have an assistant persona attached to conversation");
+
+        let user_persona = template
+            .user_persona
+            .clone()
+            .and_then(|template_user_persona| match template_user_persona {
+                TemplatePersona::Id(_) => match user_persona_from_id {
+                    Some(persona) => Some(persona.clone()),
+                    None => {
+                        panic!("No user persona")
+                    }
+                },
+                TemplatePersona::Embedded(persona) => Some(persona.clone()),
+            })
+            .expect("should have an user persona attached to conversation");
+
         Self {
             id: uuid::Uuid::new_v4().to_string(),
-            title: template.title,
+            title: template.title.clone(),
             template_id: template.id.clone(),
-            assistant_persona_id: template.assistant_persona_id,
-            user_persona_id: template.user_persona_id,
+            assistant_persona,
+            user_persona,
             messages,
             variables,
             insertable_system_prompts: template.insertable_system_prompts.clone(),
@@ -412,7 +454,10 @@ mod conversation_tests {
         let mut user: Persona = Persona::default();
         user.id = "userId".to_string();
 
-        let mut template = ConversationTemplate::new(None, assistant.clone(), user.clone());
+        let mut template = ConversationTemplate::new(None);
+
+        template.assistant_persona = Some(TemplatePersona::Id(assistant.id.clone()));
+        template.user_persona = Some(TemplatePersona::Id(user.id.clone()));
 
         template
             .insertable_system_prompts
@@ -440,7 +485,8 @@ mod conversation_tests {
 
         template.end_if();
 
-        let mut conservation: Conversation = template.clone().into();
+        let mut conservation: Conversation =
+            Conversation::from_template(&template, Some(&assistant), Some(&user));
 
         conservation.id = "expectedConservationId".to_string();
 
@@ -449,8 +495,8 @@ mod conversation_tests {
                 id: "expectedConservationId".to_string(),
                 title: template.title,
                 template_id: template.id,
-                assistant_persona_id: assistant.id,
-                user_persona_id : user.id,
+                assistant_persona: assistant,
+                user_persona : user,
                 messages: vec![
                     Message {
                         role: Role::System,
@@ -491,7 +537,7 @@ mod conversation_template_tests {
         let mut user: Persona = Persona::default();
         user.id = "userId".to_string();
 
-        let mut conversation = ConversationTemplate::new(None, assistant.clone(), user.clone());
+        let mut conversation = ConversationTemplate::new(None);
 
         let summarize_as_list_var = conversation.set_var("summaryAsList", true.into());
 
@@ -517,8 +563,8 @@ mod conversation_template_tests {
             ConversationTemplate {
                 id: "".to_string(),
                 title: None,
-                assistant_persona_id: assistant.id,
-                user_persona_id : user.id,
+                assistant_persona: Some(TemplatePersona::Id(assistant.id.clone())),
+                user_persona: Some(TemplatePersona::Id(user.id.clone())),
                 items: vec![
                     ConversationItem::set_var("summaryAsList", VariableValue::Boolean(true)),
                     ConversationItem::message(

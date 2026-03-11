@@ -20,7 +20,7 @@ export const TemplateFormHeader = () => {
   const [isEditing] = isEditingState;
 
   const personasMissing =
-    !template.assistantPersonaId || !template.userPersonaId;
+    template.assistantPersona === null || !template.userPersona === null;
 
   return (
     <Group justify="space-between">

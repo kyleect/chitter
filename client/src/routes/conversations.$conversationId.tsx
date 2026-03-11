@@ -7,7 +7,6 @@ import {
   useGetConservationByIdQuery,
   useUpdateConversationMutation,
 } from "@/queries/conversations";
-import { useGetPersonaByIdQuery } from "@/queries/personas";
 import { useGetTemplateByIdQuery } from "@/queries/templates";
 import {
   ActionIcon,
@@ -56,14 +55,6 @@ function RouteComponent() {
     getConversationQuery.data?.templateId ?? null,
   );
 
-  const getAssistantPersonaQuery = useGetPersonaByIdQuery(
-    getConversationQuery.data?.assistantPersonaId ?? null,
-  );
-
-  const getUserPersonaQuery = useGetPersonaByIdQuery(
-    getConversationQuery.data?.userPersonaId ?? null,
-  );
-
   const updateConversationMutation = useUpdateConversationMutation();
   const download = useStringDownload();
 
@@ -75,8 +66,6 @@ function RouteComponent() {
   if (
     getConversationQuery.isPending &&
     getTemplateByIdQuery.isPending &&
-    getAssistantPersonaQuery.isPending &&
-    getUserPersonaQuery.isPending &&
     getInsertablesQuery.isPending
   ) {
     return <Loader />;
@@ -88,14 +77,6 @@ function RouteComponent() {
 
   if (getTemplateByIdQuery.isError) {
     return <Alert color="red">Failed to fetch template</Alert>;
-  }
-
-  if (getAssistantPersonaQuery.isError) {
-    return <Alert color="red">Failed to assistant persona</Alert>;
-  }
-
-  if (getUserPersonaQuery.isError) {
-    return <Alert color="red">Failed to user persona</Alert>;
   }
 
   if (getInsertablesQuery.isError) {
@@ -172,8 +153,8 @@ function RouteComponent() {
       >
         <MessageList
           messages={conversation?.messages ?? []}
-          assistantPersona={getAssistantPersonaQuery.data}
-          userPersona={getUserPersonaQuery.data}
+          assistantPersona={conversation?.assistantPersona}
+          userPersona={conversation?.userPersona}
           onMessageChange={handleUpdatedMessage}
           onMessageDelete={handleDeletedMessage}
         />
@@ -227,9 +208,11 @@ function RouteComponent() {
           )}
         </Group>
 
+        <Divider label="Insertables" />
+
         <Group align="top" mt="md">
           <Stack flex={1}>
-            <Divider label="Template Insertables" />
+            <Divider label="From Template" />
 
             <Group>
               <Button
@@ -285,7 +268,7 @@ function RouteComponent() {
           </Stack>
 
           <Stack flex={1}>
-            <Divider label="Global Insertables" />
+            <Divider label="Global" />
 
             <Group>
               {(getInsertablesQuery.data ?? []).map(([key, value]) => (

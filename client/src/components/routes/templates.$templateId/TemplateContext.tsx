@@ -1,6 +1,6 @@
 import { StatePair } from "@/lib/statePair";
 import { createContext } from "react";
-import { ConversationTemplate } from "server-types";
+import { ConversationTemplate, TemplatePersona } from "server-types";
 
 type ContextType = {
   template: ConversationTemplate;
@@ -9,8 +9,8 @@ type ContextType = {
   draftTitleState: StatePair<string>;
   draftInsertablesState: StatePair<[string, string][]>;
 
-  draftAssistantPersonaIdState: StatePair<string | null>;
-  draftUserPersonaIdState: StatePair<string | null>;
+  draftAssistantPersonaState: StatePair<TemplatePersona | null>;
+  draftUserPersonaState: StatePair<TemplatePersona | null>;
 
   draftTemplateItemsState: StatePair<ConversationTemplate["items"]>;
 

@@ -349,10 +349,6 @@ export const MessageTemplateBlock: FC<MessageTemplateBlockProps> = ({
   const isSystemMessage = item.message.role.kind === "system";
   const isMessageEmpty = (item.message.message?.length ?? 0) === 0;
 
-  debugger;
-
-  console.log(JSON.stringify({ isSystemMessage, isMessageEmpty }));
-
   return (
     <TemplateBlock
       icon={icon}
