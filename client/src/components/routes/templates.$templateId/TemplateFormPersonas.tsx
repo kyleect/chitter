@@ -54,7 +54,7 @@ export const TemplateFormPersonas = () => {
           <AssistantName />
         </Group>
 
-        {isEmbeddedPersona(draftAssistantPersona) && (
+        {isEmbeddedPersona(draftAssistantPersona) && isEditing && (
           <ActionIcon
             color="red"
             variant="subtle"
@@ -143,7 +143,7 @@ export const TemplateFormPersonas = () => {
           <UserName />
         </Group>
 
-        {isEmbeddedPersona(draftUserPersona) && (
+        {isEmbeddedPersona(draftUserPersona) && isEditing && (
           <ActionIcon
             color="red"
             variant="subtle"
