@@ -214,6 +214,18 @@ pub enum TemplatePersona {
     Embedded(Persona),
 }
 
+impl From<&str> for TemplatePersona {
+    fn from(value: &str) -> Self {
+        Self::Id(value.to_string())
+    }
+}
+
+impl From<Persona> for TemplatePersona {
+    fn from(value: Persona) -> Self {
+        Self::Embedded(value.clone())
+    }
+}
+
 #[derive(TS, Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 #[ts(export)]

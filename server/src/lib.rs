@@ -353,6 +353,18 @@ pub async fn init_server(options: InitServerOptions) -> Result<AppServer, Error>
         template
     };
 
+    let template_3 = {
+        let mut template = ConversationTemplate::new(Some("Prefilled User Reply".to_string()));
+
+        template.assistant_persona = Some(Persona::new("Assistant", None).into());
+
+        template.user_persona = Some(Persona::new("User", None).into());
+
+        template.add_user_message("Example of a prefilled user reply on conversation start");
+
+        template
+    };
+
     let app_settings = AppSettings::builder()
         .default_assistant_persona_id(assistant_persona.id.clone())
         .default_user_persona_id(user_persona.id.clone())
@@ -421,7 +433,7 @@ This is video call.
         db_is_encrypted,
         tx: None,
         llm: Some(client),
-        conversation_templates: vec![template_1.clone(), template_2.clone()],
+        conversation_templates: vec![template_1.clone(), template_2.clone(), template_3.clone()],
         conservations: vec![],
         personass: vec![assistant_persona, user_persona],
         settings: app_settings,
