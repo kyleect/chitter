@@ -35,6 +35,7 @@ export const MessageList: FC<Props> = ({
     .map((message, messageIndex) => (
       <MessageInList
         value={message}
+        index={messageIndex}
         onChange={(updatedMessage) => {
           onMessageChange?.(messageIndex, updatedMessage);
           setEditingMessageIndex(null);

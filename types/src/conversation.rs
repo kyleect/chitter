@@ -453,6 +453,13 @@ impl Conversation {
     }
 }
 
+#[derive(TS, Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[ts(export)]
+pub struct RegenerateResponseRequestBody {
+    pub conversation_id: String,
+    pub message_index: usize,
+}
+
 #[cfg(test)]
 mod conversation_tests {
     use super::*;

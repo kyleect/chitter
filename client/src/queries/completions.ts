@@ -1,6 +1,25 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { CONSERVATION_KEYS } from "./conversations";
-import { CompletionRequestBody, Conversation } from "server-types";
+import {
+  CompletionRequestBody,
+  Conversation,
+  RegenerateResponseRequestBody,
+} from "server-types";
+import { produce } from "immer";
+
+export const COMPLETION_KEYS = {
+  all: ["completions"] as const,
+  chat_completion: (conversation_id: string) => [
+    ...COMPLETION_KEYS.all,
+    "chat_completion",
+    conversation_id,
+  ],
+  regeneration: (conversation_id: string) => [
+    ...COMPLETION_KEYS.all,
+    "regenerate",
+    conversation_id,
+  ],
+} as const;
 
 export const useCompletionMutation = (conversationId: string) => {
   const queryClient = useQueryClient();
@@ -73,6 +92,60 @@ export const useCompletionMutation = (conversationId: string) => {
         const error = await response.text();
 
         throw new Error(`Couldn't generate chat completion: ${error}`);
+      }
+
+      const data = (await response.json()) as {
+        response: string;
+      };
+
+      return data.response;
+    },
+  });
+};
+
+export const useRegenerateResponseMutation = (conversationId: string) => {
+  const queryClient = useQueryClient();
+  const conversationQueryKey = CONSERVATION_KEYS.detail(conversationId);
+
+  return useMutation({
+    async onMutate() {
+      await queryClient.cancelQueries({
+        queryKey: conversationQueryKey,
+      });
+
+      const prev = queryClient.getQueryData<Conversation>(conversationQueryKey);
+
+      queryClient.setQueryData(
+        conversationQueryKey,
+        produce(prev, (draft) => {
+          draft?.messages.pop();
+        }),
+      );
+    },
+    onSettled: () =>
+      queryClient.invalidateQueries({
+        queryKey: conversationQueryKey,
+      }),
+    mutationKey: COMPLETION_KEYS.regeneration(conversationId),
+    mutationFn: async (messageIndex: number) => {
+      const response = await fetch(
+        `/api/chat_completions/regenerate_response`,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            conversation_id: conversationId,
+            message_index: messageIndex,
+          } as RegenerateResponseRequestBody),
+          headers: {
+            "content-type": "application/json",
+          },
+        },
+      );
+
+      if (!response.ok) {
+        const error = await response.text();
+
+        throw new Error(`Couldn't generate response: ${error}`);
       }
 
       const data = (await response.json()) as {

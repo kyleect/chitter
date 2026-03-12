@@ -1,4 +1,4 @@
-import { FC } from "react";
+import { FC, useContext } from "react";
 import {
   ActionIcon,
   ActionIconGroup,
@@ -16,10 +16,13 @@ import { Message } from "server-types";
 import { SystemIcon } from "@/components/common/SystemIcon";
 import { useHover } from "@mantine/hooks";
 import { modals } from "@mantine/modals";
-import { IconEdit, IconX } from "@tabler/icons-react";
+import { IconEdit, IconRefresh, IconX } from "@tabler/icons-react";
+import { useRegenerateResponseMutation } from "@/queries/completions";
+import { ConversationContext } from "./ConversationContext";
 
 type MessageInListProps = {
   value: Message;
+  index: number;
   onChange: (updatedMessage: Message) => void;
   onCancelEdit: () => void;
   isEditing: boolean;
@@ -31,6 +34,7 @@ type MessageInListProps = {
 
 export const MessageInList: FC<MessageInListProps> = ({
   value,
+  index,
   onChange,
   onCancelEdit,
   onDeleteMessage,
@@ -42,6 +46,13 @@ export const MessageInList: FC<MessageInListProps> = ({
   const { hovered, ref } = useHover();
   let icon = getMesssageAuthorIcon(value);
   let author: string = getMessageAuthorName(value, userName, assistantName);
+  const context = useContext(ConversationContext)!;
+
+  const regenerateResponseMutation = useRegenerateResponseMutation(
+    context.conversation.id,
+  );
+
+  const isAssistantMessage = value.role.kind === "assistant";
 
   return (
     <Stack
@@ -114,6 +125,19 @@ export const MessageInList: FC<MessageInListProps> = ({
           <Text>[EMPTY]</Text>
         ) : (
           <TextToParagraphs text={value.message ?? "[EMPTY]"} />
+        )}
+
+        {isAssistantMessage && (
+          <ActionIcon
+            variant="subtle"
+            color="gray"
+            size="xs"
+            onClick={() => {
+              regenerateResponseMutation.mutate(index);
+            }}
+          >
+            <IconRefresh />
+          </ActionIcon>
         )}
       </Stack>
     </Stack>

@@ -2,7 +2,7 @@ import { LinkToTemplate } from "@/components/common/LinkToTemplate";
 import { ConversationContext } from "@/components/routes/conversations.$conversationId/ConversationContext";
 import { MessageList } from "@/components/routes/conversations.$conversationId/MessageList";
 import { UserReplyForm } from "@/components/routes/conversations.$conversationId/UserReplyForm";
-import { useCompletionMutation } from "@/queries/completions";
+import { COMPLETION_KEYS, useCompletionMutation } from "@/queries/completions";
 import {
   useGetConservationByIdQuery,
   useUpdateConversationMutation,
@@ -32,6 +32,7 @@ import { useStringDownload } from "@/hooks/useDownload";
 import { slugify } from "@/lib/slugify";
 import { TextToParagraphs } from "@/components/common/TextToParagraphs";
 import { useGetInsertablesQuery } from "@/queries/insertables";
+import { useMutationState } from "@tanstack/react-query";
 
 export const Route = createFileRoute("/conversations/$conversationId")({
   component: RouteComponent,
@@ -47,6 +48,18 @@ function RouteComponent() {
   const params = Route.useParams();
   const getInsertablesQuery = useGetInsertablesQuery();
   const completionMutation = useCompletionMutation(params.conversationId);
+
+  const regenerateMutations = useMutationState({
+    filters: {
+      mutationKey: COMPLETION_KEYS.regeneration(params.conversationId),
+      status: "pending",
+    },
+
+    select(mutation) {
+      return mutation.state;
+    },
+  });
+
   const getConversationQuery = useGetConservationByIdQuery(
     params.conversationId,
   );
@@ -54,6 +67,9 @@ function RouteComponent() {
   const getTemplateByIdQuery = useGetTemplateByIdQuery(
     getConversationQuery.data?.templateId ?? null,
   );
+  // const regenerateResponseMutation = useRegenerateResponseMutation(
+  //   params.conversationId,
+  // );
 
   const updateConversationMutation = useUpdateConversationMutation();
   const download = useStringDownload();
@@ -141,6 +157,7 @@ function RouteComponent() {
     <Stack gap="xs">
       <ConversationContext
         value={{
+          conversation: getConversationQuery.data!,
           editingMessageIndexState: [
             isEditingMessageIndex,
             setIsEditingMessageIndex,
@@ -185,7 +202,9 @@ function RouteComponent() {
 
         <UserReplyForm
           ref={targetRef}
-          isLoading={completionMutation.isPending}
+          isLoading={
+            completionMutation.isPending || regenerateMutations.length > 0
+          }
           value={reply}
           onChange={setReply}
           onSubmit={() => {
