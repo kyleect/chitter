@@ -43,13 +43,13 @@ use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use types::{
     DebugInfo,
     achievement::{AchievementDto, AchievementId},
-    conversation::{
-        CompletionRequestBody, Conversation, ConversationTemplate, Persona,
-        RegenerateResponseRequestBody,
-        Role::{self, Assistant, User},
-    },
+    completion::CompletionRequestBody,
+    conversation::{Conversation, RegenerateResponseRequestBody},
+    message::Role,
+    persona::Persona,
     settings::{AppSettings, LLMConnection, LLMParameters},
     socket::ClientMessage,
+    template::{ConversationTemplate, TemplatePersona},
 };
 
 #[cfg(not(feature = "development_mode"))]
@@ -295,13 +295,9 @@ pub async fn init_server(options: InitServerOptions) -> Result<AppServer, Error>
     let template_1 = {
         let mut template = ConversationTemplate::new(Some("Example".to_string()));
 
-        template.assistant_persona = Some(types::conversation::TemplatePersona::Id(
-            assistant_persona.id.clone(),
-        ));
+        template.assistant_persona = Some(TemplatePersona::Id(assistant_persona.id.clone()));
 
-        template.user_persona = Some(types::conversation::TemplatePersona::Id(
-            user_persona.id.clone(),
-        ));
+        template.user_persona = Some(TemplatePersona::Id(user_persona.id.clone()));
 
         template.insertable_system_prompts.push((
             "test".to_string(),
@@ -341,13 +337,9 @@ pub async fn init_server(options: InitServerOptions) -> Result<AppServer, Error>
     let template_2 = {
         let mut template = ConversationTemplate::new(Some("Joke".to_string()));
 
-        template.assistant_persona = Some(types::conversation::TemplatePersona::Id(
-            assistant_persona.id.clone(),
-        ));
+        template.assistant_persona = Some(TemplatePersona::Id(assistant_persona.id.clone()));
 
-        template.user_persona = Some(types::conversation::TemplatePersona::Id(
-            user_persona.id.clone(),
-        ));
+        template.user_persona = Some(TemplatePersona::Id(user_persona.id.clone()));
 
         template.add_assistant_message("Hello! Give me a word and I'll tell you a joke.");
 
@@ -711,8 +703,8 @@ fn build_prompt(conversation: &Conversation, assistant_name: &str, user_name: &s
             format!(
                 "{:?}: {}",
                 match message.role {
-                    User => user_name,
-                    Assistant => assistant_name,
+                    Role::User => user_name,
+                    Role::Assistant => assistant_name,
                     _ => todo!(),
                 },
                 message.message.clone().unwrap_or_default()
@@ -776,8 +768,8 @@ pub async fn chat_completion(
             ));
 
         conversation.messages.push(
-            types::conversation::Message::builder()
-                .role(User)
+            types::message::Message::builder()
+                .role(Role::User)
                 .message(body.prompt.clone())
                 .build(),
         );
@@ -844,8 +836,8 @@ pub async fn chat_completion(
                     .unwrap();
 
                 (*conversation).messages.push(
-                    types::conversation::Message::builder()
-                        .role(Assistant)
+                    types::message::Message::builder()
+                        .role(Role::Assistant)
                         .message(first_choice.message.content.clone().unwrap_or_default())
                         .build(),
                 );
@@ -893,8 +885,8 @@ pub async fn completetion(
             ));
 
         conversation.messages.push(
-            types::conversation::Message::builder()
-                .role(User)
+            types::message::Message::builder()
+                .role(Role::User)
                 .message(body.prompt.clone())
                 .build(),
         );
@@ -947,8 +939,8 @@ pub async fn completetion(
                     .unwrap();
 
                 (*conversation).messages.push(
-                    types::conversation::Message::builder()
-                        .role(Assistant)
+                    types::message::Message::builder()
+                        .role(Role::Assistant)
                         .message(first_choice.text.clone())
                         .build(),
                 );
@@ -1081,7 +1073,7 @@ Messsage To Rewrite:
                 let generated_response = first_choice.message.content.clone().unwrap_or_default();
 
                 (*conversation).messages.push(
-                    types::conversation::Message::builder()
+                    types::message::Message::builder()
                         .role(Role::Assistant)
                         .message(generated_response.clone())
                         .build(),

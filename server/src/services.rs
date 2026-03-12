@@ -191,7 +191,7 @@ pub mod template_service {
     };
     use serde::{Deserialize, Serialize};
     use tokio::sync::Mutex;
-    use types::conversation::ConversationTemplate;
+    use types::template::{ConversationTemplate, TemplatePersona};
 
     use crate::AppState;
 
@@ -241,15 +241,13 @@ pub mod template_service {
         let mut created_template = ConversationTemplate::new(body.title);
 
         if let Some(default_assistant_persona) = default_assistant_persona {
-            created_template.assistant_persona = Some(types::conversation::TemplatePersona::Id(
-                default_assistant_persona.id.clone(),
-            ))
+            created_template.assistant_persona =
+                Some(TemplatePersona::Id(default_assistant_persona.id.clone()))
         }
 
         if let Some(default_user_persona) = default_user_persona {
-            created_template.user_persona = Some(types::conversation::TemplatePersona::Id(
-                default_user_persona.id.clone(),
-            ))
+            created_template.user_persona =
+                Some(TemplatePersona::Id(default_user_persona.id.clone()))
         }
 
         state.conversation_templates.push(created_template.clone());
@@ -325,7 +323,7 @@ pub mod persona_services {
     };
     use hyper::StatusCode;
     use tokio::sync::Mutex;
-    use types::conversation::{NewPersona, Persona};
+    use types::persona::{NewPersona, Persona};
 
     use crate::AppState;
 
@@ -415,7 +413,7 @@ pub mod conversation_service {
     };
     use serde::{Deserialize, Serialize};
     use tokio::sync::Mutex;
-    use types::conversation::{Conversation, TemplatePersona};
+    use types::{conversation::Conversation, template::TemplatePersona};
 
     use crate::AppState;
 
@@ -447,7 +445,7 @@ pub mod conversation_service {
         let assistant_persona_from_id = template.assistant_persona.as_ref().and_then(
             |template_persona| match template_persona {
                 TemplatePersona::Id(id) => state.personass.iter().find(|persona| persona.id == *id),
-                TemplatePersona::Embedded(persona) => Some(persona),
+                TemplatePersona::Embedded(persona) => Some(&persona),
             },
         );
 
@@ -459,7 +457,7 @@ pub mod conversation_service {
                     TemplatePersona::Id(id) => {
                         state.personass.iter().find(|persona| persona.id == *id)
                     }
-                    TemplatePersona::Embedded(persona) => Some(persona),
+                    TemplatePersona::Embedded(persona) => Some(&persona),
                 });
 
         let conversation: Conversation =
@@ -495,7 +493,7 @@ pub mod conversation_service {
         let assistant_persona_from_id = template.assistant_persona.as_ref().and_then(
             |template_persona| match template_persona {
                 TemplatePersona::Id(id) => state.personass.iter().find(|persona| persona.id == *id),
-                TemplatePersona::Embedded(persona) => Some(persona),
+                TemplatePersona::Embedded(persona) => Some(&persona),
             },
         );
 
@@ -507,7 +505,7 @@ pub mod conversation_service {
                     TemplatePersona::Id(id) => {
                         state.personass.iter().find(|persona| persona.id == *id)
                     }
-                    TemplatePersona::Embedded(persona) => Some(persona),
+                    TemplatePersona::Embedded(persona) => Some(&persona),
                 });
 
         if let Some(at) = params.at
