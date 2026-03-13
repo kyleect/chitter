@@ -84,6 +84,7 @@ export const MessageInList: FC<MessageInListProps> = ({
               <ActionIcon
                 variant="subtle"
                 color="gray"
+                disabled={context.isGenerating}
                 mb={0}
                 onClick={onClick}
               >
@@ -92,6 +93,7 @@ export const MessageInList: FC<MessageInListProps> = ({
               <ActionIcon
                 variant="subtle"
                 color="gray"
+                disabled={context.isGenerating}
                 mb={0}
                 onClick={() => {
                   modals.openConfirmModal({
@@ -132,6 +134,7 @@ export const MessageInList: FC<MessageInListProps> = ({
             variant="subtle"
             color="gray"
             size="xs"
+            disabled={context.isGenerating}
             onClick={() => {
               regenerateResponseMutation.mutate(index);
             }}

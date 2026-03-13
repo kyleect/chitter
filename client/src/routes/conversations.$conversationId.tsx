@@ -153,6 +153,9 @@ function RouteComponent() {
       updateConversationMutation.mutate(updatedConversation);
   };
 
+  const isGenerating =
+    completionMutation.isPending || regenerateMutations.length > 0;
+
   return (
     <Stack gap="xs">
       <ConversationContext
@@ -166,6 +169,7 @@ function RouteComponent() {
             systemMessagesAreVisible,
             setSystemMessagesAreVisible,
           ],
+          isGenerating,
         }}
       >
         <MessageList
@@ -180,7 +184,7 @@ function RouteComponent() {
           <Switch
             label="Show System Messages"
             checked={systemMessagesAreVisible}
-            disabled={completionMutation.isPending}
+            disabled={isGenerating}
             color="violet"
             onChange={(event) =>
               setSystemMessagesAreVisible(event.currentTarget.checked)
@@ -202,9 +206,7 @@ function RouteComponent() {
 
         <UserReplyForm
           ref={targetRef}
-          isLoading={
-            completionMutation.isPending || regenerateMutations.length > 0
-          }
+          isLoading={isGenerating}
           value={reply}
           onChange={setReply}
           onSubmit={() => {
@@ -238,9 +240,7 @@ function RouteComponent() {
                 mr="md"
                 size="compact-xs"
                 color="violet"
-                disabled={
-                  !!isEditingMessageIndex || completionMutation.isPending
-                }
+                disabled={!!isEditingMessageIndex || isGenerating}
                 onClick={() => {
                   handleInsertInsertable("");
                 }}
@@ -260,10 +260,7 @@ function RouteComponent() {
                         size="compact-xs"
                         color="violet"
                         variant="subtle"
-                        disabled={
-                          !!isEditingMessageIndex ||
-                          completionMutation.isPending
-                        }
+                        disabled={!!isEditingMessageIndex || isGenerating}
                         onClick={() => {
                           setSystemMessagesAreVisible(true);
                           handleInsertInsertable(value);
@@ -297,9 +294,7 @@ function RouteComponent() {
                       size="compact-xs"
                       color="violet"
                       variant="subtle"
-                      disabled={
-                        !!isEditingMessageIndex || completionMutation.isPending
-                      }
+                      disabled={!!isEditingMessageIndex || isGenerating}
                       onClick={() => {
                         if (value) handleInsertInsertable(value);
                       }}

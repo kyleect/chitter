@@ -6,6 +6,7 @@ type ContextType = {
   conversation: Conversation;
   editingMessageIndexState: StatePair<number | null>;
   systemMessagesAreVisibleState: StatePair<boolean>;
+  isGenerating: boolean;
 };
 
 export const ConversationContext = createContext<ContextType | null>(null);
