@@ -257,6 +257,7 @@ function RouteComponent() {
                   onChange={(e) => {
                     setDraftConversationTitle(e.target.value);
                   }}
+                  disabled={isGenerating}
                 />
               ) : (
                 <Text mb={0} size="sm">
@@ -269,6 +270,7 @@ function RouteComponent() {
                   size="sm"
                   variant="subtle"
                   color="gray"
+                  disabled={isGenerating}
                   onClick={() => {
                     setIsEditingTitle(false);
 
@@ -292,6 +294,7 @@ function RouteComponent() {
                   size="sm"
                   variant="subtle"
                   color="gray"
+                  disabled={isGenerating}
                   onClick={() => {
                     setIsEditingTitle(true);
                   }}
