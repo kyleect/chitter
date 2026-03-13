@@ -224,10 +224,21 @@ function RouteComponent() {
           value={reply}
           onChange={setReply}
           onSubmit={() => {
+            const backupReply = `${reply}`;
+
+            setReply("");
+
             completionMutation.mutate(reply, {
               onSuccess() {
-                setReply("");
                 scrollIntoView();
+              },
+              onError() {
+                setReply(backupReply);
+
+                notifications.show({
+                  color: "red",
+                  message: `Error generating completion`,
+                });
               },
             });
           }}
