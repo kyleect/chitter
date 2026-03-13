@@ -147,10 +147,12 @@ export const useUpdateConversationMutation = () => {
 
       return data;
     },
-    onSuccess(data) {
-      queryClient.invalidateQueries({
-        queryKey: CONSERVATION_KEYS.detail(data.id),
-      });
+    onSettled(data) {
+      if (data) {
+        queryClient.invalidateQueries({
+          queryKey: CONSERVATION_KEYS.detail(data.id),
+        });
+      }
     },
   });
 };
