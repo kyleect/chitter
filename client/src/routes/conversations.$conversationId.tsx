@@ -1,4 +1,3 @@
-import { LinkToTemplate } from "@/components/common/LinkToTemplate";
 import { ConversationContext } from "@/components/routes/conversations.$conversationId/ConversationContext";
 import { MessageList } from "@/components/routes/conversations.$conversationId/MessageList";
 import { UserReplyForm } from "@/components/routes/conversations.$conversationId/UserReplyForm";
@@ -19,14 +18,20 @@ import {
   Stack,
   Switch,
   Text,
+  TextInput,
   ThemeIcon,
 } from "@mantine/core";
 import { useScrollIntoView } from "@mantine/hooks";
 import { notifications } from "@mantine/notifications";
-import { IconDownload, IconPlus } from "@tabler/icons-react";
+import {
+  IconDeviceFloppy,
+  IconDownload,
+  IconEdit,
+  IconPlus,
+} from "@tabler/icons-react";
 import { createFileRoute } from "@tanstack/react-router";
 import { produce } from "immer";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Message } from "server-types";
 import { useStringDownload } from "@/hooks/useDownload";
 import { slugify } from "@/lib/slugify";
@@ -48,6 +53,9 @@ function RouteComponent() {
   const params = Route.useParams();
   const getInsertablesQuery = useGetInsertablesQuery();
   const completionMutation = useCompletionMutation(params.conversationId);
+  const [draftConversationTitle, setDraftConversationTitle] =
+    useState<string>("");
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
 
   const regenerateMutations = useMutationState({
     filters: {
@@ -63,6 +71,12 @@ function RouteComponent() {
   const getConversationQuery = useGetConservationByIdQuery(
     params.conversationId,
   );
+
+  useEffect(() => {
+    if (!getConversationQuery.data) return;
+
+    setDraftConversationTitle(getConversationQuery.data.title ?? "");
+  }, [getConversationQuery.data]);
 
   const getTemplateByIdQuery = useGetTemplateByIdQuery(
     getConversationQuery.data?.templateId ?? null,
@@ -219,15 +233,64 @@ function RouteComponent() {
           }}
         />
 
-        <Group justify="space-between">
-          {conversation && (
-            <Group m={0}>
-              <Text mb={0}>Template:</Text>
+        {conversation && (
+          <Group justify="space-between">
+            <Group gap="xs">
+              <Text mb={0} size="sm">
+                Conversation:
+              </Text>
 
-              <LinkToTemplate templateId={conversation.templateId} />
+              {isEditingTitle ? (
+                <TextInput
+                  value={draftConversationTitle}
+                  onChange={(e) => {
+                    setDraftConversationTitle(e.target.value);
+                  }}
+                />
+              ) : (
+                <Text mb={0} size="sm">
+                  {draftConversationTitle}
+                </Text>
+              )}
+
+              {isEditingTitle ? (
+                <ActionIcon
+                  size="sm"
+                  variant="subtle"
+                  color="gray"
+                  onClick={() => {
+                    setIsEditingTitle(false);
+
+                    const updateConversation = produce((draft) => {
+                      if (!draft) return draft;
+
+                      draft.title = draftConversationTitle;
+
+                      return draft;
+                    }, getConversationQuery.data)();
+
+                    if (updateConversation) {
+                      updateConversationMutation.mutate(updateConversation);
+                    }
+                  }}
+                >
+                  <IconDeviceFloppy />
+                </ActionIcon>
+              ) : (
+                <ActionIcon
+                  size="sm"
+                  variant="subtle"
+                  color="gray"
+                  onClick={() => {
+                    setIsEditingTitle(true);
+                  }}
+                >
+                  <IconEdit />
+                </ActionIcon>
+              )}
             </Group>
-          )}
-        </Group>
+          </Group>
+        )}
 
         <Divider label="Insertables" />
 
