@@ -207,6 +207,7 @@ function RouteComponent() {
           <ActionIcon
             variant="subtle"
             color="gray"
+            disabled={isGenerating || conversation?.messages.length === 0}
             onClick={() => {
               download(
                 JSON.stringify(getConversationQuery.data),
