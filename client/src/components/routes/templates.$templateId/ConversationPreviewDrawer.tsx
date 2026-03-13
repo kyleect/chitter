@@ -93,7 +93,6 @@ export const ConversationPreviewDrawer: FC<Props> = ({
                     {message.role.kind}
                   </Text>
                 }
-                isEditing={false}
               >
                 <Text>{message.message}</Text>
               </TemplateBlock>
