@@ -127,7 +127,13 @@ export const useRegenerateResponseMutation = (conversationId: string) => {
         queryKey: conversationQueryKey,
       }),
     mutationKey: COMPLETION_KEYS.regeneration(conversationId),
-    mutationFn: async (messageIndex: number) => {
+    mutationFn: async ({
+      messageIndex,
+      guidancePrompt,
+    }: {
+      messageIndex: number;
+      guidancePrompt?: string;
+    }) => {
       const response = await fetch(
         `/api/chat_completions/regenerate_response`,
         {
@@ -135,6 +141,7 @@ export const useRegenerateResponseMutation = (conversationId: string) => {
           body: JSON.stringify({
             conversation_id: conversationId,
             message_index: messageIndex,
+            guidance_prompt: guidancePrompt ?? null,
           } as RegenerateResponseRequestBody),
           headers: {
             "content-type": "application/json",

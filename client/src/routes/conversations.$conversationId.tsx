@@ -139,17 +139,28 @@ function RouteComponent() {
     messageIndex: number,
     updatedMessage: Message,
   ) => {
-    notifications.show({
-      message: "Message updated!",
-    });
-
-    const updateConversation = produce((draft) => {
+    const updateConversation = produce(getConversationQuery.data, (draft) => {
       if (draft === null || typeof draft === "undefined") return;
 
       draft.messages[messageIndex] = updatedMessage;
-    }, getConversationQuery.data)();
 
-    updateConversation && updateConversationMutation.mutate(updateConversation);
+      return draft;
+    });
+
+    updateConversation &&
+      updateConversationMutation.mutate(updateConversation, {
+        onError() {
+          notifications.show({
+            message: "Unable to update message.",
+            color: "red",
+          });
+        },
+        onSuccess() {
+          notifications.show({
+            message: "Message updated!",
+          });
+        },
+      });
   };
 
   const handleDeletedMessage = (messageIndex: number) => {

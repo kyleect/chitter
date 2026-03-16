@@ -997,6 +997,8 @@ pub async fn regenerate_response(
 ) -> CompletionResponse {
     let state = state.clone();
 
+    let last_message: Option<types::conversation::Message>;
+
     {
         let mut state = state.lock().await;
         let conversation = state
@@ -1006,7 +1008,7 @@ pub async fn regenerate_response(
             .unwrap();
 
         // Remove the last message from conversation.messages
-        (*conversation).messages.pop();
+        last_message = (*conversation).messages.pop();
     };
 
     let mut state = state.lock().await;
@@ -1018,13 +1020,40 @@ pub async fn regenerate_response(
         .unwrap();
 
     if let Some(client) = &state.llm {
+        let mut messages = conversation.messages.clone();
+
+        if let Some(guidance_prompt) = body.guidance_prompt {
+            messages.push(
+                types::conversation::Message::builder()
+                    .role(Role::System)
+                    .message(format!(
+                        "
+Use this response
+Rewrite this message, using the guidance prompt below, and use this as your response.
+
+Guidance Prompt:
+
+{guidance_prompt}
+
+Messsage To Rewrite:
+
+{}
+",
+                        last_message
+                            .expect("there should be a last message")
+                            .message
+                            .unwrap_or_default()
+                    ))
+                    .build(),
+            );
+        }
+
         let request = CreateChatCompletionRequestArgs::default()
             .temperature(state.settings.params.temperature.clone().unwrap_or(0.8f32))
             .max_tokens(state.settings.params.max_tokens.clone().unwrap_or(500))
             .top_p(state.settings.params.top_p.clone().unwrap_or(0.95))
             .messages(
-                conversation
-                    .messages
+                messages
                     .iter()
                     .map(|message| {
                         let m: ChatCompletionRequestMessage = message.clone().try_into().unwrap();
@@ -1035,8 +1064,6 @@ pub async fn regenerate_response(
             )
             .build()
             .expect("should build chat completion request");
-
-        dbg!(&request);
 
         let response = client.chat().create(request).await;
 

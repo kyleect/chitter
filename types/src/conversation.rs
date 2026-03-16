@@ -458,6 +458,7 @@ impl Conversation {
 pub struct RegenerateResponseRequestBody {
     pub conversation_id: String,
     pub message_index: usize,
+    pub guidance_prompt: Option<String>,
 }
 
 #[cfg(test)]

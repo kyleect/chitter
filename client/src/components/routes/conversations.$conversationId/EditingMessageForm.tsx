@@ -35,7 +35,9 @@ export const EditingMessageForm: FC<Props> = ({
               draft.message = draftMessage;
             });
 
-            return onChange?.(updatedMessage);
+            debugger;
+
+            onChange?.(updatedMessage);
           }}
         >
           Save

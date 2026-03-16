@@ -26,17 +26,23 @@ export const MessageList: FC<Props> = ({
   const [systemMessagesAreVisible] =
     conversationContext?.systemMessagesAreVisibleState;
 
-  return messages
-    .filter((message) => {
-      let isSystemMessage = message.role.kind === "system";
+  const systemMessageIndexes = messages.map((value, i) => {
+    if (value.role.kind === "system") return i;
+  });
 
-      return systemMessagesAreVisible ? true : !isSystemMessage;
-    })
-    .map((message, messageIndex) => (
+  return messages.map((message, messageIndex) => {
+    const isSystemMessage = systemMessageIndexes.includes(messageIndex);
+
+    if (isSystemMessage && !systemMessagesAreVisible) {
+      return null;
+    }
+
+    return (
       <MessageInList
         value={message}
         index={messageIndex}
         onChange={(updatedMessage) => {
+          debugger;
           onMessageChange?.(messageIndex, updatedMessage);
           setEditingMessageIndex(null);
         }}
@@ -54,5 +60,6 @@ export const MessageList: FC<Props> = ({
           setEditingMessageIndex(null);
         }}
       />
-    ));
+    );
+  });
 };

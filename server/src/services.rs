@@ -413,7 +413,6 @@ pub mod conversation_service {
         Json,
         extract::{Path, Query, State},
     };
-    use hyper::StatusCode;
     use serde::{Deserialize, Serialize};
     use tokio::sync::Mutex;
     use types::conversation::{Conversation, TemplatePersona};
@@ -546,15 +545,21 @@ pub mod conversation_service {
         let state = state.clone();
         let mut state = state.lock().await;
 
-        let conversation = state
+        let template = state
             .conservations
             .iter_mut()
-            .find(|t| t.id == conversation_id)
-            .ok_or(StatusCode::NOT_FOUND)
-            .unwrap();
+            .find(|t| t.id == conversation_id);
 
-        *conversation = body;
+        match template {
+            Some(template) => {
+                *template = body;
 
-        Json(conversation.clone())
+                Json(template.clone())
+            }
+            None => {
+                state.conservations.push(body.clone());
+                Json(body)
+            }
+        }
     }
 }

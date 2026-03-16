@@ -5,7 +5,7 @@ import { slugify } from "@/lib/slugify";
 import {
   useDeleteConversationMutation,
   useGetConservationsQuery,
-  useStartConversationMutation,
+  useUpdateConversationMutation,
 } from "@/queries/conversations";
 import { useGetPersonasQuery } from "@/queries/personas";
 import { useGetTemplatesQuery } from "@/queries/templates";
@@ -41,12 +41,12 @@ function RouteComponent() {
   const getPersonasQuery = useGetPersonasQuery();
   const getTemplatesQuery = useGetTemplatesQuery();
   const deleteConversationMutation = useDeleteConversationMutation();
+  const updateConversationMutation = useUpdateConversationMutation();
   const download = useStringDownload();
   const [file, setFile] = useState<File | null>(null);
   const [uploadedConversation, setUploadedConversation] =
     useState<Conversation | null>();
   const nav = Route.useNavigate();
-  const startConversationMutation = useStartConversationMutation();
 
   useEffect(() => {
     if (!file) return;
@@ -192,25 +192,22 @@ function RouteComponent() {
                 <Button.Group>
                   <Button
                     onClick={() => {
-                      startConversationMutation.mutate(
-                        uploadedConversation.templateId,
-                        {
-                          onError() {
-                            notifications.show({
-                              color: "red",
-                              message: "Error saving uploaded conversation",
-                            });
-                          },
-                          onSuccess(data) {
-                            nav({
-                              to: "/conversations/$conversationId",
-                              params: {
-                                conversationId: data.id,
-                              },
-                            });
-                          },
+                      updateConversationMutation.mutate(uploadedConversation, {
+                        onError() {
+                          notifications.show({
+                            color: "red",
+                            message: "Error saving uploaded conversation",
+                          });
                         },
-                      );
+                        onSuccess(data) {
+                          nav({
+                            to: "/conversations/$conversationId",
+                            params: {
+                              conversationId: data.id,
+                            },
+                          });
+                        },
+                      });
                     }}
                   >
                     Save
