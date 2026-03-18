@@ -1,110 +1,18 @@
-use std::fmt::Display;
-
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
 use crate::{
     message::{Message, Role},
-    persona::Persona,
+    templates::{
+        blocks::TemplateBlock,
+        personas::TemplatePersona,
+        variables::{VariableKey, VariableValue},
+    },
 };
 
-#[derive(TS, Clone, Debug, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-#[ts(export)]
-pub enum ConversationItem {
-    Message(Message),
-    SetVar(VariableKey, VariableValue),
-    OOC(String),
-    InnerThoughts(String),
-    IfEq(VariableKey, VariableValue),
-    EndIf,
-}
-
-impl ConversationItem {
-    pub fn message(role: Role, message: Option<String>) -> Self {
-        ConversationItem::Message(Message::builder().role(role).maybe_message(message).build())
-    }
-
-    pub fn set_var(key: &str, value: VariableValue) -> Self {
-        ConversationItem::SetVar(VariableKey(key.to_string()), value)
-    }
-
-    pub fn ooc(prompt: &str) -> Self {
-        ConversationItem::OOC(prompt.to_string())
-    }
-
-    pub fn inner_thoughts(thoughts: &str) -> Self {
-        ConversationItem::InnerThoughts(thoughts.to_string())
-    }
-}
-
-#[derive(TS, Clone, Debug, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-#[ts(export)]
-pub enum Conditional {
-    VarEq(String, String),
-}
-
-#[derive(TS, Clone, Debug, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-#[ts(export)]
-pub enum VariableValue {
-    String(String),
-    Boolean(bool),
-    Number(f64),
-}
-
-impl Display for VariableValue {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            VariableValue::String(value) => write!(f, "{}", value),
-            VariableValue::Boolean(value) => write!(f, "{}", value),
-            VariableValue::Number(value) => write!(f, "{}", value),
-        }
-    }
-}
-
-impl From<String> for VariableValue {
-    fn from(value: String) -> Self {
-        Self::String(value)
-    }
-}
-
-impl From<bool> for VariableValue {
-    fn from(value: bool) -> Self {
-        Self::Boolean(value)
-    }
-}
-
-impl From<f64> for VariableValue {
-    fn from(value: f64) -> Self {
-        Self::Number(value)
-    }
-}
-
-#[derive(TS, Clone, Debug, Eq, Hash, PartialEq, Serialize, Deserialize)]
-#[ts(export)]
-pub struct VariableKey(pub String);
-
-#[derive(TS, Clone, Debug, Eq, Hash, PartialEq, Serialize, Deserialize)]
-#[serde(tag = "type", content = "data")]
-#[ts(export)]
-pub enum TemplatePersona {
-    Id(String),
-    Embedded(Persona),
-}
-
-impl From<&str> for TemplatePersona {
-    fn from(value: &str) -> Self {
-        Self::Id(value.to_string())
-    }
-}
-
-impl From<Persona> for TemplatePersona {
-    fn from(value: Persona) -> Self {
-        Self::Embedded(value.clone())
-    }
-}
+pub mod blocks;
+pub mod personas;
+pub mod variables;
 
 #[derive(TS, Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -114,7 +22,7 @@ pub struct ConversationTemplate {
     pub title: Option<String>,
     pub assistant_persona: Option<TemplatePersona>,
     pub user_persona: Option<TemplatePersona>,
-    pub items: Vec<ConversationItem>,
+    pub blocks: Vec<TemplateBlock>,
     pub insertable_system_prompts: Vec<(String, String)>,
 }
 
@@ -125,35 +33,35 @@ impl ConversationTemplate {
             title,
             assistant_persona: None,
             user_persona: None,
-            items: vec![],
+            blocks: vec![],
             insertable_system_prompts: Default::default(),
         }
     }
 
     pub fn if_eq(self: &mut Self, var_name: &VariableKey, expected: &VariableValue) {
-        self.items
-            .push(ConversationItem::IfEq(var_name.clone(), expected.clone()));
+        self.blocks
+            .push(TemplateBlock::IfEq(var_name.clone(), expected.clone()));
     }
 
     pub fn end_if(self: &mut Self) {
-        self.items.push(ConversationItem::EndIf);
+        self.blocks.push(TemplateBlock::EndIf);
     }
 
     pub fn set_var(self: &mut Self, key: &str, value: VariableValue) -> VariableKey {
         let var_key = VariableKey(key.to_string());
 
-        self.items
-            .push(ConversationItem::SetVar(var_key.clone(), value));
+        self.blocks
+            .push(TemplateBlock::SetVar(var_key.clone(), value));
 
         var_key
     }
 
     pub fn get_var(self: &Self, key: &str) -> Option<&VariableValue> {
         let var_found = self
-            .items
+            .blocks
             .iter()
             .filter(|item| {
-                if let ConversationItem::SetVar(set_key, _) = item
+                if let TemplateBlock::SetVar(set_key, _) = item
                     && set_key.0 == key
                 {
                     return true;
@@ -163,7 +71,7 @@ impl ConversationTemplate {
             })
             .last()
             .and_then(|item| match item {
-                ConversationItem::SetVar(_, variable_value) => Some(variable_value),
+                TemplateBlock::SetVar(_, variable_value) => Some(variable_value),
                 _ => None,
             });
 
@@ -171,33 +79,33 @@ impl ConversationTemplate {
     }
 
     pub fn add_message(self: &mut Self, message: Message) {
-        self.items.push(ConversationItem::Message(message));
+        self.blocks.push(TemplateBlock::Message(message));
     }
 
     pub fn add_system_message(self: &mut Self, message: &str) {
-        self.items.push(ConversationItem::Message(Message {
+        self.blocks.push(TemplateBlock::Message(Message {
             role: Role::System,
             message: Some(message.to_string()),
         }));
     }
 
     pub fn add_user_message(self: &mut Self, message: &str) {
-        self.items.push(ConversationItem::Message(Message {
+        self.blocks.push(TemplateBlock::Message(Message {
             role: Role::User,
             message: Some(message.to_string()),
         }));
     }
 
     pub fn ooc_message(self: &mut Self, message: &str) {
-        self.items.push(ConversationItem::ooc(message));
+        self.blocks.push(TemplateBlock::ooc(message));
     }
 
     pub fn inner_thoughts_message(self: &mut Self, message: &str) {
-        self.items.push(ConversationItem::inner_thoughts(message));
+        self.blocks.push(TemplateBlock::inner_thoughts(message));
     }
 
     pub fn add_assistant_message(self: &mut Self, message: &str) {
-        self.items.push(ConversationItem::Message(Message {
+        self.blocks.push(TemplateBlock::Message(Message {
             role: Role::Assistant,
             message: Some(message.to_string()),
         }));
@@ -207,7 +115,7 @@ impl ConversationTemplate {
 #[cfg(test)]
 mod conversation_template_tests {
 
-    use crate::message::Role;
+    use crate::{message::Role, persona::Persona, templates::variables::VariableValue};
 
     use super::*;
     use pretty_assertions::assert_eq;
@@ -248,25 +156,25 @@ mod conversation_template_tests {
                 title: None,
                 assistant_persona: Some(TemplatePersona::Id(assistant.id.clone())),
                 user_persona: Some(TemplatePersona::Id(user.id.clone())),
-                items: vec![
-                    ConversationItem::set_var("summaryAsList", VariableValue::Boolean(true)),
-                    ConversationItem::message(
+                blocks: vec![
+                    TemplateBlock::set_var("summaryAsList", VariableValue::Boolean(true)),
+                    TemplateBlock::message(
                         Role::System,
                         Some("You are a helpful AI assistant.".to_string())
                     ),
-                    ConversationItem::message(
+                    TemplateBlock::message(
                         Role::Assistant,
                         Some("Hello, I'm here to help! What can I do for you today?".to_string())
                     ),
-                    ConversationItem::inner_thoughts("I wonder what the task is."),
-                    ConversationItem::message(
+                    TemplateBlock::inner_thoughts("I wonder what the task is."),
+                    TemplateBlock::message(
                         Role::User,
                         Some("I need you to summarize some text for me, highlighting the most important details.".to_string())
                     ),
-                    ConversationItem::ooc("Only respond with the summary of the text."),
-                    ConversationItem::IfEq(summarize_as_list_var.clone(), true.into()),
-                    ConversationItem::ooc("Format the summary as a bulleted list"),
-                    ConversationItem::EndIf
+                    TemplateBlock::ooc("Only respond with the summary of the text."),
+                    TemplateBlock::IfEq(summarize_as_list_var.clone(), true.into()),
+                    TemplateBlock::ooc("Format the summary as a bulleted list"),
+                    TemplateBlock::EndIf
                 ],
                 insertable_system_prompts: Default::default()
             },

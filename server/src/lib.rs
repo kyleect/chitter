@@ -43,13 +43,13 @@ use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use types::{
     DebugInfo,
     achievement::{AchievementDto, AchievementId},
-    completion::CompletionRequestBody,
-    conversation::{Conversation, RegenerateResponseRequestBody},
+    completion::{CompletionRequestBody, RegenerateResponseRequestBody},
+    conversation::Conversation,
     message::Role,
     persona::Persona,
     settings::{AppSettings, LLMConnection, LLMParameters},
     socket::ClientMessage,
-    template::{ConversationTemplate, TemplatePersona},
+    templates::{ConversationTemplate, personas::TemplatePersona},
 };
 
 #[cfg(not(feature = "development_mode"))]
@@ -989,7 +989,7 @@ pub async fn regenerate_response(
 ) -> CompletionResponse {
     let state = state.clone();
 
-    let last_message: Option<types::conversation::Message>;
+    let last_message: Option<types::message::Message>;
 
     {
         let mut state = state.lock().await;
@@ -1016,7 +1016,7 @@ pub async fn regenerate_response(
 
         if let Some(guidance_prompt) = body.guidance_prompt {
             messages.push(
-                types::conversation::Message::builder()
+                types::message::Message::builder()
                     .role(Role::System)
                     .message(format!(
                         "

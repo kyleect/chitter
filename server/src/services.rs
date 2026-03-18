@@ -191,7 +191,7 @@ pub mod template_service {
     };
     use serde::{Deserialize, Serialize};
     use tokio::sync::Mutex;
-    use types::template::{ConversationTemplate, TemplatePersona};
+    use types::templates::{ConversationTemplate, personas::TemplatePersona};
 
     use crate::AppState;
 
@@ -413,7 +413,7 @@ pub mod conversation_service {
     };
     use serde::{Deserialize, Serialize};
     use tokio::sync::Mutex;
-    use types::{conversation::Conversation, template::TemplatePersona};
+    use types::{conversation::Conversation, templates::personas::TemplatePersona};
 
     use crate::AppState;
 
@@ -511,7 +511,7 @@ pub mod conversation_service {
         if let Some(at) = params.at
             && at > 0
         {
-            template.items = template.items[..at].to_vec()
+            template.blocks = template.blocks[..at].to_vec()
         }
 
         let conversation: Conversation =

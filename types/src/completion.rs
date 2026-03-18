@@ -18,6 +18,14 @@ pub struct CompletionRequestBody {
 
 #[derive(TS, Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 #[ts(export)]
+pub struct RegenerateResponseRequestBody {
+    pub conversation_id: String,
+    pub message_index: usize,
+    pub guidance_prompt: Option<String>,
+}
+
+#[derive(TS, Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[ts(export)]
 pub struct CompletionSettings {
     /// The maximum number of [tokens](https://platform.openai.com/tokenizer) that can be generated in the completion.
     ///

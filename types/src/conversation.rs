@@ -6,8 +6,11 @@ use ts_rs::TS;
 use crate::{
     message::Message,
     persona::Persona,
-    template::{
-        ConversationItem, ConversationTemplate, TemplatePersona, VariableKey, VariableValue,
+    templates::{
+        ConversationTemplate,
+        blocks::TemplateBlock,
+        personas::TemplatePersona,
+        variables::{VariableKey, VariableValue},
     },
 };
 
@@ -36,7 +39,7 @@ impl Conversation {
         let mut in_if_eq = false;
         let mut if_eq_result: Option<bool> = None;
 
-        for item in template.items.iter() {
+        for item in template.blocks.iter() {
             if let Some(result) = if_eq_result
                 && in_if_eq
             {
@@ -46,7 +49,7 @@ impl Conversation {
             }
 
             match item {
-                ConversationItem::Message(next_message) => {
+                TemplateBlock::Message(next_message) => {
                     if let Some(existing_draft_message) = &mut messages.last_mut() {
                         if existing_draft_message.role == next_message.role {
                             if let Some(message_string) = &mut existing_draft_message.message {
@@ -61,14 +64,14 @@ impl Conversation {
                         messages.push(next_message.clone());
                     }
                 }
-                ConversationItem::OOC(prompt) => {
+                TemplateBlock::OOC(prompt) => {
                     if let Some(draft_message) = &mut messages.last_mut() {
                         if let Some(draft_message_text) = &mut draft_message.message {
                             draft_message_text.push_str(&format!("\n((OOC: {prompt}))\n\n"));
                         }
                     }
                 }
-                ConversationItem::InnerThoughts(prompt) => {
+                TemplateBlock::InnerThoughts(prompt) => {
                     if let Some(draft_message) = messages.last_mut() {
                         if let Some(draft_message_text) = &mut draft_message.message {
                             draft_message_text
@@ -76,10 +79,10 @@ impl Conversation {
                         }
                     }
                 }
-                ConversationItem::SetVar(key, value) => {
+                TemplateBlock::SetVar(key, value) => {
                     variables.insert(key.clone(), value.clone());
                 }
-                ConversationItem::IfEq(key, expected_value) => {
+                TemplateBlock::IfEq(key, expected_value) => {
                     in_if_eq = true;
 
                     let maybe_value = variables.get(key);
@@ -91,7 +94,7 @@ impl Conversation {
 
                     if_eq_result = Some(result)
                 }
-                ConversationItem::EndIf => {
+                TemplateBlock::EndIf => {
                     in_if_eq = false;
                 }
             }
@@ -138,14 +141,6 @@ impl Conversation {
             insertable_system_prompts: template.insertable_system_prompts.clone(),
         }
     }
-}
-
-#[derive(TS, Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-#[ts(export)]
-pub struct RegenerateResponseRequestBody {
-    pub conversation_id: String,
-    pub message_index: usize,
-    pub guidance_prompt: Option<String>,
 }
 
 #[cfg(test)]

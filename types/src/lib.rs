@@ -9,7 +9,7 @@ pub mod message;
 pub mod persona;
 pub mod settings;
 pub mod socket;
-pub mod template;
+pub mod templates;
 pub mod utils;
 
 #[derive(TS, Clone, Debug, PartialEq, Serialize, Deserialize)]
