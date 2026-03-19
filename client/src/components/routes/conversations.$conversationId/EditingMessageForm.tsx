@@ -14,7 +14,7 @@ export const EditingMessageForm: FC<Props> = ({
   onChange,
   onCancel,
 }) => {
-  const [draftMessage, setDraftMessage] = useState<string>(value.message ?? "");
+  const [draftMessage, setDraftMessage] = useState<string>(value.content ?? "");
 
   return (
     <Stack>
@@ -31,13 +31,12 @@ export const EditingMessageForm: FC<Props> = ({
           size="compact-sm"
           onClick={(e) => {
             e.stopPropagation();
-            const updatedMessage = produce(value, (draft) => {
-              draft.message = draftMessage;
-            });
 
-            debugger;
-
-            onChange?.(updatedMessage);
+            onChange?.(
+              produce(value, (draft) => {
+                draft.content = draftMessage;
+              }),
+            );
           }}
         >
           Save

@@ -18,5 +18,5 @@ pub enum Role {
 #[ts(export)]
 pub struct Message {
     pub role: Role,
-    pub message: Option<String>,
+    pub content: String,
 }

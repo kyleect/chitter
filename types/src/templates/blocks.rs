@@ -19,8 +19,13 @@ pub enum TemplateBlock {
 }
 
 impl TemplateBlock {
-    pub fn message(role: Role, message: Option<String>) -> Self {
-        TemplateBlock::Message(Message::builder().role(role).maybe_message(message).build())
+    pub fn message(role: Role, message: &str) -> Self {
+        TemplateBlock::Message(
+            Message::builder()
+                .role(role)
+                .content(message.to_string())
+                .build(),
+        )
     }
 
     pub fn set_var(key: &str, value: VariableValue) -> Self {

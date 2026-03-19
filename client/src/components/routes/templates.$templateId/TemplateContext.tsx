@@ -12,7 +12,7 @@ type ContextType = {
   draftAssistantPersonaState: StatePair<TemplatePersona | null>;
   draftUserPersonaState: StatePair<TemplatePersona | null>;
 
-  draftTemplateItemsState: StatePair<ConversationTemplate["items"]>;
+  draftTemplateBlocksState: StatePair<ConversationTemplate["blocks"]>;
 
   previewConversationAtIndexState: StatePair<number | undefined>;
   previewConversationModal: {

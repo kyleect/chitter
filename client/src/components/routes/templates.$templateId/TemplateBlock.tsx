@@ -347,7 +347,7 @@ export const MessageTemplateBlock: FC<MessageTemplateBlockProps> = ({
   }
 
   const isSystemMessage = item.message.role.kind === "system";
-  const isMessageEmpty = (item.message.message?.length ?? 0) === 0;
+  const isMessageEmpty = item.message.content.length === 0;
 
   return (
     <TemplateBlock
@@ -371,11 +371,7 @@ export const MessageTemplateBlock: FC<MessageTemplateBlockProps> = ({
               patchItem(
                 index,
                 (draft, patch) => {
-                  if (
-                    isMessageItem(draft as any) &&
-                    isMessageItem(patch as any)
-                  ) {
-                    // @ts-expect-error TODO
+                  if (isMessageItem(draft) && isMessageItem(patch)) {
                     draft.message.role.kind = patch.message.role.kind;
                   }
                 },
@@ -408,11 +404,11 @@ export const MessageTemplateBlock: FC<MessageTemplateBlockProps> = ({
           size="md"
           minRows={1}
           autosize
-          value={item.message.message ?? ""}
+          value={item.message.content ?? ""}
           onChange={(e) => patchMessageItem(index, e.target.value)}
         />
       ) : (
-        <TextToParagraphs text={item.message.message ?? undefined} />
+        <TextToParagraphs text={item.message.content ?? undefined} />
       )}
       {isSystemMessage && isMessageEmpty && (
         <Group>

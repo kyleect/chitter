@@ -50,33 +50,20 @@ impl Conversation {
 
             match item {
                 TemplateBlock::Message(next_message) => {
-                    if let Some(existing_draft_message) = &mut messages.last_mut() {
-                        if existing_draft_message.role == next_message.role {
-                            if let Some(message_string) = &mut existing_draft_message.message {
-                                message_string.push_str(
-                                    &next_message.message.clone().unwrap_or("".to_string()),
-                                );
-                            }
-                        } else {
-                            messages.push(next_message.clone());
-                        }
-                    } else {
-                        messages.push(next_message.clone());
-                    }
+                    messages.push(next_message.clone());
                 }
                 TemplateBlock::OOC(prompt) => {
-                    if let Some(draft_message) = &mut messages.last_mut() {
-                        if let Some(draft_message_text) = &mut draft_message.message {
-                            draft_message_text.push_str(&format!("\n((OOC: {prompt}))\n\n"));
-                        }
+                    if let Some(draft_message) = messages.last_mut() {
+                        draft_message
+                            .content
+                            .push_str(&format!("\n((OOC: {prompt}))\n\n"));
                     }
                 }
                 TemplateBlock::InnerThoughts(prompt) => {
                     if let Some(draft_message) = messages.last_mut() {
-                        if let Some(draft_message_text) = &mut draft_message.message {
-                            draft_message_text
-                                .push_str(&format!("\n((Inner Thoughts: {prompt}))\n\n"));
-                        }
+                        draft_message
+                            .content
+                            .push_str(&format!("\n((Inner Thoughts: {prompt}))\n\n"));
                     }
                 }
                 TemplateBlock::SetVar(key, value) => {
@@ -204,19 +191,15 @@ mod conversation_tests {
                 messages: vec![
                     Message {
                         role: Role::System,
-                        message: Some("You are a helpful AI assistant.".to_string())
+                        content: "You are a helpful AI assistant.".to_string()
                     },
                     Message {
                         role: Role::Assistant,
-                        message: Some(
-                            "Hello, I'm here to help! What can I do for you today?\n((Inner Thoughts: I wonder what the task is.))\n\n".to_string()
-                        )
+                        content: "Hello, I'm here to help! What can I do for you today?\n((Inner Thoughts: I wonder what the task is.))\n\n".to_string()
                     },
                     Message {
                         role: Role::User,
-                        message: Some(
-                            "I need you to summarize some text for me, highlighting the most important details.\n((OOC: Only respond with the summary of the text.))\n\n".to_string()
-                        )
+                        content: "I need you to summarize some text for me, highlighting the most important details.\n((OOC: Only respond with the summary of the text.))\n\n".to_string()
                     }
                 ],
                 variables: HashMap::from([(summarize_as_list_var, false.into())]),

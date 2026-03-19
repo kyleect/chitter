@@ -94,7 +94,7 @@ export const ConversationPreviewDrawer: FC<Props> = ({
                   </Text>
                 }
               >
-                <Text>{message.message}</Text>
+                <Text>{message.content}</Text>
               </TemplateBlock>
             );
           })}

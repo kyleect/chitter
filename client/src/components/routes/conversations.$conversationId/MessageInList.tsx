@@ -107,10 +107,10 @@ export const MessageInList: FC<MessageInListProps> = ({
             onChange={onChange}
             onCancel={onCancelEdit}
           />
-        ) : value.message?.length === 0 ? (
+        ) : value.content?.length === 0 ? (
           <Text>[EMPTY]</Text>
         ) : (
-          <TextToParagraphs text={value.message ?? "[EMPTY]"} />
+          <TextToParagraphs text={value.content} />
         )}
 
         <ActionIcon.Group>

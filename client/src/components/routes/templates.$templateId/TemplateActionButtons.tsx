@@ -11,7 +11,7 @@ export const TemplateActionButtons = () => {
   const {
     template,
     draftTitleState,
-    draftTemplateItemsState,
+    draftTemplateBlocksState: draftTemplateItemsState,
     draftAssistantPersonaState,
     draftUserPersonaState,
     isEditingState,
@@ -26,13 +26,13 @@ export const TemplateActionButtons = () => {
   const [draftInsertables, setDraftInsertables] = draftInsertablesState;
 
   const handleSave = () => {
-    template.items = draftTemplateItems;
+    template.blocks = draftTemplateItems;
 
     let updatedTemplate: ConversationTemplate = Object.assign({}, template, {
       title: draftTitle,
       assistantPersona: draftAssistantPersona,
       userPersona: draftUserPersona,
-      items: draftTemplateItems,
+      blocks: draftTemplateItems,
       insertableSystemPrompts: draftInsertables,
     } as ConversationTemplate);
 
@@ -46,7 +46,7 @@ export const TemplateActionButtons = () => {
   };
 
   const handleCancel = () => {
-    setDraftTemplateItems(template.items);
+    setDraftTemplateItems(template.blocks);
     setDraftInsertables(template.insertableSystemPrompts);
     setIsEditing(false);
   };

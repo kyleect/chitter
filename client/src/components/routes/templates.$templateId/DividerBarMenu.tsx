@@ -50,7 +50,7 @@ export const DividerBarMenu: FC<Props> = ({ children, index }) => {
                     role: {
                       kind: "assistant",
                     },
-                    message: null,
+                    content: "",
                     kind: "Message",
                   },
                 });
@@ -66,7 +66,7 @@ export const DividerBarMenu: FC<Props> = ({ children, index }) => {
                     role: {
                       kind: "user",
                     },
-                    message: null,
+                    content: "",
                     kind: "Message",
                   },
                 });
@@ -82,7 +82,7 @@ export const DividerBarMenu: FC<Props> = ({ children, index }) => {
                     role: {
                       kind: "system",
                     },
-                    message: null,
+                    content: "",
                     kind: "Message",
                   },
                 });
@@ -110,7 +110,7 @@ export const DividerBarMenu: FC<Props> = ({ children, index }) => {
                               role: {
                                 kind: "system",
                               },
-                              message: insertableContent,
+                              content: insertableContent,
                               kind: "Message",
                             },
                           });

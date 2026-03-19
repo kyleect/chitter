@@ -1,8 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Conversation,
-  ConversationItem,
   Message,
+  TemplateBlock,
   VariableKey,
   VariableValue,
 } from "server-types";
@@ -52,9 +52,7 @@ export const useStartConversationMutation = () =>
     },
   });
 
-export function isMessageItem(
-  item: ConversationItem,
-): item is { message: Message } {
+export function isMessageItem(item: any): item is { message: Message } {
   const keys = Object.keys(item);
 
   if (keys.length > 1) return false;
@@ -64,7 +62,7 @@ export function isMessageItem(
   return key === "message";
 }
 
-export function isOOCItem(item: ConversationItem): item is { oOC: string } {
+export function isOOCItem(item: TemplateBlock): item is { oOC: string } {
   const keys = Object.keys(item);
 
   if (keys.length > 1) return false;
@@ -75,7 +73,7 @@ export function isOOCItem(item: ConversationItem): item is { oOC: string } {
 }
 
 export function isInnerThoughtsItem(
-  item: ConversationItem,
+  item: TemplateBlock,
 ): item is { innerThoughts: string } {
   const keys = Object.keys(item);
 
@@ -86,7 +84,7 @@ export function isInnerThoughtsItem(
   return key === "innerThoughts";
 }
 
-export function isSetVarItem(item: ConversationItem): item is {
+export function isSetVarItem(item: TemplateBlock): item is {
   setVar: [VariableKey, VariableValue];
 } {
   const keys = Object.keys(item);
@@ -98,11 +96,11 @@ export function isSetVarItem(item: ConversationItem): item is {
   return key === "setVar";
 }
 
-export function isEndIf(item: ConversationItem): item is "endIf" {
+export function isEndIf(item: TemplateBlock): item is "endIf" {
   return item === "endIf";
 }
 
-export function isIfEqItem(item: ConversationItem): item is {
+export function isIfEqItem(item: TemplateBlock): item is {
   ifEq: [VariableKey, VariableValue];
 } {
   const keys = Object.keys(item);

@@ -128,7 +128,7 @@ function RouteComponent() {
         role: {
           kind: "system",
         },
-        message: message_processed,
+        content: message_processed,
       });
     }, getConversationQuery.data)();
 
@@ -218,7 +218,7 @@ function RouteComponent() {
           <ActionIcon
             variant="subtle"
             color="gray"
-            disabled={isGenerating || conversation?.messages.length === 0}
+            disabled={isGenerating || conversation?.messages?.length === 0}
             onClick={() => {
               download(
                 JSON.stringify(getConversationQuery.data),

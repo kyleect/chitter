@@ -37,7 +37,7 @@ function RouteComponent() {
   const [isEditing, setIsEditing] = useState(false);
   const [draftTitle, setDraftTitle] = useState("");
   const [draftTemplateItems, setDraftTemplateItems] = useState<
-    ConversationTemplate["items"]
+    ConversationTemplate["blocks"]
   >([]);
   const [draftInsertables, setDraftInsertables] = useState<[string, string][]>(
     [],
@@ -56,7 +56,7 @@ function RouteComponent() {
   const getPersonasQuery = useGetPersonasQuery();
 
   useEffect(() => {
-    setDraftTemplateItems(getTemplateByIdQuery.data?.items ?? []);
+    setDraftTemplateItems(getTemplateByIdQuery.data?.blocks ?? []);
   }, [getTemplateByIdQuery.data]);
 
   useEffect(() => {
@@ -130,7 +130,7 @@ function RouteComponent() {
           setDraftAssistantPersona,
         ],
         draftInsertablesState: [draftInsertables, setDraftInsertables],
-        draftTemplateItemsState: [draftTemplateItems, setDraftTemplateItems],
+        draftTemplateBlocksState: [draftTemplateItems, setDraftTemplateItems],
         previewConversationAtIndexState: [
           previewConversationAtIndex,
           setPreviewConversationAtIndexState,

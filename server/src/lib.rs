@@ -707,7 +707,7 @@ fn build_prompt(conversation: &Conversation, assistant_name: &str, user_name: &s
                     Role::Assistant => assistant_name,
                     _ => todo!(),
                 },
-                message.message.clone().unwrap_or_default()
+                message.content
             )
         })
         .collect();
@@ -770,7 +770,7 @@ pub async fn chat_completion(
         conversation.messages.push(
             types::message::Message::builder()
                 .role(Role::User)
-                .message(body.prompt.clone())
+                .content(body.prompt.clone())
                 .build(),
         );
     };
@@ -797,17 +797,16 @@ pub async fn chat_completion(
                     .iter()
                     .map(|message| {
                         // Update message.message if is Some
-                        let new_message_string = message.message.as_ref().map(|message| {
-                            message
-                                .replace("{{CHAR}}", &assistant_persona.name)
-                                .replace("{{CHAR_DESCRIPTION}}", &assistant_persona.description)
-                                .replace("{{USER}}", &assistant_persona.name)
-                                .replace("{{USER_DESCRIPTION}}", &user_persona.description)
-                        });
+                        let new_message_string = message
+                            .content
+                            .replace("{{CHAR}}", &assistant_persona.name)
+                            .replace("{{CHAR_DESCRIPTION}}", &assistant_persona.description)
+                            .replace("{{USER}}", &assistant_persona.name)
+                            .replace("{{USER_DESCRIPTION}}", &user_persona.description);
 
                         let mut new_message = message.clone();
 
-                        new_message.message = new_message_string;
+                        new_message.content = new_message_string;
 
                         let m: ChatCompletionRequestMessage = new_message.try_into().unwrap();
 
@@ -838,7 +837,7 @@ pub async fn chat_completion(
                 (*conversation).messages.push(
                     types::message::Message::builder()
                         .role(Role::Assistant)
-                        .message(first_choice.message.content.clone().unwrap_or_default())
+                        .content(first_choice.message.content.clone().unwrap_or_default())
                         .build(),
                 );
 
@@ -887,7 +886,7 @@ pub async fn completetion(
         conversation.messages.push(
             types::message::Message::builder()
                 .role(Role::User)
-                .message(body.prompt.clone())
+                .content(body.prompt.clone())
                 .build(),
         );
 
@@ -941,7 +940,7 @@ pub async fn completetion(
                 (*conversation).messages.push(
                     types::message::Message::builder()
                         .role(Role::Assistant)
-                        .message(first_choice.text.clone())
+                        .content(first_choice.text.clone())
                         .build(),
                 );
 
@@ -1018,9 +1017,8 @@ pub async fn regenerate_response(
             messages.push(
                 types::message::Message::builder()
                     .role(Role::System)
-                    .message(format!(
+                    .content(format!(
                         "
-Use this response
 Rewrite this message, using the guidance prompt below, and use this as your response.
 
 Guidance Prompt:
@@ -1033,8 +1031,7 @@ Messsage To Rewrite:
 ",
                         last_message
                             .expect("there should be a last message")
-                            .message
-                            .unwrap_or_default()
+                            .content
                     ))
                     .build(),
             );
@@ -1075,7 +1072,7 @@ Messsage To Rewrite:
                 (*conversation).messages.push(
                     types::message::Message::builder()
                         .role(Role::Assistant)
-                        .message(generated_response.clone())
+                        .content(generated_response.clone())
                         .build(),
                 );
 

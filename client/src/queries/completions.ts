@@ -51,7 +51,7 @@ export const useCompletionMutation = (conversationId: string) => {
               {
                 kind: "Message",
                 role: { kind: "user" },
-                message: prompt,
+                content: prompt,
               },
             ],
           };

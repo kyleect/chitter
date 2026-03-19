@@ -24,7 +24,8 @@ import { usePatchTemplateItems } from "@/hooks/usePatchTemplateItems";
 export const TemplateFormBlocks = () => {
   const context = useContext(TemplateContext)!;
 
-  const { isEditingState, draftTemplateItemsState } = context;
+  const { isEditingState, draftTemplateBlocksState: draftTemplateItemsState } =
+    context;
 
   const [_, setIsEditing] = isEditingState;
   const [draftTemplateItems] = draftTemplateItemsState;

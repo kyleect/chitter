@@ -6,12 +6,12 @@ import {
   patchItemsWithInsertAt,
 } from "@/queries/templates";
 import { useContext } from "react";
-import { ConversationItem, Message, VariableValue } from "server-types";
+import { Message, VariableValue } from "server-types";
 
 export const usePatchTemplateItems = () => {
   const context = useContext(TemplateContext)!;
 
-  const { draftTemplateItemsState } = context;
+  const { draftTemplateBlocksState: draftTemplateItemsState } = context;
 
   const [_, setDraftTemplateItems] = draftTemplateItemsState;
 
@@ -21,7 +21,7 @@ export const usePatchTemplateItems = () => {
 export const usePatchTemplateItem = () => {
   const context = useContext(TemplateContext)!;
 
-  const { draftTemplateItemsState } = context;
+  const { draftTemplateBlocksState: draftTemplateItemsState } = context;
 
   const [_, setDraftTemplateItems] = draftTemplateItemsState;
 
@@ -35,23 +35,17 @@ export const usePatchMessageItem = () => {
     patchItem(
       index,
       (draftItem, patch) => {
-        if (
-          isMessageItem(draftItem as unknown as ConversationItem) &&
-          isMessageItem(patch as any)
-        ) {
+        if (isMessageItem(draftItem) && isMessageItem(patch)) {
           (
             draftItem as {
               message: Message;
             }
-            // prettier-ignore
-          ).message.message =
-            // @ts-expect-error TODO
-            patch.message.message;
+          ).message.content = patch.message.content;
         }
       },
       {
         message: {
-          message: value,
+          content: value,
         },
       },
     );

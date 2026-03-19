@@ -14,9 +14,9 @@ import {
   Badge,
   Button,
   Card,
-  Code,
   FileButton,
   Group,
+  JsonInput,
   Loader,
   Stack,
   TextInput,
@@ -43,23 +43,26 @@ function RouteComponent() {
   const startConversationMutation = useStartConversationMutation();
   const deleteTemplateMutation = useDeleteTemplateMutation();
   const download = useStringDownload();
-  const [file, setFile] = useState<File | null>(null);
+  const [uploadedFileContent, setUploadedFileContent] = useState<string | null>(
+    null,
+  );
+  const [uploadedFileName, setUploadedFileName] = useState<string | null>(null);
   const [uploadedTemplate, setUploadedTemplate] =
     useState<ConversationTemplate | null>();
 
   useEffect(() => {
-    if (!file) return;
+    if (!uploadedFileContent) return;
 
     (async () => {
       const template: ConversationTemplate = JSON.parse(
-        (await file?.text()) ?? "{}",
+        uploadedFileContent ?? "{}",
       );
 
       setUploadedTemplate(template);
 
       setDraftName(template.title ?? "");
     })();
-  }, [file]);
+  }, [uploadedFileContent]);
 
   if (templatesQuery.isPending && getPersonasQuery.isPending) {
     return <Loader />;
@@ -167,7 +170,13 @@ function RouteComponent() {
         <Stack>
           <Group>
             <Button.Group>
-              <FileButton onChange={setFile} accept="application/json">
+              <FileButton
+                onChange={(uploadedFile) => {
+                  uploadedFile?.text().then(setUploadedFileContent);
+                  setUploadedFileName(uploadedFile?.name ?? null);
+                }}
+                accept="application/json"
+              >
                 {(props) => (
                   <Button
                     leftSection={
@@ -241,9 +250,16 @@ function RouteComponent() {
           {uploadedTemplate && (
             <Stack mt="lg" gap="xs">
               <Badge color="gray" variant="transparent">
-                {file?.name}
+                {uploadedFileName}
               </Badge>
-              <Code block>{JSON.stringify(uploadedTemplate, null, 2)}</Code>
+              <JsonInput
+                autosize
+                value={uploadedFileContent ?? undefined}
+                formatOnBlur
+                onChange={(newValue) => {
+                  setUploadedFileContent(newValue);
+                }}
+              />
             </Stack>
           )}
         </Stack>

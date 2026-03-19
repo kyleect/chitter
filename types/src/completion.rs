@@ -64,21 +64,21 @@ impl TryFrom<Message> for ChatCompletionRequestMessage {
     fn try_from(value: Message) -> Result<Self, Self::Error> {
         match value.role {
             Role::System => Ok(ChatCompletionRequestSystemMessage {
-                content: value.message.ok_or("missing content")?.into(),
+                content: value.content.into(),
                 name: None,
             }
             .into()),
 
             Role::User => Ok(ChatCompletionRequestUserMessage {
-                content: value.message.ok_or("missing content")?.into(),
+                content: value.content.into(),
                 name: None,
             }
             .into()),
 
             Role::Assistant => Ok(ChatCompletionRequestAssistantMessage {
-                content: value
-                    .message
-                    .map(ChatCompletionRequestAssistantMessageContent::Text),
+                content: Some(ChatCompletionRequestAssistantMessageContent::Text(
+                    value.content,
+                )),
                 name: None,
                 tool_calls: None,
                 refusal: None,

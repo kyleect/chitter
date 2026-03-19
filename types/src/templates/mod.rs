@@ -85,14 +85,14 @@ impl ConversationTemplate {
     pub fn add_system_message(self: &mut Self, message: &str) {
         self.blocks.push(TemplateBlock::Message(Message {
             role: Role::System,
-            message: Some(message.to_string()),
+            content: message.to_string(),
         }));
     }
 
     pub fn add_user_message(self: &mut Self, message: &str) {
         self.blocks.push(TemplateBlock::Message(Message {
             role: Role::User,
-            message: Some(message.to_string()),
+            content: message.to_string(),
         }));
     }
 
@@ -107,7 +107,7 @@ impl ConversationTemplate {
     pub fn add_assistant_message(self: &mut Self, message: &str) {
         self.blocks.push(TemplateBlock::Message(Message {
             role: Role::Assistant,
-            message: Some(message.to_string()),
+            content: message.to_string(),
         }));
     }
 }
@@ -158,18 +158,15 @@ mod conversation_template_tests {
                 user_persona: Some(TemplatePersona::Id(user.id.clone())),
                 blocks: vec![
                     TemplateBlock::set_var("summaryAsList", VariableValue::Boolean(true)),
-                    TemplateBlock::message(
-                        Role::System,
-                        Some("You are a helpful AI assistant.".to_string())
-                    ),
+                    TemplateBlock::message(Role::System, "You are a helpful AI assistant."),
                     TemplateBlock::message(
                         Role::Assistant,
-                        Some("Hello, I'm here to help! What can I do for you today?".to_string())
+                        "Hello, I'm here to help! What can I do for you today?"
                     ),
                     TemplateBlock::inner_thoughts("I wonder what the task is."),
                     TemplateBlock::message(
                         Role::User,
-                        Some("I need you to summarize some text for me, highlighting the most important details.".to_string())
+                        "I need you to summarize some text for me, highlighting the most important details."
                     ),
                     TemplateBlock::ooc("Only respond with the summary of the text."),
                     TemplateBlock::IfEq(summarize_as_list_var.clone(), true.into()),

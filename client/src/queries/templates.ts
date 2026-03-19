@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { produce } from "immer";
 import {
   Conversation,
-  ConversationItem,
+  TemplateBlock,
   ConversationTemplate,
   Message,
   Persona,
@@ -142,7 +142,7 @@ export function isEmbeddedPersona(persona: unknown): persona is {
 }
 
 export function isMessageItem(
-  item: RecursivePartial<ConversationItem>,
+  item: RecursivePartial<TemplateBlock>,
 ): item is { message: Message } {
   const keys = Object.keys(item);
 
@@ -153,7 +153,7 @@ export function isMessageItem(
   return key === "message";
 }
 
-export function isOOCItem(item: ConversationItem): item is { oOC: string } {
+export function isOOCItem(item: TemplateBlock): item is { oOC: string } {
   const keys = Object.keys(item);
 
   if (keys.length > 1) return false;
@@ -164,7 +164,7 @@ export function isOOCItem(item: ConversationItem): item is { oOC: string } {
 }
 
 export function isInnerThoughtsItem(
-  item: ConversationItem,
+  item: TemplateBlock,
 ): item is { innerThoughts: string } {
   const keys = Object.keys(item);
 
@@ -175,7 +175,7 @@ export function isInnerThoughtsItem(
   return key === "innerThoughts";
 }
 
-export function isSetVarItem(item: ConversationItem): item is {
+export function isSetVarItem(item: TemplateBlock): item is {
   setVar: [VariableKey, VariableValue];
 } {
   const keys = Object.keys(item);
@@ -187,11 +187,11 @@ export function isSetVarItem(item: ConversationItem): item is {
   return key === "setVar";
 }
 
-export function isEndIf(item: ConversationItem): item is "endIf" {
+export function isEndIf(item: TemplateBlock): item is "endIf" {
   return item === "endIf";
 }
 
-export function isIfEqItem(item: ConversationItem): item is {
+export function isIfEqItem(item: TemplateBlock): item is {
   ifEq: [VariableKey, VariableValue];
 } {
   const keys = Object.keys(item);
@@ -204,8 +204,8 @@ export function isIfEqItem(item: ConversationItem): item is {
 }
 
 export const patchItemsImmer =
-  (set: React.Dispatch<React.SetStateAction<ConversationTemplate["items"]>>) =>
-  (patchFn: (items: ConversationTemplate["items"]) => void) => {
+  (set: React.Dispatch<React.SetStateAction<ConversationTemplate["blocks"]>>) =>
+  (patchFn: (items: ConversationTemplate["blocks"]) => void) => {
     set(
       produce((draftItems) => {
         patchFn(draftItems);
@@ -222,14 +222,14 @@ type RecursivePartial<T> = {
 };
 
 export const patchItemImmer =
-  (set: React.Dispatch<React.SetStateAction<ConversationTemplate["items"]>>) =>
+  (set: React.Dispatch<React.SetStateAction<ConversationTemplate["blocks"]>>) =>
   (
     draftItemIndex: number,
     patchFn: (
-      item: RecursivePartial<Unarray<ConversationTemplate["items"]>>,
-      patch: RecursivePartial<Unarray<ConversationTemplate["items"]>>,
+      item: RecursivePartial<Unarray<ConversationTemplate["blocks"]>>,
+      patch: RecursivePartial<Unarray<ConversationTemplate["blocks"]>>,
     ) => void,
-    patch: RecursivePartial<Unarray<ConversationTemplate["items"]>>,
+    patch: RecursivePartial<Unarray<ConversationTemplate["blocks"]>>,
   ) => {
     set(
       produce((draftItems) => {
@@ -240,11 +240,11 @@ export const patchItemImmer =
     );
   };
 
-type PatchItemsPatchFn = (items: ConversationItem[]) => void;
+type PatchItemsPatchFn = (items: TemplateBlock[]) => void;
 type PatchItemsFn = (patchFn: PatchItemsPatchFn) => void;
 
 export const patchItemsWithInsertAt =
-  (patchItems: PatchItemsFn) => (index: number, newItem: ConversationItem) =>
+  (patchItems: PatchItemsFn) => (index: number, newItem: TemplateBlock) =>
     patchItems((items) => items.splice(index, 0, newItem));
 
 export const useDeleteTemplateMutation = () => {
