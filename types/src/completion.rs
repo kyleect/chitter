@@ -10,8 +10,15 @@ use crate::message::{Message, Role};
 
 #[derive(TS, Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 #[ts(export)]
-pub struct CompletionRequestBody {
+pub struct ChatCompletionRequestBody {
     pub conversation_id: String,
+    pub prompt: String,
+    pub settings: CompletionSettings,
+}
+
+#[derive(TS, Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[ts(export)]
+pub struct CompletionRequestBody {
     pub prompt: String,
     pub settings: CompletionSettings,
 }

@@ -1,3 +1,4 @@
+import { ConversationSettings } from "@/components/routes/settings.index/ConversationSettings";
 import { DefaultPersonasSettings } from "@/components/routes/settings.index/DefaultPersonasSettings";
 import { LLMConnectionSettings } from "@/components/routes/settings.index/LLMConnectionSettings";
 import { LLMParameterSettings } from "@/components/routes/settings.index/LLMParameterSettings";
@@ -49,6 +50,8 @@ function RouteComponent() {
         <LLMConnectionSettings />
 
         <LLMParameterSettings />
+
+        <ConversationSettings />
       </Stack>
     </SettingsContext>
   );

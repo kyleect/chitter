@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { CONSERVATION_KEYS } from "./conversations";
 import {
+  ChatCompletionRequestBody,
   CompletionRequestBody,
   Conversation,
   RegenerateResponseRequestBody,
@@ -9,6 +10,7 @@ import { produce } from "immer";
 
 export const COMPLETION_KEYS = {
   all: ["completions"] as const,
+  completion: () => [...COMPLETION_KEYS.all, "completion"],
   chat_completion: (conversation_id: string) => [
     ...COMPLETION_KEYS.all,
     "chat_completion",
@@ -21,7 +23,39 @@ export const COMPLETION_KEYS = {
   ],
 } as const;
 
-export const useCompletionMutation = (conversationId: string) => {
+export const useCompletionMutation = () => {
+  return useMutation({
+    mutationKey: COMPLETION_KEYS.completion(),
+    mutationFn: async (prompt: string) => {
+      const response = await fetch(`/api/completions`, {
+        method: "POST",
+        body: JSON.stringify({
+          prompt,
+          settings: {
+            temperature: 1.0,
+          },
+        } as CompletionRequestBody),
+        headers: {
+          "content-type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        const error = await response.text();
+
+        throw new Error(`Couldn't generate chat completion: ${error}`);
+      }
+
+      const data = (await response.json()) as {
+        response: string;
+      };
+
+      return data.response;
+    },
+  });
+};
+
+export const useChatCompletionMutation = (conversationId: string) => {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -82,7 +116,7 @@ export const useCompletionMutation = (conversationId: string) => {
           settings: {
             temperature: 1.0,
           },
-        } as CompletionRequestBody),
+        } as ChatCompletionRequestBody),
         headers: {
           "content-type": "application/json",
         },

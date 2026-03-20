@@ -1,7 +1,10 @@
 import { ConversationContext } from "@/components/routes/conversations.$conversationId/ConversationContext";
 import { MessageList } from "@/components/routes/conversations.$conversationId/MessageList";
 import { UserReplyForm } from "@/components/routes/conversations.$conversationId/UserReplyForm";
-import { COMPLETION_KEYS, useCompletionMutation } from "@/queries/completions";
+import {
+  COMPLETION_KEYS,
+  useChatCompletionMutation,
+} from "@/queries/completions";
 import {
   useGetConservationByIdQuery,
   useUpdateConversationMutation,
@@ -52,7 +55,9 @@ function RouteComponent() {
     useState<boolean>(false);
   const params = Route.useParams();
   const getInsertablesQuery = useGetInsertablesQuery();
-  const completionMutation = useCompletionMutation(params.conversationId);
+  const chatCompletionMutation = useChatCompletionMutation(
+    params.conversationId,
+  );
   const [draftConversationTitle, setDraftConversationTitle] =
     useState<string>("");
   const [isEditingTitle, setIsEditingTitle] = useState(false);
@@ -60,6 +65,17 @@ function RouteComponent() {
   const regenerateMutations = useMutationState({
     filters: {
       mutationKey: COMPLETION_KEYS.regeneration(params.conversationId),
+      status: "pending",
+    },
+
+    select(mutation) {
+      return mutation.state;
+    },
+  });
+
+  const completionMutations = useMutationState({
+    filters: {
+      mutationKey: COMPLETION_KEYS.completion(),
       status: "pending",
     },
 
@@ -179,7 +195,9 @@ function RouteComponent() {
   };
 
   const isGenerating =
-    completionMutation.isPending || regenerateMutations.length > 0;
+    chatCompletionMutation.isPending ||
+    regenerateMutations.length > 0 ||
+    completionMutations.length > 0;
 
   return (
     <Stack gap="xs">
@@ -240,7 +258,7 @@ function RouteComponent() {
 
             setReply("");
 
-            completionMutation.mutate(reply, {
+            chatCompletionMutation.mutate(reply, {
               onSuccess() {
                 scrollIntoView();
               },

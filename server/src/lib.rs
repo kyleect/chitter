@@ -43,11 +43,11 @@ use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use types::{
     DebugInfo,
     achievement::{AchievementDto, AchievementId},
-    completion::{CompletionRequestBody, RegenerateResponseRequestBody},
+    completion::{ChatCompletionRequestBody, CompletionRequestBody, RegenerateResponseRequestBody},
     conversation::Conversation,
     message::Role,
     persona::Persona,
-    settings::{AppSettings, LLMConnection, LLMParameters},
+    settings::{AppSettings, ConversationSettings, LLMConnection, LLMParameters},
     socket::ClientMessage,
     templates::{ConversationTemplate, personas::TemplatePersona},
 };
@@ -377,6 +377,12 @@ pub async fn init_server(options: InitServerOptions) -> Result<AppServer, Error>
                 .min_p(0.05)
                 .build(),
         )
+        .conversation_settings(ConversationSettings {
+            add_detail_prompt: Some(
+                "Rewrite the following text to add length and detail while maintaining the original meaning of the text. Respond only with the rewritten text.\n\nText to rewrite:\n\n{{INPUT}}"
+                    .to_string(),
+            ),
+        })
         .build();
 
     let client = Client::with_config(
@@ -695,35 +701,6 @@ pub async fn get_achievements(
     )
 }
 
-fn build_prompt(conversation: &Conversation, assistant_name: &str, user_name: &str) -> String {
-    let messages: Vec<String> = conversation
-        .messages
-        .iter()
-        .map(|message| {
-            format!(
-                "{:?}: {}",
-                match message.role {
-                    Role::User => user_name,
-                    Role::Assistant => assistant_name,
-                    _ => todo!(),
-                },
-                message.content
-            )
-        })
-        .collect();
-    let messages = messages.join("\n\n");
-
-    format!(
-        "
-The following is a conversation between '{assistant_name}' and '{user_name}'. You are {assistant_name}. It's your turn to respond. Write your next response.
-
-Conversation:
-
-{messages}
-    "
-    )
-}
-
 pub async fn get_insertables(
     State(state): State<Arc<Mutex<AppState>>>,
 ) -> Json<Vec<(String, String)>> {
@@ -752,7 +729,7 @@ pub struct CompletionResponse {
 
 pub async fn chat_completion(
     State(state): State<Arc<Mutex<AppState>>>,
-    Json(body): Json<CompletionRequestBody>,
+    Json(body): Json<ChatCompletionRequestBody>,
 ) -> CompletionResponse {
     let state = state.clone();
     let mut state = state.lock().await;
@@ -871,97 +848,39 @@ pub async fn completetion(
     Json(body): Json<CompletionRequestBody>,
 ) -> CompletionResponse {
     let state = state.clone();
-    let mut state = state.lock().await;
+    let state = state.lock().await;
 
-    let (assistant_persona_id, user_persona_id) = {
-        let conversation = state
-            .conservations
-            .iter_mut()
-            .find(|c| c.id == body.conversation_id)
-            .expect(&format!(
-                "should find conversation by id {}",
-                body.conversation_id
-            ));
+    match &state.llm {
+        Some(client) => {
+            let request = CreateCompletionRequestArgs::default()
+                .prompt(body.prompt)
+                .max_tokens(400_u32)
+                .temperature(body.settings.temperature.unwrap_or(0.8f32))
+                .build()
+                .expect("should create completion request");
 
-        conversation.messages.push(
-            types::message::Message::builder()
-                .role(Role::User)
-                .content(body.prompt.clone())
-                .build(),
-        );
+            let response = client.completions().create(request).await;
 
-        (
-            conversation.assistant_persona.id.clone(),
-            conversation.user_persona.id.clone(),
-        )
-    };
+            match &response {
+                Ok(response) => {
+                    let first_choice = response.choices.first().unwrap();
 
-    let assistant_persona = state
-        .personass
-        .iter()
-        .find(|p| p.id == assistant_persona_id)
-        .expect("conversation should have assistant persona");
+                    return CompletionResponse {
+                        response: first_choice.text.clone(),
+                    };
+                }
+                Err(err) => {
+                    let err_str = err.to_string();
 
-    let user_persona = state
-        .personass
-        .iter()
-        .find(|p| p.id == user_persona_id)
-        .expect("conversation should have user persona");
-
-    let conversation = state
-        .conservations
-        .iter()
-        .find(|c| c.id == body.conversation_id)
-        .unwrap();
-
-    let prompt = build_prompt(conversation, &assistant_persona.name, &user_persona.name);
-
-    if let Some(client) = &state.llm {
-        let request = CreateCompletionRequestArgs::default()
-            .prompt(prompt)
-            .max_tokens(400_u32)
-            .temperature(body.settings.temperature.unwrap_or(0.8f32))
-            .build()
-            .expect("should create completion request");
-
-        let response = client.completions().create(request).await;
-
-        match &response {
-            Ok(response) => {
-                let first_choice = response.choices.first().unwrap();
-
-                let conversation = state
-                    .conservations
-                    .iter_mut()
-                    .find(|t| t.id == body.conversation_id)
-                    .ok_or(StatusCode::NOT_FOUND)
-                    .unwrap();
-
-                (*conversation).messages.push(
-                    types::message::Message::builder()
-                        .role(Role::Assistant)
-                        .content(first_choice.text.clone())
-                        .build(),
-                );
-
-                return CompletionResponse {
-                    response: first_choice.text.clone(),
-                };
-            }
-            Err(err) => {
-                let err_str = err.to_string();
-
-                dbg!(&err_str);
-
-                return CompletionResponse {
-                    response: err_str.clone(),
-                };
+                    return CompletionResponse {
+                        response: err_str.clone(),
+                    };
+                }
             }
         }
-    }
-
-    CompletionResponse {
-        response: "FALLBACK TODO!".to_string(),
+        _ => CompletionResponse {
+            response: "FALLBACK TODO!".to_string(),
+        },
     }
 }
 

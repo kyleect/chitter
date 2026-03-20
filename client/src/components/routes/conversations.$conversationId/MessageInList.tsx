@@ -2,8 +2,10 @@ import { FC, useContext, useState } from "react";
 import {
   ActionIcon,
   ActionIconGroup,
+  Alert,
   Button,
   Group,
+  Loader,
   Stack,
   Text,
   Textarea,
@@ -23,10 +25,17 @@ import {
   IconEdit,
   IconPencilPlus,
   IconRefresh,
+  IconWritingSign,
   IconX,
 } from "@tabler/icons-react";
-import { useRegenerateResponseMutation } from "@/queries/completions";
+import {
+  useRegenerateResponseMutation,
+  useCompletionMutation,
+} from "@/queries/completions";
 import { ConversationContext } from "./ConversationContext";
+import { useUpdateConversationMutation } from "@/queries/conversations";
+import { produce } from "immer";
+import { useGetSettingsQuery } from "@/queries/settings";
 
 type MessageInListProps = {
   value: Message;
@@ -51,6 +60,8 @@ export const MessageInList: FC<MessageInListProps> = ({
   assistantName,
   onClick,
 }) => {
+  const getSettingsQuery = useGetSettingsQuery();
+
   const { hovered, ref } = useHover();
   let icon = getMesssageAuthorIcon(value);
   let author: string = getMessageAuthorName(value, userName, assistantName);
@@ -62,8 +73,32 @@ export const MessageInList: FC<MessageInListProps> = ({
   const regenerateResponseMutation = useRegenerateResponseMutation(
     context.conversation.id,
   );
+  const completionMutation = useCompletionMutation();
+  const updateConversationMutation = useUpdateConversationMutation();
+
+  if (getSettingsQuery.isPending) {
+    return <Loader />;
+  }
+
+  if (getSettingsQuery.isError) {
+    return (
+      <Alert color="red">
+        Error fetching settings: {getSettingsQuery.error.message}
+      </Alert>
+    );
+  }
 
   const isAssistantMessage = value.role.kind === "assistant";
+
+  const conversation_settings = getSettingsQuery.data.conversation_settings;
+
+  const addMoreDetailPrompt =
+    conversation_settings.add_detail_prompt === null
+      ? `OOPS`
+      : conversation_settings.add_detail_prompt.replace(
+          "{{INPUT}}",
+          value.content,
+        );
 
   return (
     <Stack
@@ -140,6 +175,52 @@ export const MessageInList: FC<MessageInListProps> = ({
                   }}
                 >
                   <IconPencilPlus />
+                </ActionIcon>
+              </Tooltip.Floating>
+              <Tooltip.Floating label="Add more detail">
+                <ActionIcon
+                  variant="subtle"
+                  color="gray"
+                  size="sm"
+                  disabled={context.isGenerating || isEditingRegenerationPrompt}
+                  onClick={() => {
+                    completionMutation.mutate(addMoreDetailPrompt, {
+                      onSuccess(response) {
+                        modals.openConfirmModal({
+                          title: "Update message?",
+                          size: "xl",
+                          children: (
+                            <>
+                              <Text>{response}</Text>
+                            </>
+                          ),
+                          labels: { confirm: "Replace", cancel: "Cancel" },
+                          onConfirm() {
+                            const updateConversation = produce(
+                              context.conversation,
+                              (draft) => {
+                                if (
+                                  draft === null ||
+                                  typeof draft === "undefined"
+                                )
+                                  return;
+
+                                draft.messages[index].content = response;
+
+                                return draft;
+                              },
+                            );
+
+                            updateConversationMutation.mutate(
+                              updateConversation,
+                            );
+                          },
+                        });
+                      },
+                    });
+                  }}
+                >
+                  <IconWritingSign stroke={1.5} />
                 </ActionIcon>
               </Tooltip.Floating>
             </>
