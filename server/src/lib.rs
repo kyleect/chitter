@@ -382,6 +382,7 @@ pub async fn init_server(options: InitServerOptions) -> Result<AppServer, Error>
                 "Rewrite the following text to add length and detail while maintaining the original meaning of the text. Respond only with the rewritten text.\n\nText to rewrite:\n\n{{INPUT}}"
                     .to_string(),
             ),
+            rename_conversation_prompt: Some("Write a short title that summarizes the following text:\n\n{{INPUT}}".to_string())
         })
         .build();
 
@@ -854,7 +855,7 @@ pub async fn completetion(
         Some(client) => {
             let request = CreateCompletionRequestArgs::default()
                 .prompt(body.prompt)
-                .max_tokens(400_u32)
+                .max_tokens(body.settings.max_tokens.unwrap_or(400))
                 .temperature(body.settings.temperature.unwrap_or(0.8f32))
                 .build()
                 .expect("should create completion request");

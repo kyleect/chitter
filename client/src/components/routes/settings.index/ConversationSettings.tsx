@@ -31,6 +31,31 @@ export const ConversationSettings = () => {
           <Code>{"{{INPUT}}"}</Code> will be replaced with the input text to be
           rewritten.
         </Alert>
+
+        <Textarea
+          label={'"Rename Conversation" Prompt'}
+          autosize
+          minRows={1}
+          value={
+            draftSettings?.conversation_settings.rename_conversation_prompt ??
+            ""
+          }
+          onChange={(e) => {
+            setDraftSettings(
+              produce((draft) => {
+                if (!draft) return;
+
+                draft.conversation_settings.rename_conversation_prompt =
+                  e.target.value;
+              }),
+            );
+          }}
+        />
+
+        <Alert>
+          <Code>{"{{INPUT}}"}</Code> will be replaced with the input text to be
+          rewritten.
+        </Alert>
       </Stack>
     </Card>
   );

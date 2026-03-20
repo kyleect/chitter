@@ -16,6 +16,7 @@ pub struct AppSettings {
 #[ts(export)]
 pub struct ConversationSettings {
     pub add_detail_prompt: Option<String>,
+    pub rename_conversation_prompt: Option<String>,
 }
 
 #[derive(TS, Clone, Debug, PartialEq, Serialize, Deserialize, Default, Builder)]

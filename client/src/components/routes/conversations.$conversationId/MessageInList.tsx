@@ -73,7 +73,8 @@ export const MessageInList: FC<MessageInListProps> = ({
   const regenerateResponseMutation = useRegenerateResponseMutation(
     context.conversation.id,
   );
-  const completionMutation = useCompletionMutation();
+  const addMoreDetailsCompletionMutation =
+    useCompletionMutation("add-more-details");
   const updateConversationMutation = useUpdateConversationMutation();
 
   if (getSettingsQuery.isPending) {
@@ -184,40 +185,43 @@ export const MessageInList: FC<MessageInListProps> = ({
                   size="sm"
                   disabled={context.isGenerating || isEditingRegenerationPrompt}
                   onClick={() => {
-                    completionMutation.mutate(addMoreDetailPrompt, {
-                      onSuccess(response) {
-                        modals.openConfirmModal({
-                          title: "Update message?",
-                          size: "xl",
-                          children: (
-                            <>
-                              <Text>{response}</Text>
-                            </>
-                          ),
-                          labels: { confirm: "Replace", cancel: "Cancel" },
-                          onConfirm() {
-                            const updateConversation = produce(
-                              context.conversation,
-                              (draft) => {
-                                if (
-                                  draft === null ||
-                                  typeof draft === "undefined"
-                                )
-                                  return;
+                    addMoreDetailsCompletionMutation.mutate(
+                      { prompt: addMoreDetailPrompt },
+                      {
+                        onSuccess(response) {
+                          modals.openConfirmModal({
+                            title: "Update message?",
+                            size: "xl",
+                            children: (
+                              <>
+                                <Text>{response}</Text>
+                              </>
+                            ),
+                            labels: { confirm: "Replace", cancel: "Cancel" },
+                            onConfirm() {
+                              const updateConversation = produce(
+                                context.conversation,
+                                (draft) => {
+                                  if (
+                                    draft === null ||
+                                    typeof draft === "undefined"
+                                  )
+                                    return;
 
-                                draft.messages[index].content = response;
+                                  draft.messages[index].content = response;
 
-                                return draft;
-                              },
-                            );
+                                  return draft;
+                                },
+                              );
 
-                            updateConversationMutation.mutate(
-                              updateConversation,
-                            );
-                          },
-                        });
+                              updateConversationMutation.mutate(
+                                updateConversation,
+                              );
+                            },
+                          });
+                        },
                       },
-                    });
+                    );
                   }}
                 >
                   <IconWritingSign stroke={1.5} />

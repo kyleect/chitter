@@ -4,13 +4,14 @@ import {
   ChatCompletionRequestBody,
   CompletionRequestBody,
   Conversation,
+  LLMParameters,
   RegenerateResponseRequestBody,
 } from "server-types";
 import { produce } from "immer";
 
 export const COMPLETION_KEYS = {
   all: ["completions"] as const,
-  completion: () => [...COMPLETION_KEYS.all, "completion"],
+  completion: (key: string) => [...COMPLETION_KEYS.all, "completion", key],
   chat_completion: (conversation_id: string) => [
     ...COMPLETION_KEYS.all,
     "chat_completion",
@@ -23,16 +24,22 @@ export const COMPLETION_KEYS = {
   ],
 } as const;
 
-export const useCompletionMutation = () => {
+export const useCompletionMutation = (key: string) => {
   return useMutation({
-    mutationKey: COMPLETION_KEYS.completion(),
-    mutationFn: async (prompt: string) => {
+    mutationKey: COMPLETION_KEYS.completion(key),
+    mutationFn: async ({
+      prompt,
+      params,
+    }: {
+      prompt: string;
+      params?: Partial<LLMParameters>;
+    }) => {
       const response = await fetch(`/api/completions`, {
         method: "POST",
         body: JSON.stringify({
           prompt,
           settings: {
-            temperature: 1.0,
+            ...params,
           },
         } as CompletionRequestBody),
         headers: {
@@ -43,7 +50,7 @@ export const useCompletionMutation = () => {
       if (!response.ok) {
         const error = await response.text();
 
-        throw new Error(`Couldn't generate chat completion: ${error}`);
+        throw new Error(`Couldn't generate completion: ${error}`);
       }
 
       const data = (await response.json()) as {

@@ -4,6 +4,7 @@ import { UserReplyForm } from "@/components/routes/conversations.$conversationId
 import {
   COMPLETION_KEYS,
   useChatCompletionMutation,
+  useCompletionMutation,
 } from "@/queries/completions";
 import {
   useGetConservationByIdQuery,
@@ -31,6 +32,7 @@ import {
   IconDownload,
   IconEdit,
   IconPlus,
+  IconSparkles,
 } from "@tabler/icons-react";
 import { createFileRoute } from "@tanstack/react-router";
 import { produce } from "immer";
@@ -41,6 +43,8 @@ import { slugify } from "@/lib/slugify";
 import { TextToParagraphs } from "@/components/common/TextToParagraphs";
 import { useGetInsertablesQuery } from "@/queries/insertables";
 import { useMutationState } from "@tanstack/react-query";
+import { modals } from "@mantine/modals";
+import { useGetSettingsQuery } from "@/queries/settings";
 
 export const Route = createFileRoute("/conversations/$conversationId")({
   component: RouteComponent,
@@ -58,6 +62,9 @@ function RouteComponent() {
   const chatCompletionMutation = useChatCompletionMutation(
     params.conversationId,
   );
+  const renameConversationCompletionMutation = useCompletionMutation(
+    "rename-conversation",
+  );
   const [draftConversationTitle, setDraftConversationTitle] =
     useState<string>("");
   const [isEditingTitle, setIsEditingTitle] = useState(false);
@@ -73,9 +80,20 @@ function RouteComponent() {
     },
   });
 
-  const completionMutations = useMutationState({
+  const addMoreDetailsCompletionMutations = useMutationState({
     filters: {
-      mutationKey: COMPLETION_KEYS.completion(),
+      mutationKey: COMPLETION_KEYS.completion("add-more-details"),
+      status: "pending",
+    },
+
+    select(mutation) {
+      return mutation.state;
+    },
+  });
+
+  const renameTitleCompletionMutations = useMutationState({
+    filters: {
+      mutationKey: COMPLETION_KEYS.completion("rename-conversation"),
       status: "pending",
     },
 
@@ -97,9 +115,8 @@ function RouteComponent() {
   const getTemplateByIdQuery = useGetTemplateByIdQuery(
     getConversationQuery.data?.templateId ?? null,
   );
-  // const regenerateResponseMutation = useRegenerateResponseMutation(
-  //   params.conversationId,
-  // );
+
+  const getSettingsQuery = useGetSettingsQuery();
 
   const updateConversationMutation = useUpdateConversationMutation();
   const download = useStringDownload();
@@ -110,9 +127,10 @@ function RouteComponent() {
   });
 
   if (
-    getConversationQuery.isPending &&
-    getTemplateByIdQuery.isPending &&
-    getInsertablesQuery.isPending
+    getConversationQuery.isPending ||
+    getTemplateByIdQuery.isPending ||
+    getInsertablesQuery.isPending ||
+    getSettingsQuery.isPending
   ) {
     return <Loader />;
   }
@@ -127,6 +145,10 @@ function RouteComponent() {
 
   if (getInsertablesQuery.isError) {
     return <Alert color="red">Failed to fetch insertables</Alert>;
+  }
+
+  if (getSettingsQuery.isError) {
+    return <Alert color="red">Failed to fetch settings</Alert>;
   }
 
   const conversation = getConversationQuery.data;
@@ -197,7 +219,8 @@ function RouteComponent() {
   const isGenerating =
     chatCompletionMutation.isPending ||
     regenerateMutations.length > 0 ||
-    completionMutations.length > 0;
+    addMoreDetailsCompletionMutations.length > 0 ||
+    renameTitleCompletionMutations.length > 0;
 
   return (
     <Stack gap="xs">
@@ -320,17 +343,67 @@ function RouteComponent() {
                   <IconDeviceFloppy />
                 </ActionIcon>
               ) : (
-                <ActionIcon
-                  size="sm"
-                  variant="subtle"
-                  color="gray"
-                  disabled={isGenerating}
-                  onClick={() => {
-                    setIsEditingTitle(true);
-                  }}
-                >
-                  <IconEdit />
-                </ActionIcon>
+                <>
+                  <ActionIcon
+                    size="sm"
+                    variant="subtle"
+                    color="gray"
+                    disabled={isGenerating}
+                    onClick={() => {
+                      setIsEditingTitle(true);
+                    }}
+                  >
+                    <IconEdit />
+                  </ActionIcon>
+                  <ActionIcon
+                    size="sm"
+                    variant="subtle"
+                    color="gray"
+                    disabled={isGenerating}
+                    onClick={() => {
+                      const renameConversationPrompt =
+                        getSettingsQuery.data.conversation_settings
+                          .rename_conversation_prompt ?? "";
+
+                      const messages = conversation.messages
+                        .slice(0, 4)
+                        .map((x) => `${x.content}\n`)
+                        .join("\n");
+
+                      const prompt = renameConversationPrompt.replace(
+                        "{{INPUT}}",
+                        messages,
+                      );
+
+                      renameConversationCompletionMutation.mutate(
+                        {
+                          prompt,
+                          params: {
+                            max_tokens: 15,
+                            temperature: 0.2,
+                          },
+                        },
+                        {
+                          onSuccess(data) {
+                            const newConversationTitle = data;
+
+                            modals.openConfirmModal({
+                              title: "Update title?",
+                              children: <Text>{newConversationTitle}</Text>,
+                              onConfirm() {
+                                notifications.show({
+                                  message: `Title updated to ${newConversationTitle}`,
+                                });
+                              },
+                            });
+                          },
+                        },
+                      );
+                    }}
+                  >
+                    <IconSparkles />
+                  </ActionIcon>
+                </>
               )}
             </Group>
           </Group>
