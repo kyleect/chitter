@@ -1,5 +1,10 @@
 use clap::Parser;
-use server::{Args, DbEncryption, DbOptions, InitServerOptions, errors::ServerError, init_server};
+use server::{
+    app_server::{InitServerOptions, init_server},
+    cli::Args,
+    db::{DbEncryption, DbOptions},
+    errors::ServerError,
+};
 
 #[tokio::main]
 async fn main() -> Result<(), ServerError> {
@@ -14,14 +19,16 @@ async fn main() -> Result<(), ServerError> {
 
     let open_browser_on_start = args.open.unwrap_or(true);
 
-    let server = init_server(InitServerOptions {
-        port: server_port,
-        open_browser: open_browser_on_start,
-        db_options: DbOptions {
-            path: db_path,
-            encryption: db_encryption,
-        },
-    })
+    let server = init_server(
+        InitServerOptions::builder()
+            .maybe_port(server_port)
+            .open_browser(open_browser_on_start)
+            .db_options(DbOptions {
+                path: db_path,
+                encryption: db_encryption,
+            })
+            .build(),
+    )
     .await;
 
     match server {

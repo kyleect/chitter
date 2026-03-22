@@ -7,7 +7,7 @@ use axum::{
 use axum::{Json, extract::State};
 use types::conversation::Conversation;
 
-use crate::AsyncAppState;
+use crate::app_state::AsyncAppState;
 
 pub fn conversations_routes(state: AsyncAppState) -> Router<AsyncAppState> {
     Router::new().route("/", get(get_conversations)).route(

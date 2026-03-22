@@ -5,7 +5,7 @@ use tracing::instrument;
 use axum::{Json, extract::State};
 use types::DebugInfo;
 
-use crate::AsyncAppState;
+use crate::app_state::AsyncAppState;
 
 pub fn debug_routes(state: AsyncAppState) -> Router<AsyncAppState> {
     Router::new()
@@ -23,7 +23,10 @@ async fn get_debug_info(State(state): State<AsyncAppState>) -> (StatusCode, Json
 
         let cwd = state.home_dir.clone();
 
-        cwd.to_str().unwrap_or_default().to_string()
+        cwd.expect("should have home_dir set in app state")
+            .to_str()
+            .unwrap_or_default()
+            .to_string()
     };
 
     let db = {

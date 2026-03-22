@@ -4,7 +4,11 @@ use std::sync::{
 };
 
 use clap::Parser;
-use server::{Args, DbEncryption, DbOptions, InitServerOptions, init_server};
+use server::{
+    app_server::{InitServerOptions, init_server},
+    cli::Args,
+    db::{DbEncryption, DbOptions},
+};
 use tao::{
     event::{Event, StartCause, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
@@ -24,14 +28,16 @@ async fn main() -> wry::Result<()> {
     let db_rekey = args.db_encryption_rekey;
     let db_encryption = DbEncryption::Encrypted(args.db_encryption_key, db_rekey);
 
-    let server = init_server(InitServerOptions {
-        port: server_port,
-        open_browser: false,
-        db_options: DbOptions {
-            path: db_path,
-            encryption: db_encryption,
-        },
-    })
+    let server = init_server(
+        InitServerOptions::builder()
+            .maybe_port(server_port)
+            .open_browser(false)
+            .db_options(DbOptions {
+                path: db_path,
+                encryption: db_encryption,
+            })
+            .build(),
+    )
     .await
     .expect("should have initialized app server");
 

@@ -1,7 +1,7 @@
 use axum::{Router, routing::get};
 use hyper::StatusCode;
 
-use crate::AsyncAppState;
+use crate::app_state::AsyncAppState;
 
 use axum::{
     Json,

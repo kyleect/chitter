@@ -3391,6 +3391,7 @@ dependencies = [
  "async-openai",
  "axum",
  "axum-extra",
+ "bon",
  "chrono",
  "clap",
  "dotenv",

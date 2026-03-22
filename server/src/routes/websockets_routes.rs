@@ -17,7 +17,7 @@ use axum::extract::State;
 use tokio::{spawn, sync::mpsc::unbounded_channel};
 use types::socket::ClientMessage;
 
-use crate::AsyncAppState;
+use crate::app_state::AsyncAppState;
 
 pub fn websockets_routes(state: AsyncAppState) -> Router<AsyncAppState> {
     Router::new().route("/", any(ws_handler)).with_state(state)

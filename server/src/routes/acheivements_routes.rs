@@ -6,7 +6,7 @@ use sqlx::Row;
 use axum::{Json, extract::State};
 use types::achievement::{Achievement, AchievementDto};
 
-use crate::AsyncAppState;
+use crate::app_state::AsyncAppState;
 
 pub fn achievements_routes(state: AsyncAppState) -> Router<AsyncAppState> {
     Router::new()

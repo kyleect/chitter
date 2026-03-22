@@ -16,6 +16,7 @@ tower-http = { version = "0.6.8", features = [
     "compression-deflate",
     "compression-gzip",
 ] }
+bon = "3.9"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 tower-serve-static = "0.1.1"

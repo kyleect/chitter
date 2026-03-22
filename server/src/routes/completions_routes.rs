@@ -16,7 +16,7 @@ use types::{
     message::Role,
 };
 
-use crate::AsyncAppState;
+use crate::app_state::AsyncAppState;
 
 pub fn completions_routes(state: AsyncAppState) -> Router<AsyncAppState> {
     Router::new()

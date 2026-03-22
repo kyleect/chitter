@@ -1,7 +1,7 @@
 use axum::Router;
 
 use crate::{
-    AsyncAppState,
+    app_state::AsyncAppState,
     routes::{
         acheivements_routes::achievements_routes, completions_routes::completions_routes,
         conversations_routes::conversations_routes, debug_routes::debug_routes,
