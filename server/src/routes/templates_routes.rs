@@ -4,11 +4,7 @@ use axum::{
     routing::{get, post},
 };
 
-use std::sync::Arc;
-
-use tokio::sync::Mutex;
-
-use crate::AppState;
+use crate::AsyncAppState;
 
 use axum::{
     Json,
@@ -20,7 +16,7 @@ use types::{
     templates::{ConversationTemplate, personas::TemplatePersona},
 };
 
-pub fn templates_routes(state: Arc<Mutex<AppState>>) -> Router<Arc<Mutex<AppState>>> {
+pub fn templates_routes(state: AsyncAppState) -> Router<AsyncAppState> {
     Router::new()
         .route("/", get(get_templates).post(create_template))
         .route(
@@ -34,9 +30,7 @@ pub fn templates_routes(state: Arc<Mutex<AppState>>) -> Router<Arc<Mutex<AppStat
         .with_state(state)
 }
 
-async fn get_templates(
-    State(state): State<Arc<Mutex<AppState>>>,
-) -> Json<Vec<ConversationTemplate>> {
+async fn get_templates(State(state): State<AsyncAppState>) -> Json<Vec<ConversationTemplate>> {
     let state = state.clone();
     let state = state.lock().await;
 
@@ -49,7 +43,7 @@ struct CreateTemplateBody {
 }
 
 async fn create_template(
-    State(state): State<Arc<Mutex<AppState>>>,
+    State(state): State<AsyncAppState>,
     Json(body): Json<CreateTemplateBody>,
 ) -> Json<ConversationTemplate> {
     let state = state.clone();
@@ -94,7 +88,7 @@ async fn create_template(
 }
 
 async fn get_template(
-    State(state): State<Arc<Mutex<AppState>>>,
+    State(state): State<AsyncAppState>,
     Path(template_id): Path<String>,
 ) -> Json<ConversationTemplate> {
     let state = state.clone();
@@ -111,7 +105,7 @@ async fn get_template(
 }
 
 async fn update_template(
-    State(state): State<Arc<Mutex<AppState>>>,
+    State(state): State<AsyncAppState>,
     Path(template_id): Path<String>,
     Json(body): Json<ConversationTemplate>,
 ) -> Json<ConversationTemplate> {
@@ -136,10 +130,7 @@ async fn update_template(
     }
 }
 
-async fn delete_template(
-    State(state): State<Arc<Mutex<AppState>>>,
-    Path(template_id): Path<String>,
-) {
+async fn delete_template(State(state): State<AsyncAppState>, Path(template_id): Path<String>) {
     let state = state.clone();
     let mut state = state.lock().await;
 
@@ -157,7 +148,7 @@ struct PreviewQueryParams {
 }
 
 async fn preview_conversation(
-    State(state): State<Arc<Mutex<AppState>>>,
+    State(state): State<AsyncAppState>,
     Path(template_id): Path<String>,
     Query(params): Query<PreviewQueryParams>,
 ) -> Json<Conversation> {
@@ -202,7 +193,7 @@ async fn preview_conversation(
 }
 
 async fn start_conversation(
-    State(state): State<Arc<Mutex<AppState>>>,
+    State(state): State<AsyncAppState>,
     Path(template_id): Path<String>,
 ) -> Json<Conversation> {
     let state = state.clone();

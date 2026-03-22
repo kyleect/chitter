@@ -14,31 +14,25 @@ use tracing::{info, instrument};
 use std::sync::Arc;
 
 use axum::extract::State;
-use tokio::{
-    spawn,
-    sync::{Mutex, mpsc::unbounded_channel},
-};
+use tokio::{spawn, sync::mpsc::unbounded_channel};
 use types::socket::ClientMessage;
 
-use crate::AppState;
+use crate::AsyncAppState;
 
-pub fn websockets_routes(state: Arc<Mutex<AppState>>) -> Router<Arc<Mutex<AppState>>> {
+pub fn websockets_routes(state: AsyncAppState) -> Router<AsyncAppState> {
     Router::new().route("/", any(ws_handler)).with_state(state)
 }
 
 #[axum::debug_handler]
 #[instrument(skip(ws, state))]
-async fn ws_handler(
-    ws: WebSocketUpgrade,
-    State(state): State<Arc<Mutex<AppState>>>,
-) -> impl IntoResponse {
+async fn ws_handler(ws: WebSocketUpgrade, State(state): State<AsyncAppState>) -> impl IntoResponse {
     // finalize the upgrade process by returning upgrade callback.
     // we can customize the callback by sending additional info such as address.
     ws.on_upgrade(move |socket| handle_socket(socket, state))
 }
 
 #[instrument(skip(socket, state))]
-async fn handle_socket(socket: WebSocket, state: Arc<Mutex<AppState>>) {
+async fn handle_socket(socket: WebSocket, state: AsyncAppState) {
     info!("WebSocket connection established");
 
     let (tx, mut rx) = unbounded_channel::<String>();

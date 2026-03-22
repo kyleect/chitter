@@ -3,21 +3,18 @@ use futures_util::TryStreamExt;
 use hyper::StatusCode;
 use sqlx::Row;
 
-use std::sync::Arc;
-
 use axum::{Json, extract::State};
-use tokio::sync::Mutex;
 use types::achievement::{Achievement, AchievementDto};
 
-use crate::AppState;
+use crate::AsyncAppState;
 
-pub fn achievements_routes(state: Arc<Mutex<AppState>>) -> Router<Arc<Mutex<AppState>>> {
+pub fn achievements_routes(state: AsyncAppState) -> Router<AsyncAppState> {
     Router::new()
         .route("/", get(get_achievements))
         .with_state(state)
 }
 
-async fn get_achievements_inner(state: Arc<Mutex<AppState>>) -> Vec<AchievementDto> {
+async fn get_achievements_inner(state: AsyncAppState) -> Vec<AchievementDto> {
     let state = state.clone();
     let state = state.lock().await;
     let conn = state.db.as_ref().unwrap();
@@ -48,7 +45,7 @@ async fn get_achievements_inner(state: Arc<Mutex<AppState>>) -> Vec<AchievementD
 }
 
 async fn get_achievements(
-    State(state): State<Arc<Mutex<AppState>>>,
+    State(state): State<AsyncAppState>,
 ) -> (StatusCode, Json<Vec<AchievementDto>>) {
     (StatusCode::OK, Json(get_achievements_inner(state).await))
 }

@@ -1,8 +1,8 @@
 use clap::Parser;
-use server::{Args, DbEncryption, DbOptions, Error, InitServerOptions, init_server};
+use server::{Args, DbEncryption, DbOptions, InitServerOptions, errors::ServerError, init_server};
 
 #[tokio::main]
-async fn main() -> Result<(), Error> {
+async fn main() -> Result<(), ServerError> {
     dotenv::dotenv().expect("should load dotenv");
 
     let args = Args::parse();

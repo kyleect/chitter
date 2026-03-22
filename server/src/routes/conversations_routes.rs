@@ -4,15 +4,12 @@ use axum::{
     routing::{delete, get},
 };
 
-use std::sync::Arc;
-
 use axum::{Json, extract::State};
-use tokio::sync::Mutex;
 use types::conversation::Conversation;
 
-use crate::AppState;
+use crate::AsyncAppState;
 
-pub fn conversations_routes(state: Arc<Mutex<AppState>>) -> Router<Arc<Mutex<AppState>>> {
+pub fn conversations_routes(state: AsyncAppState) -> Router<AsyncAppState> {
     Router::new().route("/", get(get_conversations)).route(
         "/{conversation_id}",
         delete(delete_conversation)
@@ -21,7 +18,7 @@ pub fn conversations_routes(state: Arc<Mutex<AppState>>) -> Router<Arc<Mutex<App
     )
 }
 
-async fn get_conversations(State(state): State<Arc<Mutex<AppState>>>) -> Json<Vec<Conversation>> {
+async fn get_conversations(State(state): State<AsyncAppState>) -> Json<Vec<Conversation>> {
     let state = state.clone();
     let state = state.lock().await;
 
@@ -29,7 +26,7 @@ async fn get_conversations(State(state): State<Arc<Mutex<AppState>>>) -> Json<Ve
 }
 
 async fn delete_conversation(
-    State(state): State<Arc<Mutex<AppState>>>,
+    State(state): State<AsyncAppState>,
     Path(conversation_id): Path<String>,
 ) {
     let state = state.clone();
@@ -44,7 +41,7 @@ async fn delete_conversation(
 }
 
 async fn update_conversation(
-    State(state): State<Arc<Mutex<AppState>>>,
+    State(state): State<AsyncAppState>,
     Path(conversation_id): Path<String>,
     Json(body): Json<Conversation>,
 ) -> Json<Conversation> {

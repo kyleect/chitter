@@ -1,10 +1,7 @@
-use std::sync::Arc;
-
 use axum::Router;
-use tokio::sync::Mutex;
 
 use crate::{
-    AppState,
+    AsyncAppState,
     routes::{
         acheivements_routes::achievements_routes, completions_routes::completions_routes,
         conversations_routes::conversations_routes, debug_routes::debug_routes,
@@ -24,7 +21,7 @@ pub mod settings_routes;
 pub mod templates_routes;
 pub mod websockets_routes;
 
-pub fn api_routes(state: Arc<Mutex<AppState>>) -> Router<Arc<Mutex<AppState>>> {
+pub fn api_routes(state: AsyncAppState) -> Router<AsyncAppState> {
     Router::new()
         .nest("/debug", debug_routes(state.clone()))
         .nest("/achievements", achievements_routes(state.clone()))

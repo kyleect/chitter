@@ -10,18 +10,15 @@ use axum::{
 use hyper::StatusCode;
 use serde::{Deserialize, Serialize};
 
-use std::sync::Arc;
-
 use axum::{Json, extract::State};
-use tokio::sync::Mutex;
 use types::{
     completion::{ChatCompletionRequestBody, CompletionRequestBody, RegenerateResponseRequestBody},
     message::Role,
 };
 
-use crate::AppState;
+use crate::AsyncAppState;
 
-pub fn completions_routes(state: Arc<Mutex<AppState>>) -> Router<Arc<Mutex<AppState>>> {
+pub fn completions_routes(state: AsyncAppState) -> Router<AsyncAppState> {
     Router::new()
         .route("/chat", post(chat_completion))
         .route("/chat/regenerate", post(regenerate_response))
@@ -35,7 +32,7 @@ struct CompletionResponse {
 }
 
 async fn chat_completion(
-    State(state): State<Arc<Mutex<AppState>>>,
+    State(state): State<AsyncAppState>,
     Json(body): Json<ChatCompletionRequestBody>,
 ) -> CompletionResponse {
     let state = state.clone();
@@ -151,7 +148,7 @@ impl IntoResponse for CompletionResponse {
 }
 
 async fn completetion(
-    State(state): State<Arc<Mutex<AppState>>>,
+    State(state): State<AsyncAppState>,
     Json(body): Json<CompletionRequestBody>,
 ) -> CompletionResponse {
     let state = state.clone();
@@ -192,7 +189,7 @@ async fn completetion(
 }
 
 async fn regenerate_response(
-    State(state): State<Arc<Mutex<AppState>>>,
+    State(state): State<AsyncAppState>,
     Json(body): Json<RegenerateResponseRequestBody>,
 ) -> CompletionResponse {
     let state = state.clone();

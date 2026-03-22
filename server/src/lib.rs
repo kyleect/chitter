@@ -1,12 +1,7 @@
 use std::{env::current_dir, path::PathBuf, sync::Arc, vec};
 
 use async_openai::{Client, config::OpenAIConfig};
-use axum::{
-    Router,
-    extract::Request,
-    http::StatusCode,
-    response::{IntoResponse, Response},
-};
+use axum::{Router, extract::Request};
 use clap::Parser;
 use hyper::{body::Incoming, service::service_fn};
 use hyper_util::{
@@ -39,46 +34,15 @@ use tower_http::services::ServeDir;
 #[cfg(not(feature = "development_mode"))]
 use tower_serve_static::ServeDir as StaticServeDir;
 
-use crate::routes::api_routes;
+use crate::{errors::ServerError, routes::api_routes};
 
+pub mod errors;
 pub mod routes;
 
 static MIGRATOR: Migrator = sqlx::migrate!();
 
 const DATABASE_URL_ENV_VAR: &str = "DATABASE_URL";
 const DEFAULT_DB_FILENAME: &str = "chitter.sqlite3";
-
-#[derive(Debug)]
-pub enum Error {
-    Io(String),
-    DbEncryptionKeyRequiredButNotProvided,
-}
-
-impl std::fmt::Display for Error {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        match self {
-            Error::Io(printable) => write!(f, "{}", printable),
-            Error::DbEncryptionKeyRequiredButNotProvided => {
-                write!(f, "Db encryption key required but not provided")
-            }
-        }
-    }
-}
-
-impl From<std::io::Error> for Error {
-    fn from(err: std::io::Error) -> Self {
-        Error::Io(err.to_string())
-    }
-}
-
-impl IntoResponse for Error {
-    fn into_response(self) -> Response {
-        let body = self.to_string();
-
-        error!(body);
-        (StatusCode::INTERNAL_SERVER_ERROR, body).into_response()
-    }
-}
 
 #[derive(Clone, Debug)]
 pub struct AppState {
@@ -102,6 +66,8 @@ impl AppState {
     }
 }
 
+pub type AsyncAppState = Arc<Mutex<AppState>>;
+
 #[derive(Parser)]
 pub struct Args {
     /// Set which port to use (default: random)
@@ -124,7 +90,7 @@ pub struct Args {
 pub struct AppServer(TcpListener, Router);
 
 impl AppServer {
-    pub async fn start<F>(self, on_ready: &F) -> Result<(), Error>
+    pub async fn start<F>(self, on_ready: &F) -> Result<(), ServerError>
     where
         F: Fn(),
     {
@@ -186,7 +152,7 @@ pub enum DbEncryption {
     Encrypted(String, Option<String>),
 }
 
-pub async fn init_server(options: InitServerOptions) -> Result<AppServer, Error> {
+pub async fn init_server(options: InitServerOptions) -> Result<AppServer, ServerError> {
     tracing_subscriber::registry()
         .with(
             tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| {
@@ -422,7 +388,7 @@ This is video call.
         ],
     };
 
-    let state = Arc::new(Mutex::new(state));
+    let state: AsyncAppState = Arc::new(Mutex::new(state));
 
     let listener = tokio::net::TcpListener::bind(format!("localhost:{}", port)).await?;
     let addr = listener.local_addr()?;
@@ -431,7 +397,7 @@ This is video call.
     tracing::info!("listening on {}", url);
 
     if options.open_browser && webbrowser::Browser::is_available() {
-        webbrowser::open(&url).map_err(crate::Error::from)?;
+        webbrowser::open(&url).map_err(ServerError::from)?;
     }
 
     let compression_layer: CompressionLayer =

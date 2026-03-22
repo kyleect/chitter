@@ -1,11 +1,7 @@
 use axum::{Router, routing::get};
 use hyper::StatusCode;
 
-use std::sync::Arc;
-
-use tokio::sync::Mutex;
-
-use crate::AppState;
+use crate::AsyncAppState;
 
 use axum::{
     Json,
@@ -13,7 +9,7 @@ use axum::{
 };
 use types::persona::{NewPersona, Persona};
 
-pub fn persona_routes(state: Arc<Mutex<AppState>>) -> Router<Arc<Mutex<AppState>>> {
+pub fn persona_routes(state: AsyncAppState) -> Router<AsyncAppState> {
     Router::new()
         .route("/", get(get_personas).post(add_personas))
         .route(
@@ -23,7 +19,7 @@ pub fn persona_routes(state: Arc<Mutex<AppState>>) -> Router<Arc<Mutex<AppState>
         .with_state(state)
 }
 
-async fn get_personas(State(state): State<Arc<Mutex<AppState>>>) -> Json<Vec<Persona>> {
+async fn get_personas(State(state): State<AsyncAppState>) -> Json<Vec<Persona>> {
     let state = state.clone();
     let state = state.lock().await;
 
@@ -31,7 +27,7 @@ async fn get_personas(State(state): State<Arc<Mutex<AppState>>>) -> Json<Vec<Per
 }
 
 async fn add_personas(
-    State(state): State<Arc<Mutex<AppState>>>,
+    State(state): State<AsyncAppState>,
     Json(body): Json<NewPersona>,
 ) -> Json<Persona> {
     let state = state.clone();
@@ -45,7 +41,7 @@ async fn add_personas(
 }
 
 async fn get_persona(
-    State(state): State<Arc<Mutex<AppState>>>,
+    State(state): State<AsyncAppState>,
     Path(persona_id): Path<String>,
 ) -> Json<Persona> {
     let state = state.clone();
@@ -61,7 +57,7 @@ async fn get_persona(
     Json(persona.clone())
 }
 
-async fn delete_persona(State(state): State<Arc<Mutex<AppState>>>, Path(persona_id): Path<String>) {
+async fn delete_persona(State(state): State<AsyncAppState>, Path(persona_id): Path<String>) {
     let state = state.clone();
     let mut state = state.lock().await;
 
@@ -74,7 +70,7 @@ async fn delete_persona(State(state): State<Arc<Mutex<AppState>>>, Path(persona_
 }
 
 async fn update_persona(
-    State(state): State<Arc<Mutex<AppState>>>,
+    State(state): State<AsyncAppState>,
     Path(persona_id): Path<String>,
     Json(body): Json<Persona>,
 ) -> Json<Persona> {

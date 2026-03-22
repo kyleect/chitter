@@ -2,15 +2,12 @@ use axum::{Router, routing::get};
 use hyper::StatusCode;
 use tracing::instrument;
 
-use std::sync::Arc;
-
 use axum::{Json, extract::State};
-use tokio::sync::Mutex;
 use types::DebugInfo;
 
-use crate::AppState;
+use crate::AsyncAppState;
 
-pub fn debug_routes(state: Arc<Mutex<AppState>>) -> Router<Arc<Mutex<AppState>>> {
+pub fn debug_routes(state: AsyncAppState) -> Router<AsyncAppState> {
     Router::new()
         .route("/", get(get_debug_info))
         .with_state(state)
@@ -18,9 +15,7 @@ pub fn debug_routes(state: Arc<Mutex<AppState>>) -> Router<Arc<Mutex<AppState>>>
 
 #[instrument(skip(state))]
 #[axum::debug_handler]
-async fn get_debug_info(
-    State(state): State<Arc<Mutex<AppState>>>,
-) -> (StatusCode, Json<DebugInfo>) {
+async fn get_debug_info(State(state): State<AsyncAppState>) -> (StatusCode, Json<DebugInfo>) {
     let state = state.clone();
 
     let project_dir = {
