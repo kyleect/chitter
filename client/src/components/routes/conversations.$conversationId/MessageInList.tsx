@@ -186,7 +186,13 @@ export const MessageInList: FC<MessageInListProps> = ({
                   disabled={context.isGenerating || isEditingRegenerationPrompt}
                   onClick={() => {
                     addMoreDetailsCompletionMutation.mutate(
-                      { prompt: addMoreDetailPrompt },
+                      {
+                        prompt: addMoreDetailPrompt,
+                        params: {
+                          max_tokens: 1000,
+                          temperature: 0.5,
+                        },
+                      },
                       {
                         onSuccess(response) {
                           modals.openConfirmModal({

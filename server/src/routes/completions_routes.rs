@@ -158,8 +158,18 @@ async fn completetion(
         Some(client) => {
             let request = CreateCompletionRequestArgs::default()
                 .prompt(body.prompt)
-                .max_tokens(body.settings.max_tokens.unwrap_or(400))
-                .temperature(body.settings.temperature.unwrap_or(0.8f32))
+                .max_tokens(
+                    body.settings
+                        .max_tokens
+                        .or(state.settings.params.max_tokens)
+                        .unwrap_or(400),
+                )
+                .temperature(
+                    body.settings
+                        .temperature
+                        .or(state.settings.params.temperature)
+                        .unwrap_or(0.8f32),
+                )
                 .build()
                 .expect("should create completion request");
 
