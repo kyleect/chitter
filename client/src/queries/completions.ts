@@ -34,7 +34,7 @@ export const useCompletionMutation = (key: string) => {
       prompt: string;
       params?: Partial<LLMParameters>;
     }) => {
-      const response = await fetch(`/api/completions`, {
+      const response = await fetch(`/api/completions/text`, {
         method: "POST",
         body: JSON.stringify({
           prompt,
@@ -115,7 +115,7 @@ export const useChatCompletionMutation = (conversationId: string) => {
         queryKey: CONSERVATION_KEYS.detail(conversationId),
       }),
     mutationFn: async (prompt: string) => {
-      const response = await fetch(`/api/chat_completions`, {
+      const response = await fetch(`/api/completions/chat`, {
         method: "POST",
         body: JSON.stringify({
           prompt,
@@ -175,20 +175,17 @@ export const useRegenerateResponseMutation = (conversationId: string) => {
       messageIndex: number;
       guidancePrompt?: string;
     }) => {
-      const response = await fetch(
-        `/api/chat_completions/regenerate_response`,
-        {
-          method: "POST",
-          body: JSON.stringify({
-            conversation_id: conversationId,
-            message_index: messageIndex,
-            guidance_prompt: guidancePrompt ?? null,
-          } as RegenerateResponseRequestBody),
-          headers: {
-            "content-type": "application/json",
-          },
+      const response = await fetch(`/api/completions/chat/regenerate`, {
+        method: "POST",
+        body: JSON.stringify({
+          conversation_id: conversationId,
+          message_index: messageIndex,
+          guidance_prompt: guidancePrompt ?? null,
+        } as RegenerateResponseRequestBody),
+        headers: {
+          "content-type": "application/json",
         },
-      );
+      });
 
       if (!response.ok) {
         const error = await response.text();
