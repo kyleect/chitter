@@ -5,6 +5,7 @@ import {
   COMPLETION_KEYS,
   useChatCompletionMutation,
   useCompletionMutation,
+  useGenerateResponseMutation,
 } from "@/queries/completions";
 import {
   useGetConservationByIdQuery,
@@ -60,6 +61,9 @@ function RouteComponent() {
   const params = Route.useParams();
   const getInsertablesQuery = useGetInsertablesQuery();
   const chatCompletionMutation = useChatCompletionMutation(
+    params.conversationId,
+  );
+  const generateResponseMutation = useGenerateResponseMutation(
     params.conversationId,
   );
   const renameConversationCompletionMutation = useCompletionMutation(
@@ -220,7 +224,10 @@ function RouteComponent() {
     chatCompletionMutation.isPending ||
     regenerateMutations.length > 0 ||
     addMoreDetailsCompletionMutations.length > 0 ||
-    renameTitleCompletionMutations.length > 0;
+    renameTitleCompletionMutations.length > 0 ||
+    generateResponseMutation.isPending;
+
+  const isUserTurn = conversation?.messages.at(-1)?.role.kind !== "user";
 
   return (
     <Stack gap="xs">
@@ -271,31 +278,45 @@ function RouteComponent() {
           </ActionIcon>
         </Group>
 
-        <UserReplyForm
-          ref={targetRef}
-          isLoading={isGenerating}
-          value={reply}
-          onChange={setReply}
-          onSubmit={() => {
-            const backupReply = `${reply}`;
+        {isUserTurn ? (
+          <UserReplyForm
+            ref={targetRef}
+            isLoading={isGenerating}
+            value={reply}
+            onChange={setReply}
+            onSubmit={() => {
+              const backupReply = `${reply}`;
 
-            setReply("");
+              setReply("");
 
-            chatCompletionMutation.mutate(reply, {
-              onSuccess() {
-                scrollIntoView();
-              },
-              onError() {
-                setReply(backupReply);
+              chatCompletionMutation.mutate(reply, {
+                onSuccess() {
+                  scrollIntoView();
+                },
+                onError() {
+                  setReply(backupReply);
 
-                notifications.show({
-                  color: "red",
-                  message: `Error generating completion`,
-                });
-              },
-            });
-          }}
-        />
+                  notifications.show({
+                    color: "red",
+                    message: `Error generating completion`,
+                  });
+                },
+              });
+            }}
+          />
+        ) : (
+          <Button.Group>
+            <Button
+              variant="gradient"
+              onClick={() => {
+                generateResponseMutation.mutate();
+              }}
+              loading={isGenerating}
+            >
+              Generate Response
+            </Button>
+          </Button.Group>
+        )}
 
         {conversation && (
           <Group justify="space-between">

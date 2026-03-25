@@ -144,6 +144,52 @@ export const useChatCompletionMutation = (conversationId: string) => {
   });
 };
 
+export const useGenerateResponseMutation = (conversationId: string) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    // When mutate is called:
+    onMutate: async () => {
+      // Cancel any outgoing refetches
+      // (so they don't overwrite our optimistic update)
+      await queryClient.cancelQueries({
+        queryKey: CONSERVATION_KEYS.detail(conversationId),
+      });
+    },
+    // Always refetch after error or success:
+    onSettled: () =>
+      queryClient.invalidateQueries({
+        queryKey: CONSERVATION_KEYS.detail(conversationId),
+      }),
+    mutationFn: async () => {
+      const response = await fetch(`/api/completions/chat/generate`, {
+        method: "POST",
+        body: JSON.stringify({
+          conversation_id: conversationId,
+          settings: {
+            temperature: 1.0,
+          },
+        } as ChatCompletionRequestBody),
+        headers: {
+          "content-type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        const error = await response.text();
+
+        throw new Error(`Couldn't generate chat completion: ${error}`);
+      }
+
+      const data = (await response.json()) as {
+        response: string;
+      };
+
+      return data.response;
+    },
+  });
+};
+
 export const useRegenerateResponseMutation = (conversationId: string) => {
   const queryClient = useQueryClient();
   const conversationQueryKey = CONSERVATION_KEYS.detail(conversationId);
