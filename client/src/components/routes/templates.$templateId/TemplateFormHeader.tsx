@@ -18,6 +18,7 @@ export const TemplateFormHeader = () => {
 
   const [draftTitle, setDraftTitle] = draftTitleState;
   const [isEditing] = isEditingState;
+  const [currentVariant] = context.variantState;
 
   const personasMissing =
     template.assistantPersona === null || !template.userPersona === null;
@@ -30,16 +31,22 @@ export const TemplateFormHeader = () => {
             variant="gradient"
             disabled={personasMissing}
             onClick={() => {
-              startConversationMutation.mutate(template.id, {
-                onSuccess(data) {
-                  nav({
-                    to: "/conversations/$conversationId",
-                    params: {
-                      conversationId: data.id,
-                    },
-                  });
+              startConversationMutation.mutate(
+                {
+                  templateId: template.id,
+                  variantId: currentVariant ?? undefined,
                 },
-              });
+                {
+                  onSuccess(data) {
+                    nav({
+                      to: "/conversations/$conversationId",
+                      params: {
+                        conversationId: data.id,
+                      },
+                    });
+                  },
+                },
+              );
             }}
           >
             Chat

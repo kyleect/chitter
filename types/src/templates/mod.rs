@@ -1,3 +1,4 @@
+use bon::Builder;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
@@ -14,7 +15,7 @@ pub mod blocks;
 pub mod personas;
 pub mod variables;
 
-#[derive(TS, Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(TS, Clone, Debug, PartialEq, Serialize, Deserialize, Builder)]
 #[serde(rename_all = "camelCase")]
 #[ts(export)]
 pub struct ConversationTemplate {
@@ -24,6 +25,33 @@ pub struct ConversationTemplate {
     pub user_persona: Option<TemplatePersona>,
     pub blocks: Vec<TemplateBlock>,
     pub insertable_system_prompts: Vec<(String, String)>,
+    pub variants: Vec<TemplateVariant>,
+    pub active_variant: Option<String>,
+}
+
+#[derive(TS, Clone, Debug, PartialEq, Serialize, Deserialize, Builder)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct TemplateVariant {
+    pub id: String,
+    pub title: String,
+    pub blocks: Vec<TemplateBlock>,
+    pub insertable_system_prompts: Vec<(String, String)>,
+}
+
+impl TemplateVariant {
+    pub fn new(
+        title: &str,
+        blocks: Vec<TemplateBlock>,
+        insertable_system_prompts: Vec<(String, String)>,
+    ) -> Self {
+        Self {
+            id: uuid::Uuid::new_v4().to_string(),
+            title: title.to_string(),
+            blocks,
+            insertable_system_prompts,
+        }
+    }
 }
 
 impl ConversationTemplate {
@@ -35,6 +63,8 @@ impl ConversationTemplate {
             user_persona: None,
             blocks: vec![],
             insertable_system_prompts: Default::default(),
+            variants: vec![],
+            active_variant: None,
         }
     }
 
@@ -173,7 +203,9 @@ mod conversation_template_tests {
                     TemplateBlock::ooc("Format the summary as a bulleted list"),
                     TemplateBlock::EndIf
                 ],
-                insertable_system_prompts: Default::default()
+                insertable_system_prompts: Default::default(),
+                variants: vec![],
+                active_variant: None
             },
             conversation
         );

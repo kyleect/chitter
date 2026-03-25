@@ -12,6 +12,7 @@ import {
   Button,
   Loader,
   Alert,
+  Badge,
 } from "@mantine/core";
 import { FC, useContext } from "react";
 import { TemplateContext } from "./TemplateContext";
@@ -42,6 +43,7 @@ type TemplateBlockProps = {
   inline?: boolean;
   level?: number;
   onClose?: () => void;
+  variantBlock?: boolean;
 };
 
 export const TemplateBlock: React.FC<TemplateBlockProps> = ({
@@ -51,6 +53,7 @@ export const TemplateBlock: React.FC<TemplateBlockProps> = ({
   children,
   level = 0,
   onClose,
+  variantBlock = false,
 }) => {
   const context = useContext(TemplateContext)!;
 
@@ -69,6 +72,10 @@ export const TemplateBlock: React.FC<TemplateBlockProps> = ({
               {title}
             </Text>
           </Group>
+
+          <Badge radius="sm" variant="outline">
+            {variantBlock ? "Variant" : "Template"}
+          </Badge>
 
           <Group>
             {children}
@@ -100,6 +107,10 @@ export const TemplateBlock: React.FC<TemplateBlockProps> = ({
             onClick={() => onClose?.call(null)}
           />
         </Group>
+
+        <Badge radius="sm" variant="subtle" mb="lg" color="gray">
+          Source: {variantBlock ? "Variant" : "Template"}
+        </Badge>
 
         {children}
       </Stack>
@@ -306,12 +317,14 @@ type MessageTemplateBlockProps = {
   item: {
     message: Message;
   };
+  variantBlock?: boolean;
   handleDeleteAtIndex: () => void;
 };
 
 export const MessageTemplateBlock: FC<MessageTemplateBlockProps> = ({
   index,
   item,
+  variantBlock = false,
   handleDeleteAtIndex,
 }) => {
   const getInsertablesQuery = useGetInsertablesQuery();
@@ -352,11 +365,13 @@ export const MessageTemplateBlock: FC<MessageTemplateBlockProps> = ({
   return (
     <TemplateBlock
       icon={icon}
+      variantBlock={variantBlock}
       title={
         isEditing ? (
           <Select
             size="md"
             value={item.message.role.kind}
+            disabled={variantBlock}
             onChange={(newRole) => {
               if (newRole === null) return;
 
@@ -404,6 +419,7 @@ export const MessageTemplateBlock: FC<MessageTemplateBlockProps> = ({
           size="md"
           minRows={1}
           autosize
+          disabled={variantBlock}
           value={item.message.content ?? ""}
           onChange={(e) => patchMessageItem(index, e.target.value)}
         />

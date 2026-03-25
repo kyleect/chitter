@@ -42,10 +42,19 @@ export const useGetConservationByIdQuery = (id: string) =>
 
 export const useStartConversationMutation = () =>
   useMutation({
-    mutationFn: async (templateId: string) => {
-      const response = await fetch(`/api/templates/${templateId}/chat`, {
-        method: "POST",
-      });
+    mutationFn: async ({
+      templateId,
+      variantId,
+    }: {
+      templateId: string;
+      variantId?: string;
+    }) => {
+      const response = await fetch(
+        `/api/templates/${templateId}/chat?variantId=${variantId}`,
+        {
+          method: "POST",
+        },
+      );
       const data = (await response.json()) as Conversation;
 
       return data ?? null;

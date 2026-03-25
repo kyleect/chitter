@@ -111,16 +111,19 @@ function RouteComponent() {
                   variant="gradient"
                   disabled={missingPersonas}
                   onClick={() => {
-                    startConversationMutation.mutate(template.id, {
-                      onSuccess(data) {
-                        nav({
-                          to: "/conversations/$conversationId",
-                          params: {
-                            conversationId: data.id,
-                          },
-                        });
+                    startConversationMutation.mutate(
+                      { templateId: template.id },
+                      {
+                        onSuccess(data) {
+                          nav({
+                            to: "/conversations/$conversationId",
+                            params: {
+                              conversationId: data.id,
+                            },
+                          });
+                        },
                       },
-                    });
+                    );
                   }}
                 >
                   Chat

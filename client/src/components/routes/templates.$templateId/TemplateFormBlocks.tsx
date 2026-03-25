@@ -20,15 +20,17 @@ import {
 } from "./TemplateBlock";
 import { modals } from "@mantine/modals";
 import { usePatchTemplateItems } from "@/hooks/usePatchTemplateItems";
+import { VariantDividerBar } from "./VariantDividerBar";
 
 export const TemplateFormBlocks = () => {
   const context = useContext(TemplateContext)!;
 
-  const { isEditingState, draftTemplateBlocksState: draftTemplateItemsState } =
+  const { isEditingState, draftTemplateBlocksState, draftVariantBlocksState } =
     context;
 
   const [_, setIsEditing] = isEditingState;
-  const [draftTemplateItems] = draftTemplateItemsState;
+  const [draftTemplateBlocks] = draftTemplateBlocksState;
+  const [draftVariantBlocks] = draftVariantBlocksState;
 
   const patchItems = usePatchTemplateItems();
 
@@ -50,7 +52,7 @@ export const TemplateFormBlocks = () => {
     });
   };
 
-  if (draftTemplateItems.length === 0) {
+  if (draftTemplateBlocks.length === 0) {
     return <DividerBar index={-1} onClickAdd={() => setIsEditing(true)} />;
   }
 
@@ -58,7 +60,7 @@ export const TemplateFormBlocks = () => {
     <Stack gap="xs">
       <DividerBar index={-1} />
 
-      {draftTemplateItems.map((item, index) => {
+      {draftTemplateBlocks.map((item, index) => {
         let block: ReactNode = null;
 
         switch (true) {
@@ -121,6 +123,75 @@ export const TemplateFormBlocks = () => {
             {block}
 
             <DividerBar index={index} />
+          </>
+        );
+      })}
+
+      {draftVariantBlocks.map((item, index) => {
+        let block: ReactNode = null;
+        let totalIndex = draftTemplateBlocks.length + index;
+
+        switch (true) {
+          case isMessageItem(item):
+            block = (
+              <MessageTemplateBlock
+                index={index}
+                item={item}
+                handleDeleteAtIndex={handleDeleteAtIndex(index)}
+                variantBlock={true}
+              />
+            );
+            break;
+          case isOOCItem(item):
+            block = (
+              <OOCTemplateBlock
+                index={index}
+                item={item}
+                handleDeleteAtIndex={handleDeleteAtIndex(index)}
+              />
+            );
+            break;
+          case isInnerThoughtsItem(item):
+            block = (
+              <InnerThoughtsTemplateBlock
+                index={index}
+                item={item}
+                handleDeleteAtIndex={handleDeleteAtIndex(index)}
+              />
+            );
+            break;
+          case isSetVarItem(item):
+            block = (
+              <SetVarTemplateBlock
+                index={index}
+                item={item}
+                handleDeleteAtIndex={handleDeleteAtIndex(index)}
+              />
+            );
+            break;
+          case isIfEqItem(item):
+            block = (
+              <IfEqTemplateBlock
+                index={index}
+                item={item}
+                handleDeleteAtIndex={handleDeleteAtIndex(index)}
+              />
+            );
+            break;
+          case isEndIf(item):
+            block = (
+              <EndIfTemplateBlock
+                handleDeleteAtIndex={handleDeleteAtIndex(index)}
+              />
+            );
+            break;
+        }
+
+        return (
+          <>
+            {block}
+
+            <VariantDividerBar index={totalIndex} />
           </>
         );
       })}

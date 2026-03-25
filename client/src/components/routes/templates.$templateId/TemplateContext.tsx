@@ -1,9 +1,15 @@
 import { StatePair } from "@/lib/statePair";
 import { createContext } from "react";
-import { ConversationTemplate, TemplatePersona } from "server-types";
+import {
+  ConversationTemplate,
+  TemplatePersona,
+  TemplateVariant,
+} from "server-types";
 
 type ContextType = {
   template: ConversationTemplate;
+
+  variantState: StatePair<string | null>;
 
   isEditingState: StatePair<boolean>;
   draftTitleState: StatePair<string>;
@@ -13,6 +19,7 @@ type ContextType = {
   draftUserPersonaState: StatePair<TemplatePersona | null>;
 
   draftTemplateBlocksState: StatePair<ConversationTemplate["blocks"]>;
+  draftVariantBlocksState: StatePair<TemplateVariant["blocks"]>;
 
   previewConversationAtIndexState: StatePair<number | undefined>;
   previewConversationModal: {

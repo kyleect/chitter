@@ -6,9 +6,12 @@ use sqlx::{Pool, Sqlite};
 use tokio::sync::{Mutex, mpsc::UnboundedSender};
 use types::{
     conversation::Conversation,
+    message::Role,
     persona::Persona,
     settings::{AppSettings, ConversationSettings, LLMConnection, LLMParameters},
-    templates::{ConversationTemplate, personas::TemplatePersona},
+    templates::{
+        ConversationTemplate, TemplateVariant, blocks::TemplateBlock, personas::TemplatePersona,
+    },
 };
 
 #[derive(Clone, Debug, Builder)]
@@ -104,7 +107,20 @@ impl Default for AppState {
 
             template.user_persona = Some(TemplatePersona::Id(user_persona.id.clone()));
 
-            template.add_assistant_message("Hello! Give me a word and I'll tell you a joke.");
+            template
+                .add_assistant_message("Hello! Give me a topic and I'll tell you a funny joke.");
+
+            template.variants.push(TemplateVariant::new(
+                "Halloween Joke",
+                vec![TemplateBlock::message(Role::User, "Halloween")],
+                vec![],
+            ));
+
+            template.variants.push(TemplateVariant::new(
+                "Programming Joke",
+                vec![TemplateBlock::message(Role::User, "Programming")],
+                vec![],
+            ));
 
             template
         };

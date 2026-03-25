@@ -15,11 +15,13 @@ import { PERSONA_KEYS } from "./personas";
 export const TEMPLATE_KEYS = {
   all: ["templates"] as const,
   detail: (id: string | null) => [...TEMPLATE_KEYS.all, id ?? null],
-  preview: (id: string, at?: number) => [
+  preview: (id: string, at?: number, variantId?: string) => [
     ...TEMPLATE_KEYS.detail(id),
     "preview",
     "at",
     at ?? null,
+    "variantId",
+    variantId,
   ],
 } as const;
 
@@ -65,15 +67,22 @@ export const useCreateTemplateMutation = () =>
     },
   });
 
-export const useGetTemplateByIdPreviewQuery = (id: string, at?: number) =>
+export const useGetTemplateByIdPreviewQuery = (
+  id: string,
+  at?: number,
+  variantId?: string,
+) =>
   useQuery({
-    queryKey: TEMPLATE_KEYS.preview(id, at),
+    queryKey: TEMPLATE_KEYS.preview(id, at, variantId),
     queryFn: async () => {
-      const response = await fetch(
-        at
-          ? `/api/templates/${id}/preview?at=${at}`
-          : `/api/templates/${id}/preview`,
-      );
+      const endpoint = at
+        ? `/api/templates/${id}/preview?at=${at}&variantId=${variantId}`
+        : `/api/templates/${id}/preview?variantId=${variantId}`;
+
+      console.log({ endpoint });
+
+      const response = await fetch(endpoint);
+
       const data = (await response.json()) as Conversation;
 
       return data ?? null;

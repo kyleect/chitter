@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+use bon::Builder;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
@@ -14,7 +15,7 @@ use crate::{
     },
 };
 
-#[derive(TS, Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(TS, Clone, Debug, PartialEq, Serialize, Deserialize, Default, Builder)]
 #[serde(rename_all = "camelCase")]
 #[ts(export)]
 pub struct Conversation {
@@ -31,6 +32,7 @@ pub struct Conversation {
 impl Conversation {
     pub fn from_template(
         template: &ConversationTemplate,
+        _variant_id: Option<String>,
         assistant_persona_from_id: Option<&Persona>,
         user_persona_from_id: Option<&Persona>,
     ) -> Self {
@@ -38,6 +40,10 @@ impl Conversation {
         let mut variables: HashMap<VariableKey, VariableValue> = HashMap::new();
         let mut in_if_eq = false;
         let mut if_eq_result: Option<bool> = None;
+
+        let mut blocks = vec![];
+
+        blocks.extend(template.blocks.clone());
 
         for item in template.blocks.iter() {
             if let Some(result) = if_eq_result
@@ -176,8 +182,12 @@ mod conversation_tests {
 
         template.end_if();
 
-        let mut conservation: Conversation =
-            Conversation::from_template(&template, Some(&assistant), Some(&user));
+        let mut conservation: Conversation = Conversation::from_template(
+            &template,
+            Some("expected-variant-id".to_string()),
+            Some(&assistant),
+            Some(&user),
+        );
 
         conservation.id = "expectedConservationId".to_string();
 

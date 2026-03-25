@@ -6,7 +6,11 @@ import { Alert, Divider, Loader, Stack } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { ConversationTemplate, TemplatePersona } from "server-types";
+import {
+  ConversationTemplate,
+  TemplatePersona,
+  TemplateVariant,
+} from "server-types";
 import { ConversationPreviewDrawer } from "@/components/routes/templates.$templateId/ConversationPreviewDrawer";
 import { useGetPersonasQuery } from "@/queries/personas";
 import { useGetSettingsQuery } from "@/queries/settings";
@@ -16,6 +20,7 @@ import { TemplateFormPersonas } from "@/components/routes/templates.$templateId/
 import { TemplateFormAffix } from "@/components/routes/templates.$templateId/TemplateFormAffix";
 import { TemplateFormBlocks } from "@/components/routes/templates.$templateId/TemplateFormBlocks";
 import { TemplateFormInsertable } from "@/components/routes/templates.$templateId/TemplateFormInsertable";
+import { TemplateVariants } from "@/components/routes/templates.$templateId/TemplateVariants";
 
 type Search = {
   at?: number;
@@ -35,9 +40,13 @@ function RouteComponent() {
   const getTemplateByIdQuery = useGetTemplateByIdQuery(params.templateId);
   const [opened, { open, close }] = useDisclosure(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [currentVariant, setCurrentVariant] = useState<string | null>(null);
   const [draftTitle, setDraftTitle] = useState("");
   const [draftTemplateItems, setDraftTemplateItems] = useState<
     ConversationTemplate["blocks"]
+  >([]);
+  const [draftVariantItems, setDraftVariantItems] = useState<
+    TemplateVariant["blocks"]
   >([]);
   const [draftInsertables, setDraftInsertables] = useState<[string, string][]>(
     [],
@@ -45,6 +54,7 @@ function RouteComponent() {
   const getTemplateByIdPreviewQuery = useGetTemplateByIdPreviewQuery(
     params.templateId,
     previewConversationAtIndex,
+    currentVariant ?? undefined,
   );
 
   const getSettingsQuery = useGetSettingsQuery();
@@ -56,8 +66,19 @@ function RouteComponent() {
   const getPersonasQuery = useGetPersonasQuery();
 
   useEffect(() => {
-    setDraftTemplateItems(getTemplateByIdQuery.data?.blocks ?? []);
+    const templateBlocks = getTemplateByIdQuery.data?.blocks ?? [];
+
+    setDraftTemplateItems(templateBlocks);
   }, [getTemplateByIdQuery.data]);
+
+  useEffect(() => {
+    const varientBlocks =
+      getTemplateByIdQuery.data?.variants.find(
+        (variant) => variant.id === currentVariant,
+      )?.blocks ?? [];
+
+    setDraftVariantItems(varientBlocks);
+  }, [currentVariant]);
 
   useEffect(() => {
     if (getTemplateByIdQuery.data) {
@@ -118,10 +139,13 @@ function RouteComponent() {
     return <Alert color="blue">Template not found</Alert>;
   }
 
+  const hasVariants = template.variants.length > 0;
+
   return (
     <TemplateContext
       value={{
         template,
+        variantState: [currentVariant, setCurrentVariant],
         isEditingState: [isEditing, setIsEditing],
         draftTitleState: [draftTitle, setDraftTitle],
         draftUserPersonaState: [draftUserPersona, setDraftUserPersona],
@@ -131,6 +155,7 @@ function RouteComponent() {
         ],
         draftInsertablesState: [draftInsertables, setDraftInsertables],
         draftTemplateBlocksState: [draftTemplateItems, setDraftTemplateItems],
+        draftVariantBlocksState: [draftVariantItems, setDraftVariantItems],
         previewConversationAtIndexState: [
           previewConversationAtIndex,
           setPreviewConversationAtIndexState,
@@ -145,6 +170,19 @@ function RouteComponent() {
       <Stack>
         <Stack>
           <TemplateFormHeader />
+
+          {hasVariants && (
+            <>
+              <Divider
+                label={"Varients"}
+                labelPosition="left"
+                mt="md"
+                mb="md"
+              />
+
+              <TemplateVariants />
+            </>
+          )}
 
           <Divider label={"Personas"} labelPosition="left" mt="md" mb="md" />
 
