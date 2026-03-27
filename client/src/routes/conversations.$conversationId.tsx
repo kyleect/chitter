@@ -23,6 +23,7 @@ import {
   Stack,
   Switch,
   Text,
+  Textarea,
   TextInput,
   ThemeIcon,
 } from "@mantine/core";
@@ -53,6 +54,8 @@ export const Route = createFileRoute("/conversations/$conversationId")({
 
 function RouteComponent() {
   const [reply, setReply] = useState("");
+  const [sendWithMessage, setSendWithMessage] = useState("");
+  const [doSendWithNextMessage, setDoSendWithNextMessage] = useState(false);
   const [isEditingMessageIndex, setIsEditingMessageIndex] = useState<
     number | null
   >(null);
@@ -287,21 +290,25 @@ function RouteComponent() {
             onSubmit={() => {
               const backupReply = `${reply}`;
 
-              setReply("");
+              chatCompletionMutation.mutate(
+                { prompt: reply, systemMessageAfterPrompt: sendWithMessage },
+                {
+                  onSuccess() {
+                    setReply("");
+                    setSendWithMessage("");
+                    setDoSendWithNextMessage(false);
+                    scrollIntoView();
+                  },
+                  onError() {
+                    setReply(backupReply);
 
-              chatCompletionMutation.mutate(reply, {
-                onSuccess() {
-                  scrollIntoView();
+                    notifications.show({
+                      color: "red",
+                      message: `Error generating completion`,
+                    });
+                  },
                 },
-                onError() {
-                  setReply(backupReply);
-
-                  notifications.show({
-                    color: "red",
-                    message: `Error generating completion`,
-                  });
-                },
-              });
+              );
             }}
           />
         ) : (
@@ -432,27 +439,63 @@ function RouteComponent() {
 
         <Divider label="Insertables" />
 
+        {isUserTurn && (
+          <Group align="flex-start">
+            <Switch
+              flex={1}
+              label="Send with next message"
+              disabled={isGenerating}
+              checked={doSendWithNextMessage}
+              onChange={(e) => {
+                if (!e.target.checked) {
+                  setSendWithMessage("");
+                }
+                setDoSendWithNextMessage(e.target.checked);
+              }}
+            />
+
+            <Textarea
+              placeholder="System message to send after the reply"
+              autosize
+              minRows={1}
+              flex={4}
+              style={{
+                visibility: doSendWithNextMessage ? "visible" : "hidden",
+              }}
+              value={sendWithMessage}
+              onChange={(e) => setSendWithMessage(e.target.value)}
+            />
+          </Group>
+        )}
+
         <Group align="top" mt="md">
           <Stack flex={1}>
             <Divider label="From Template" />
 
             <Group>
-              <Button
-                mr="md"
-                size="compact-xs"
-                color="violet"
-                disabled={!!isEditingMessageIndex || isGenerating}
-                onClick={() => {
-                  handleInsertInsertable("");
-                }}
-                leftSection={
-                  <ThemeIcon size="compact-xs" color="violet">
-                    <IconPlus />
-                  </ThemeIcon>
-                }
-              >
-                New
-              </Button>
+              {!doSendWithNextMessage && (
+                <Button
+                  mr="md"
+                  size="compact-xs"
+                  color="violet"
+                  disabled={!!isEditingMessageIndex || isGenerating}
+                  onClick={() => {
+                    if (doSendWithNextMessage) {
+                      setSendWithMessage("");
+                    } else {
+                      setSystemMessagesAreVisible(true);
+                      handleInsertInsertable("");
+                    }
+                  }}
+                  leftSection={
+                    <ThemeIcon size="compact-xs" color="violet">
+                      <IconPlus />
+                    </ThemeIcon>
+                  }
+                >
+                  New
+                </Button>
+              )}
               {(conversation?.insertableSystemPrompts ?? []).map(
                 ([key, value]) => (
                   <HoverCard width={280} shadow="md">
@@ -463,8 +506,12 @@ function RouteComponent() {
                         variant="subtle"
                         disabled={!!isEditingMessageIndex || isGenerating}
                         onClick={() => {
-                          setSystemMessagesAreVisible(true);
-                          handleInsertInsertable(value);
+                          if (doSendWithNextMessage) {
+                            setSendWithMessage(value);
+                          } else {
+                            setSystemMessagesAreVisible(true);
+                            handleInsertInsertable(value);
+                          }
                         }}
                       >
                         {key}
@@ -497,7 +544,12 @@ function RouteComponent() {
                       variant="subtle"
                       disabled={!!isEditingMessageIndex || isGenerating}
                       onClick={() => {
-                        if (value) handleInsertInsertable(value);
+                        if (doSendWithNextMessage) {
+                          setSendWithMessage(value);
+                        } else {
+                          setSystemMessagesAreVisible(true);
+                          handleInsertInsertable(value);
+                        }
                       }}
                     >
                       {key}

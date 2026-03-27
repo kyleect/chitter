@@ -58,6 +58,15 @@ async fn chat_completion(
                 .content(body.prompt.clone())
                 .build(),
         );
+
+        if let Some(system_message_after_prompt) = &body.system_message_after_prompt {
+            conversation.messages.push(
+                types::message::Message::builder()
+                    .role(Role::System)
+                    .content(system_message_after_prompt.clone())
+                    .build(),
+            );
+        }
     };
 
     let conversation = state

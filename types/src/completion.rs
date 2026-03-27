@@ -13,6 +13,7 @@ use crate::message::{Message, Role};
 pub struct ChatCompletionRequestBody {
     pub conversation_id: String,
     pub prompt: String,
+    pub system_message_after_prompt: Option<String>,
     pub settings: CompletionSettings,
 }
 

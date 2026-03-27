@@ -67,7 +67,13 @@ export const useChatCompletionMutation = (conversationId: string) => {
 
   return useMutation({
     // When mutate is called:
-    onMutate: async (prompt: string) => {
+    onMutate: async ({
+      prompt,
+      systemMessageAfterPrompt,
+    }: {
+      prompt: string;
+      systemMessageAfterPrompt?: string;
+    }) => {
       // Cancel any outgoing refetches
       // (so they don't overwrite our optimistic update)
       await queryClient.cancelQueries({
@@ -84,6 +90,23 @@ export const useChatCompletionMutation = (conversationId: string) => {
         CONSERVATION_KEYS.detail(conversationId),
         (old) => {
           if (!old) return old;
+
+          const messages = [
+            ...old.messages,
+            {
+              kind: "Message",
+              role: { kind: "user" },
+              content: prompt,
+            },
+          ];
+
+          if (systemMessageAfterPrompt) {
+            messages.push({
+              kind: "Message",
+              role: { kind: "system" },
+              content: systemMessageAfterPrompt,
+            });
+          }
 
           return {
             ...old,
@@ -114,11 +137,18 @@ export const useChatCompletionMutation = (conversationId: string) => {
       queryClient.invalidateQueries({
         queryKey: CONSERVATION_KEYS.detail(conversationId),
       }),
-    mutationFn: async (prompt: string) => {
+    mutationFn: async ({
+      prompt,
+      systemMessageAfterPrompt,
+    }: {
+      prompt: string;
+      systemMessageAfterPrompt?: string;
+    }) => {
       const response = await fetch(`/api/completions/chat`, {
         method: "POST",
         body: JSON.stringify({
           prompt,
+          system_message_after_prompt: systemMessageAfterPrompt,
           conversation_id: conversationId,
           settings: {
             temperature: 1.0,
