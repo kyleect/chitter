@@ -17,16 +17,21 @@ import {
   Button,
   Card,
   CloseButton,
+  Code,
+  FileButton,
   Group,
   Loader,
   Stack,
   Text,
+  Textarea,
   TextInput,
+  ThemeIcon,
 } from "@mantine/core";
 import { modals } from "@mantine/modals";
+import { IconUpload } from "@tabler/icons-react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { produce } from "immer";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export const Route = createFileRoute("/personas/")({
   component: RouteComponent,
@@ -34,6 +39,12 @@ export const Route = createFileRoute("/personas/")({
 
 function RouteComponent() {
   const [draftName, setDraftName] = useState("");
+  const [draftDescription, setDraftDescription] = useState("");
+  const [draftScenario, setDraftScenario] = useState("");
+  const [draftSystemPrompt, setDraftSystemPrompt] = useState("");
+  const [draftPersonality, setDraftPersonality] = useState("");
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [uploadedCard, setUploadedCard] = useState<any | null>(null);
   const personasQuery = useGetPersonasQuery();
   const createPersonaMutation = useCreatePersonaMutation();
   const deletePersonaMutation = useDeletePersonaMutation();
@@ -45,6 +56,16 @@ function RouteComponent() {
   const getUserQuery = useGetPersonaByIdQuery(
     getSettingsQuery.data?.default_user_persona_id ?? null,
   );
+
+  useEffect(() => {
+    if (!uploadedCard) return;
+
+    setDraftName(uploadedCard.card.data.name);
+    setDraftDescription(uploadedCard.card.data.description);
+    setDraftScenario(uploadedCard.card.data.scenario);
+    setDraftSystemPrompt(uploadedCard.card.data.system_prompt);
+    setDraftPersonality(uploadedCard.card.data.personality);
+  }, [uploadedCard]);
 
   if (personasQuery.isPending && getSettingsQuery.isPending) {
     return <Loader />;
@@ -70,11 +91,15 @@ function RouteComponent() {
     createPersonaMutation.mutate(
       {
         name: draftName,
-        description: null,
+        description: draftDescription,
       },
       {
         onSuccess() {
           setDraftName("");
+          setDraftDescription("");
+          setDraftPersonality("");
+          setUploadedFile(null);
+          setUploadedCard(null);
         },
       },
     );
@@ -184,21 +209,116 @@ function RouteComponent() {
       })}
 
       <Card>
-        <Group>
-          <TextInput
-            flex={1}
-            value={draftName}
-            size="md"
-            placeholder="Persona Name"
-            autoFocus
-            onChange={(e) => setDraftName(e.target.value)}
-          />
+        <Stack>
+          <Group>
+            <TextInput
+              flex={1}
+              value={draftName}
+              size="md"
+              placeholder="Persona Name"
+              autoFocus
+              onChange={(e) => setDraftName(e.target.value)}
+            />
 
-          <Button.Group>
-            <Button onClick={handleAddPersona}>Add</Button>
-          </Button.Group>
-        </Group>
+            <Button.Group>
+              <Button onClick={handleAddPersona}>Add</Button>
+            </Button.Group>
+
+            {uploadedCard ? (
+              <Button
+                color="red"
+                variant="outline"
+                onClick={() => {
+                  setUploadedFile(null);
+                  setUploadedCard(null);
+                  setDraftName("");
+                  setDraftDescription("");
+                  setDraftScenario("");
+                  setDraftSystemPrompt("");
+                }}
+              >
+                Cancel
+              </Button>
+            ) : (
+              <FileButton
+                onChange={async (file) => {
+                  if (!file) return;
+
+                  setUploadedFile(file);
+
+                  const formData = new FormData();
+                  formData.append("file", file);
+
+                  const res = await fetch("/api/personas/upload", {
+                    method: "POST",
+                    body: formData,
+                  });
+
+                  const data = await res.json();
+
+                  setUploadedCard(data);
+
+                  console.log(data);
+                }}
+              >
+                {(props) => (
+                  <Button
+                    variant="subtle"
+                    leftSection={
+                      <ThemeIcon size="sm" variant="subtle">
+                        <IconUpload />
+                      </ThemeIcon>
+                    }
+                    {...props}
+                  >
+                    Import Character V2
+                  </Button>
+                )}
+              </FileButton>
+            )}
+          </Group>
+
+          {uploadedCard && (
+            <>
+              <Text mb={0} fw="bold">
+                {uploadedFile?.name}
+              </Text>
+
+              <Textarea
+                autosize
+                label="Description"
+                value={draftDescription}
+                onChange={(e) => setDraftDescription(e.target.value)}
+              />
+
+              <Textarea
+                autosize
+                label="Scenario"
+                value={draftScenario}
+                onChange={(e) => setDraftScenario(e.target.value)}
+              />
+
+              <Textarea
+                autosize
+                label="System Prompt"
+                value={draftSystemPrompt}
+                onChange={(e) => setDraftSystemPrompt(e.target.value)}
+              />
+
+              <Textarea
+                autosize
+                label="Personality"
+                value={draftPersonality}
+                onChange={(e) => setDraftPersonality(e.target.value)}
+              />
+            </>
+          )}
+        </Stack>
       </Card>
+
+      {uploadedCard && (
+        <Code block>{JSON.stringify(uploadedCard.card.data, null, 2)}</Code>
+      )}
     </Stack>
   );
 }

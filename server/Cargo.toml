@@ -5,7 +5,7 @@ edition = "2024"
 build = "build.rs"
 
 [dependencies]
-axum = { version = "0.8.0", features = ["macros", "ws"] }
+axum = { version = "0.8.0", features = ["macros", "ws", "multipart"] }
 axum-extra = { version = "0.10.1" }
 tokio = { version = "1.0", features = ["macros", "rt-multi-thread"] }
 tower = { version = "0.5.2", features = ["util"] }
@@ -40,6 +40,7 @@ async-openai = { version = "0.33.0", features = [
     "completions",
     "chat-completion",
 ] }
+card-parser = { path = "../card-parser" }
 
 [dependencies.uuid]
 version = "1.19.0"

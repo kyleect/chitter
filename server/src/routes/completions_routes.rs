@@ -93,9 +93,9 @@ async fn chat_completion(
                         // Update message.message if is Some
                         let new_message_string = message
                             .content
-                            .replace("{{CHAR}}", &assistant_persona.name)
+                            .replace("{{char}}", &assistant_persona.name)
                             .replace("{{CHAR_DESCRIPTION}}", &assistant_persona.description)
-                            .replace("{{USER}}", &assistant_persona.name)
+                            .replace("{{user}}", &assistant_persona.name)
                             .replace("{{USER_DESCRIPTION}}", &user_persona.description);
 
                         let mut new_message = message.clone();
@@ -254,9 +254,9 @@ async fn generate_response(
                         // Update message.message if is Some
                         let new_message_string = message
                             .content
-                            .replace("{{CHAR}}", &assistant_persona.name)
+                            .replace("{{char}}", &assistant_persona.name)
                             .replace("{{CHAR_DESCRIPTION}}", &assistant_persona.description)
-                            .replace("{{USER}}", &assistant_persona.name)
+                            .replace("{{user}}", &assistant_persona.name)
                             .replace("{{USER_DESCRIPTION}}", &user_persona.description);
 
                         let mut new_message = message.clone();

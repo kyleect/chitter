@@ -138,14 +138,14 @@ impl Default for AppState {
         };
 
         let personas_insertable = "
-You are {{CHAR}}. I am {{USER}}.
+You are {{char}}. I am {{user}}.
 
 ---
-{{CHAR}}'s Description:
+{{char}}'s Description:
 
 {{CHAR_DESCRIPTION}}
 ---
-{{USER}}'s Description:
+{{user}}'s Description:
 
 {{USER_DESCRIPTION}}
 ---

@@ -1,5 +1,11 @@
-use axum::{Router, routing::get};
+use axum::{
+    Router,
+    extract::Multipart,
+    routing::{get, post},
+};
+use card_parser::io::read_card_from_bytes;
 use hyper::StatusCode;
+use serde_json::json;
 
 use crate::app_state::AsyncAppState;
 
@@ -16,6 +22,7 @@ pub fn persona_routes(state: AsyncAppState) -> Router<AsyncAppState> {
             "/{persona_id}",
             get(get_persona).put(update_persona).delete(delete_persona),
         )
+        .route("/upload", post(upload_png))
         .with_state(state)
 }
 
@@ -90,4 +97,31 @@ async fn update_persona(
             Json(body)
         }
     }
+}
+
+async fn upload_png(mut multipart: Multipart) -> Result<Json<serde_json::Value>, StatusCode> {
+    while let Some(field) = multipart.next_field().await.unwrap() {
+        let name = field.name().unwrap_or("");
+
+        if name == "file" {
+            let data = field.bytes().await.unwrap();
+
+            match read_card_from_bytes(&data) {
+                Ok(card) => {
+                    return Ok(Json(json!({
+                        "success": true,
+                        "card": card
+                    })));
+                }
+                Err(err) => {
+                    return Ok(Json(json!({
+                        "success": false,
+                        "error": err.to_string()
+                    })));
+                }
+            }
+        }
+    }
+
+    Err(StatusCode::BAD_REQUEST)
 }

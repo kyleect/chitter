@@ -1,0 +1,12 @@
+[package]
+name = "card-parser"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+flate2 = "1"
+serde_json = "1.0"
+png = "0.18.1"
+base64 = "0.22.1"
+thiserror = "2"
+serde = "1"
