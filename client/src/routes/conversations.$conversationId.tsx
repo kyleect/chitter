@@ -109,6 +109,17 @@ function RouteComponent() {
     },
   });
 
+  const chatImpersonationCompletionMutations = useMutationState({
+    filters: {
+      mutationKey: COMPLETION_KEYS.chat_impersonation(params.conversationId),
+      status: "pending",
+    },
+
+    select(mutation) {
+      return mutation.state;
+    },
+  });
+
   const getConversationQuery = useGetConservationByIdQuery(
     params.conversationId,
   );
@@ -228,6 +239,7 @@ function RouteComponent() {
     regenerateMutations.length > 0 ||
     addMoreDetailsCompletionMutations.length > 0 ||
     renameTitleCompletionMutations.length > 0 ||
+    chatImpersonationCompletionMutations.length > 0 ||
     generateResponseMutation.isPending;
 
   const isUserTurn = conversation?.messages.at(-1)?.role.kind !== "user";

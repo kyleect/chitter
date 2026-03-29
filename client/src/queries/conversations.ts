@@ -45,12 +45,19 @@ export const useStartConversationMutation = () =>
     mutationFn: async ({
       templateId,
       variantId,
+      firstMessageIndex,
     }: {
       templateId: string;
       variantId?: string;
+      firstMessageIndex?: number;
     }) => {
+      const firstMessageIndexQuery =
+        typeof firstMessageIndex !== "undefined"
+          ? `firstMessageIndex=${firstMessageIndex}`
+          : "";
+
       const response = await fetch(
-        `/api/templates/${templateId}/chat?variantId=${variantId}`,
+        `/api/templates/${templateId}/chat?variantId=${variantId}&${firstMessageIndexQuery}`,
         {
           method: "POST",
         },
@@ -69,6 +76,10 @@ export function isMessageItem(item: any): item is { message: Message } {
   const key = keys[0];
 
   return key === "message";
+}
+
+export function isFirstMessageItem(item: any): item is "firstAssistantMessage" {
+  return item === "firstAssistantMessage";
 }
 
 export function isOOCItem(item: TemplateBlock): item is { oOC: string } {

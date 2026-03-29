@@ -11,6 +11,7 @@ use crate::{
 #[ts(export)]
 pub enum TemplateBlock {
     Message(Message),
+    FirstAssistantMessage,
     SetVar(VariableKey, VariableValue),
     OOC(String),
     InnerThoughts(String),

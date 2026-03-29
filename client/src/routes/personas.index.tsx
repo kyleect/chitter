@@ -43,6 +43,8 @@ function RouteComponent() {
   const [draftScenario, setDraftScenario] = useState("");
   const [draftSystemPrompt, setDraftSystemPrompt] = useState("");
   const [draftPersonality, setDraftPersonality] = useState("");
+  const [draftFirstMessage, setDraftFirstMessage] = useState("");
+  const [draftMessageExamples, setDraftMessageExamples] = useState("");
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [uploadedCard, setUploadedCard] = useState<any | null>(null);
   const personasQuery = useGetPersonasQuery();
@@ -65,6 +67,8 @@ function RouteComponent() {
     setDraftScenario(uploadedCard.card.data.scenario);
     setDraftSystemPrompt(uploadedCard.card.data.system_prompt);
     setDraftPersonality(uploadedCard.card.data.personality);
+    setDraftFirstMessage(uploadedCard.card.data.first_mes);
+    setDraftMessageExamples(uploadedCard.card.data.mes_example);
   }, [uploadedCard]);
 
   if (personasQuery.isPending && getSettingsQuery.isPending) {
@@ -92,6 +96,7 @@ function RouteComponent() {
       {
         name: draftName,
         description: draftDescription,
+        firstMessages: draftFirstMessage.length > 0 ? [draftFirstMessage] : [],
       },
       {
         onSuccess() {
@@ -241,6 +246,7 @@ function RouteComponent() {
               </Button>
             ) : (
               <FileButton
+                accept="image/png"
                 onChange={async (file) => {
                   if (!file) return;
 
@@ -257,8 +263,6 @@ function RouteComponent() {
                   const data = await res.json();
 
                   setUploadedCard(data);
-
-                  console.log(data);
                 }}
               >
                 {(props) => (
@@ -277,6 +281,14 @@ function RouteComponent() {
               </FileButton>
             )}
           </Group>
+
+          {uploadedFile && (
+            <img
+              src={URL.createObjectURL(uploadedFile)}
+              alt="preview"
+              style={{ maxWidth: 200 }}
+            />
+          )}
 
           {uploadedCard && (
             <>
@@ -310,6 +322,20 @@ function RouteComponent() {
                 label="Personality"
                 value={draftPersonality}
                 onChange={(e) => setDraftPersonality(e.target.value)}
+              />
+
+              <Textarea
+                autosize
+                label="First Message"
+                value={draftFirstMessage}
+                onChange={(e) => setDraftFirstMessage(e.target.value)}
+              />
+
+              <Textarea
+                autosize
+                label="Message Examples"
+                value={draftMessageExamples}
+                onChange={(e) => setDraftMessageExamples(e.target.value)}
               />
             </>
           )}

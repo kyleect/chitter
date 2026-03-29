@@ -35,6 +35,7 @@ import { SystemIcon } from "@/components/common/SystemIcon";
 import { isMessageItem } from "@/queries/conversations";
 import { TextToParagraphs } from "@/components/common/TextToParagraphs";
 import { useGetInsertablesQuery } from "@/queries/insertables";
+import { FirstMessageIcon } from "@/components/common/FirstMessageIcon";
 
 type TemplateBlockProps = {
   children?: React.ReactNode;
@@ -455,6 +456,62 @@ export const MessageTemplateBlock: FC<MessageTemplateBlockProps> = ({
           ))}
         </Group>
       )}
+    </TemplateBlock>
+  );
+};
+
+type FirstMessageTemplateBlockProps = {
+  handleDeleteAtIndex: () => void;
+};
+
+export const FirstMessageTemplateBlock: FC<FirstMessageTemplateBlockProps> = ({
+  handleDeleteAtIndex,
+}) => {
+  const context = useContext(TemplateContext)!;
+  const firstMessages = context.assistantPersonaResolved?.firstMessages ?? [];
+  const [selectedFirstMessageIndex, setSelectedFirstMessageIndex] =
+    context.selectedFirstMessageIndexState;
+  const [isEditing] = context.isEditingState;
+
+  const selectedFirstMessage =
+    selectedFirstMessageIndex === null
+      ? null
+      : firstMessages[selectedFirstMessageIndex];
+
+  return (
+    <TemplateBlock
+      icon={<FirstMessageIcon />}
+      title="First Message"
+      onClose={handleDeleteAtIndex}
+    >
+      <Stack>
+        {selectedFirstMessageIndex >= 0 && selectedFirstMessage ? (
+          <TextToParagraphs text={selectedFirstMessage} />
+        ) : (
+          <Alert>No first message selected</Alert>
+        )}
+
+        {!isEditing && (
+          <Button.Group>
+            <Button
+              disabled={selectedFirstMessageIndex === -1}
+              onClick={() => {
+                setSelectedFirstMessageIndex((prev) => prev - 1);
+              }}
+            >
+              Previous
+            </Button>
+            <Button
+              disabled={selectedFirstMessageIndex === firstMessages.length - 1}
+              onClick={() => {
+                setSelectedFirstMessageIndex((prev) => prev + 1);
+              }}
+            >
+              Next
+            </Button>
+          </Button.Group>
+        )}
+      </Stack>
     </TemplateBlock>
   );
 };

@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
 use crate::{
-    message::Message,
+    message::{Message, Role},
     persona::Persona,
     templates::{
         ConversationTemplate,
@@ -35,6 +35,7 @@ impl Conversation {
         _variant_id: Option<String>,
         assistant_persona_from_id: Option<&Persona>,
         user_persona_from_id: Option<&Persona>,
+        first_message_index: Option<usize>,
     ) -> Self {
         let mut messages: Vec<Message> = vec![];
         let mut variables: HashMap<VariableKey, VariableValue> = HashMap::new();
@@ -57,6 +58,21 @@ impl Conversation {
             match item {
                 TemplateBlock::Message(next_message) => {
                     messages.push(next_message.clone());
+                }
+                TemplateBlock::FirstAssistantMessage => {
+                    if let Some(index) = first_message_index {
+                        let first_message = assistant_persona_from_id
+                            .and_then(|persona| persona.first_messages.get(index));
+
+                        if let Some(first_message) = first_message {
+                            messages.push(
+                                Message::builder()
+                                    .role(Role::Assistant)
+                                    .content(first_message.clone())
+                                    .build(),
+                            );
+                        }
+                    }
                 }
                 TemplateBlock::OOC(prompt) => {
                     if let Some(draft_message) = messages.last_mut() {
@@ -187,6 +203,7 @@ mod conversation_tests {
             Some("expected-variant-id".to_string()),
             Some(&assistant),
             Some(&user),
+            None,
         );
 
         conservation.id = "expectedConservationId".to_string();

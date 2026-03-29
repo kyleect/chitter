@@ -19,6 +19,13 @@ pub struct ChatCompletionRequestBody {
 
 #[derive(TS, Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 #[ts(export)]
+pub struct ChatImpersonationCompletionRequestBody {
+    pub conversation_id: String,
+    pub settings: CompletionSettings,
+}
+
+#[derive(TS, Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[ts(export)]
 pub struct GenerateResponseRequestBody {
     pub conversation_id: String,
     pub settings: CompletionSettings,

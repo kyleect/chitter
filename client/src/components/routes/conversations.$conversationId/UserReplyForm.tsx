@@ -1,7 +1,8 @@
 import { Button, ButtonGroup, Group, Textarea, ThemeIcon } from "@mantine/core";
-import { IconSend } from "@tabler/icons-react";
+import { IconBubbleText, IconSend } from "@tabler/icons-react";
 import { FC, Ref, useContext } from "react";
 import { ConversationContext } from "./ConversationContext";
+import { useChatImpersonationCompletionMutation } from "@/queries/completions";
 
 type Props = {
   isLoading: boolean;
@@ -20,6 +21,8 @@ export const UserReplyForm: FC<Props> = ({
 }) => {
   const conversationContext = useContext(ConversationContext)!;
   const [editingMessageIndex] = conversationContext?.editingMessageIndexState;
+  const chatImpersonationCompletionMutation =
+    useChatImpersonationCompletionMutation(conversationContext.conversation.id);
 
   const isEditingMessage = !!editingMessageIndex;
 
@@ -41,7 +44,7 @@ export const UserReplyForm: FC<Props> = ({
           size="md"
           variant="gradient"
           loading={isLoading}
-          disabled={isEditingMessage}
+          disabled={isEditingMessage || value.length === 0}
           leftSection={
             <ThemeIcon size="xs">
               <IconSend />
@@ -52,6 +55,22 @@ export const UserReplyForm: FC<Props> = ({
           }}
         >
           Reply
+        </Button>
+        <Button
+          size="md"
+          variant="subtle"
+          loading={isLoading}
+          disabled={isEditingMessage || value.length > 0}
+          leftSection={
+            <ThemeIcon size="xs" variant="subtle">
+              <IconBubbleText stroke={1.5} />
+            </ThemeIcon>
+          }
+          onClick={() => {
+            chatImpersonationCompletionMutation.mutate();
+          }}
+        >
+          Impersonate
         </Button>
       </ButtonGroup>
     </Group>

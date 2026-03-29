@@ -1,7 +1,9 @@
 use crate::{cardv2::CharacterCardV2, error::CharCardError};
+use base64::engine::general_purpose::STANDARD;
 use base64::{Engine as _, engine::general_purpose};
 use flate2::{Compression, read::ZlibDecoder, write::ZlibEncoder};
 use png::{Decoder, Encoder};
+use serde_json::from_slice;
 use std::fs::File;
 use std::io::{BufReader, BufWriter, Cursor, Read, Write};
 use std::path::Path;
@@ -18,7 +20,7 @@ fn decode_ztxt(data: &[u8]) -> Result<String, CharCardError> {
 
 /// Encode zTXt compressed text
 fn encode_ztxt(text: &str) -> Result<Vec<u8>, CharCardError> {
-    let mut encoder = ZlibEncoder::new(Vec::new(), Compression::default());
+    let mut encoder = ZlibEncoder::new(vec![], Compression::default());
     encoder.write_all(text.as_bytes())?;
     Ok(encoder.finish()?)
 }
@@ -35,7 +37,7 @@ pub fn read_card_from_png<P: AsRef<Path>>(path: P) -> Result<CharacterCardV2, Ch
     for chunk in &info.uncompressed_latin1_text {
         if chunk.keyword == CHUNK_KEY {
             let decoded = general_purpose::STANDARD.decode(&chunk.text)?;
-            let card: CharacterCardV2 = serde_json::from_slice(&decoded)?;
+            let card: CharacterCardV2 = from_slice(&decoded)?;
             return Ok(card);
         }
     }
@@ -45,7 +47,7 @@ pub fn read_card_from_png<P: AsRef<Path>>(path: P) -> Result<CharacterCardV2, Ch
         if chunk.keyword == CHUNK_KEY {
             let decompressed = decode_ztxt(&chunk.get_text().unwrap().as_bytes())?;
             let decoded = general_purpose::STANDARD.decode(decompressed)?;
-            let card: CharacterCardV2 = serde_json::from_slice(&decoded)?;
+            let card: CharacterCardV2 = from_slice(&decoded)?;
             return Ok(card);
         }
     }
@@ -54,7 +56,7 @@ pub fn read_card_from_png<P: AsRef<Path>>(path: P) -> Result<CharacterCardV2, Ch
 }
 
 pub fn read_card_from_bytes(bytes: &[u8]) -> Result<CharacterCardV2, CharCardError> {
-    let decoder = png::Decoder::new(Cursor::new(bytes));
+    let decoder = Decoder::new(Cursor::new(bytes));
     let reader = decoder.read_info()?;
 
     let info = reader.info();
@@ -62,8 +64,8 @@ pub fn read_card_from_bytes(bytes: &[u8]) -> Result<CharacterCardV2, CharCardErr
     // --- tEXt ---
     for chunk in &info.uncompressed_latin1_text {
         if chunk.keyword == CHUNK_KEY {
-            let decoded = base64::engine::general_purpose::STANDARD.decode(&chunk.text)?;
-            let card = serde_json::from_slice(&decoded)?;
+            let decoded = STANDARD.decode(&chunk.text)?;
+            let card = from_slice(&decoded)?;
             return Ok(card);
         }
     }
@@ -72,8 +74,8 @@ pub fn read_card_from_bytes(bytes: &[u8]) -> Result<CharacterCardV2, CharCardErr
     for chunk in &info.compressed_latin1_text {
         if chunk.keyword == CHUNK_KEY {
             let decompressed = decode_ztxt(&chunk.get_text().unwrap().as_bytes())?;
-            let decoded = base64::engine::general_purpose::STANDARD.decode(decompressed)?;
-            let card = serde_json::from_slice(&decoded)?;
+            let decoded = STANDARD.decode(decompressed)?;
+            let card = from_slice(&decoded)?;
             return Ok(card);
         }
     }

@@ -3,6 +3,7 @@ import { ReactNode, useContext } from "react";
 import { TemplateContext } from "./TemplateContext";
 import {
   isEndIf,
+  isFirstMessageItem,
   isIfEqItem,
   isInnerThoughtsItem,
   isMessageItem,
@@ -12,6 +13,7 @@ import {
 import { DividerBar } from "./DividerBar";
 import {
   EndIfTemplateBlock,
+  FirstMessageTemplateBlock,
   IfEqTemplateBlock,
   InnerThoughtsTemplateBlock,
   MessageTemplateBlock,
@@ -69,6 +71,13 @@ export const TemplateFormBlocks = () => {
               <MessageTemplateBlock
                 index={index}
                 item={item}
+                handleDeleteAtIndex={handleDeleteAtIndex(index)}
+              />
+            );
+            break;
+          case isFirstMessageItem(item):
+            block = (
+              <FirstMessageTemplateBlock
                 handleDeleteAtIndex={handleDeleteAtIndex(index)}
               />
             );
@@ -139,6 +148,13 @@ export const TemplateFormBlocks = () => {
                 item={item}
                 handleDeleteAtIndex={handleDeleteAtIndex(index)}
                 variantBlock={true}
+              />
+            );
+            break;
+          case isFirstMessageItem(item):
+            block = (
+              <FirstMessageTemplateBlock
+                handleDeleteAtIndex={handleDeleteAtIndex(index)}
               />
             );
             break;

@@ -216,6 +216,7 @@ async fn preview_conversation(
         None,
         assistant_persona_from_id,
         user_persona_from_id,
+        None,
     );
 
     Json(conversation)
@@ -225,6 +226,7 @@ async fn preview_conversation(
 #[serde(rename_all = "camelCase")]
 struct StartConversationQuery {
     variant_id: Option<String>,
+    first_message_index: Option<usize>,
 }
 
 async fn start_conversation(
@@ -278,6 +280,7 @@ async fn start_conversation(
         None,
         assistant_persona_from_id,
         user_persona_from_id,
+        query.first_message_index,
     );
 
     if let Some(variant) = variant {

@@ -20,6 +20,8 @@ export const TemplateFormHeader = () => {
   const [isEditing] = isEditingState;
   const [currentVariant] = context.variantState;
 
+  const [firstMessageIndex] = context.selectedFirstMessageIndexState;
+
   const personasMissing =
     template.assistantPersona === null || !template.userPersona === null;
 
@@ -31,10 +33,13 @@ export const TemplateFormHeader = () => {
             variant="gradient"
             disabled={personasMissing}
             onClick={() => {
+              debugger;
               startConversationMutation.mutate(
                 {
                   templateId: template.id,
                   variantId: currentVariant ?? undefined,
+                  firstMessageIndex:
+                    firstMessageIndex === -1 ? undefined : firstMessageIndex,
                 },
                 {
                   onSuccess(data) {

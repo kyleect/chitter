@@ -8,6 +8,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import {
   ConversationTemplate,
+  Persona,
   TemplatePersona,
   TemplateVariant,
 } from "server-types";
@@ -38,6 +39,8 @@ function RouteComponent() {
   const [previewConversationAtIndex, setPreviewConversationAtIndexState] =
     useState<number | undefined>();
   const getTemplateByIdQuery = useGetTemplateByIdQuery(params.templateId);
+  const [selectedFirstMessageIndex, setSelectdFirstMessageIndex] =
+    useState<number>(-1);
   const [opened, { open, close }] = useDisclosure(false);
   const [isEditing, setIsEditing] = useState(false);
   const [currentVariant, setCurrentVariant] = useState<string | null>(null);
@@ -133,10 +136,29 @@ function RouteComponent() {
     );
   }
 
-  const template = getTemplateByIdQuery.data;
+  const template = getTemplateByIdQuery.data!;
 
   if (!template || !draftTemplateItems) {
     return <Alert color="blue">Template not found</Alert>;
+  }
+
+  let assistantPersonaResolved: Persona | undefined;
+
+  switch (template.assistantPersona?.type) {
+    case "Id":
+      const foundPersona = (getPersonasQuery.data ?? []).find(
+        (x) => x.id === template.assistantPersona?.data,
+      );
+
+      if (foundPersona) {
+        assistantPersonaResolved = foundPersona;
+      }
+
+      break;
+
+    case "Embedded":
+      assistantPersonaResolved = template.assistantPersona.data;
+      break;
   }
 
   const hasVariants = template.variants.length > 0;
@@ -145,6 +167,10 @@ function RouteComponent() {
     <TemplateContext
       value={{
         template,
+        selectedFirstMessageIndexState: [
+          selectedFirstMessageIndex,
+          setSelectdFirstMessageIndex,
+        ],
         variantState: [currentVariant, setCurrentVariant],
         isEditingState: [isEditing, setIsEditing],
         draftTitleState: [draftTitle, setDraftTitle],
@@ -153,6 +179,7 @@ function RouteComponent() {
           draftAssistantPersona,
           setDraftAssistantPersona,
         ],
+        assistantPersonaResolved: assistantPersonaResolved ?? null,
         draftInsertablesState: [draftInsertables, setDraftInsertables],
         draftTemplateBlocksState: [draftTemplateItems, setDraftTemplateItems],
         draftVariantBlocksState: [draftVariantItems, setDraftVariantItems],

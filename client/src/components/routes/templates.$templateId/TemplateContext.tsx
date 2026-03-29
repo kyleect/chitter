@@ -2,12 +2,15 @@ import { StatePair } from "@/lib/statePair";
 import { createContext } from "react";
 import {
   ConversationTemplate,
+  Persona,
   TemplatePersona,
   TemplateVariant,
 } from "server-types";
 
 type ContextType = {
   template: ConversationTemplate;
+
+  selectedFirstMessageIndexState: StatePair<number>;
 
   variantState: StatePair<string | null>;
 
@@ -16,6 +19,7 @@ type ContextType = {
   draftInsertablesState: StatePair<[string, string][]>;
 
   draftAssistantPersonaState: StatePair<TemplatePersona | null>;
+  assistantPersonaResolved: Persona | null;
   draftUserPersonaState: StatePair<TemplatePersona | null>;
 
   draftTemplateBlocksState: StatePair<ConversationTemplate["blocks"]>;

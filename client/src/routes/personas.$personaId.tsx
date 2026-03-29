@@ -1,8 +1,10 @@
+import { TextToParagraphs } from "@/components/common/TextToParagraphs";
 import {
   useGetPersonaByIdQuery,
   useUpdatePersonaMutation,
 } from "@/queries/personas";
 import {
+  ActionIcon,
   Alert,
   Button,
   Card,
@@ -13,7 +15,9 @@ import {
   Textarea,
   TextInput,
 } from "@mantine/core";
+import { IconTrash } from "@tabler/icons-react";
 import { createFileRoute } from "@tanstack/react-router";
+import { produce } from "immer";
 import { useEffect, useState } from "react";
 
 export const Route = createFileRoute("/personas/$personaId")({
@@ -27,12 +31,14 @@ function RouteComponent() {
   const [isEditing, setIsEditing] = useState(false);
   const [draftName, setDraftName] = useState("");
   const [draftDescription, setDraftDescription] = useState("");
+  const [draftFirstMessages, setDraftFirstMessages] = useState<string[]>([]);
 
   useEffect(() => {
     if (getPersonaQuery.data === null) return;
 
     setDraftName(getPersonaQuery.data?.name ?? "");
     setDraftDescription(getPersonaQuery.data?.description ?? "");
+    setDraftFirstMessages(getPersonaQuery.data?.firstMessages ?? []);
   }, [getPersonaQuery.data]);
 
   if (getPersonaQuery.isPending) {
@@ -53,6 +59,7 @@ function RouteComponent() {
         id: params.personaId,
         name: draftName,
         description: draftDescription,
+        firstMessages: draftFirstMessages,
       },
       {
         onSuccess() {
@@ -103,7 +110,72 @@ function RouteComponent() {
               minRows={1}
             />
           ) : (
-            <Text>{draftDescription}</Text>
+            <TextToParagraphs text={draftDescription} />
+          )}
+        </Stack>
+      </Card>
+
+      <Card>
+        <Stack>
+          <Text mb={0} fw="bold">
+            First Messages
+          </Text>
+
+          {isEditing
+            ? draftFirstMessages.map((draftFirstMessage, index) => (
+                <Group align="flex-start" justify="space-between">
+                  <Textarea
+                    flex={20}
+                    size="md"
+                    value={draftFirstMessage}
+                    onChange={(e) =>
+                      setDraftFirstMessages(
+                        produce((draft) => {
+                          draft[index] = e.target.value;
+                        }),
+                      )
+                    }
+                    autosize
+                    minRows={1}
+                  />
+
+                  <ActionIcon
+                    flex={1}
+                    color="red"
+                    variant="subtle"
+                    size="sm"
+                    onClick={() =>
+                      setDraftFirstMessages(
+                        produce((draft) => {
+                          draft.splice(index);
+                        }),
+                      )
+                    }
+                  >
+                    <IconTrash />
+                  </ActionIcon>
+                </Group>
+              ))
+            : draftFirstMessages.map((draftFirstMessage) => (
+                <Card withBorder shadow={"xl"}>
+                  <TextToParagraphs text={draftFirstMessage} />
+                </Card>
+              ))}
+
+          {isEditing && (
+            <Button.Group>
+              <Button
+                onClick={() =>
+                  setDraftFirstMessages(
+                    produce((draft) => {
+                      draft.push("");
+                    }),
+                  )
+                }
+              >
+                Add
+              </Button>
+            </Button.Group>
           )}
         </Stack>
       </Card>

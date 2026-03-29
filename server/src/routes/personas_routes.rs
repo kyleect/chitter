@@ -40,7 +40,11 @@ async fn add_personas(
     let state = state.clone();
     let mut state = state.lock().await;
 
-    let persona = Persona::new(&body.name, body.description.as_deref());
+    let mut persona = Persona::new(&body.name, body.description.as_deref());
+
+    persona.first_messages = body.first_messages;
+
+    dbg!(&persona);
 
     state.personass.push(persona.clone());
 

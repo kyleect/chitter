@@ -59,6 +59,14 @@ export const DividerBarMenu: FC<Props> = ({ children, index }) => {
               Assistant
             </Menu.Item>
             <Menu.Item
+              leftSection={<AssistantIcon />}
+              onClick={() => {
+                patchItemsWithInsertAt(index + 1, "firstAssistantMessage");
+              }}
+            >
+              Assistant First Message
+            </Menu.Item>
+            <Menu.Item
               leftSection={<UserIcon />}
               onClick={() => {
                 patchItemsWithInsertAt(index + 1, {
