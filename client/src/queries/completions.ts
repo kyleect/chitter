@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { CONSERVATION_KEYS } from "./conversations";
 import {
   ChatCompletionRequestBody,
+  ChatImpersonationCompletionRequestBody,
   CompletionRequestBody,
   Conversation,
   LLMParameters,
@@ -15,6 +16,11 @@ export const COMPLETION_KEYS = {
   chat_completion: (conversation_id: string) => [
     ...COMPLETION_KEYS.all,
     "chat_completion",
+    conversation_id,
+  ],
+  chat_impersonation: (conversation_id: string) => [
+    ...COMPLETION_KEYS.all,
+    "chat_impersonation",
     conversation_id,
   ],
   regeneration: (conversation_id: string) => [
@@ -163,6 +169,56 @@ export const useChatCompletionMutation = (conversationId: string) => {
         const error = await response.text();
 
         throw new Error(`Couldn't generate chat completion: ${error}`);
+      }
+
+      const data = (await response.json()) as {
+        response: string;
+      };
+
+      return data.response;
+    },
+  });
+};
+
+export const useChatImpersonationCompletionMutation = (
+  conversationId: string,
+) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    // When mutate is called:
+    onMutate: async () => {
+      // Cancel any outgoing refetches
+      // (so they don't overwrite our optimistic update)
+      await queryClient.cancelQueries({
+        queryKey: CONSERVATION_KEYS.detail(conversationId),
+      });
+    },
+    // Always refetch after error or success:
+    onSettled: () =>
+      queryClient.invalidateQueries({
+        queryKey: CONSERVATION_KEYS.detail(conversationId),
+      }),
+    mutationFn: async () => {
+      const response = await fetch(`/api/completions/chat/impersonate`, {
+        method: "POST",
+        body: JSON.stringify({
+          conversation_id: conversationId,
+          settings: {
+            temperature: 1.0,
+          },
+        } as ChatImpersonationCompletionRequestBody),
+        headers: {
+          "content-type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        const error = await response.text();
+
+        throw new Error(
+          `Couldn't generate chat impersonation completion: ${error}`,
+        );
       }
 
       const data = (await response.json()) as {
