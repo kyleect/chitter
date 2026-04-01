@@ -8,6 +8,7 @@ import {
   useGenerateResponseMutation,
 } from "@/queries/completions";
 import {
+  useForkConversationByIdMutation,
   useGetConservationByIdQuery,
   useUpdateConversationMutation,
 } from "@/queries/conversations";
@@ -33,6 +34,7 @@ import {
   IconDeviceFloppy,
   IconDownload,
   IconEdit,
+  IconGitFork,
   IconPlus,
   IconSparkles,
 } from "@tabler/icons-react";
@@ -56,6 +58,7 @@ function RouteComponent() {
   const [reply, setReply] = useState("");
   const [sendWithMessage, setSendWithMessage] = useState("");
   const [doSendWithNextMessage, setDoSendWithNextMessage] = useState(false);
+  const forkConversationMutation = useForkConversationByIdMutation();
   const [isEditingMessageIndex, setIsEditingMessageIndex] = useState<
     number | null
   >(null);
@@ -75,6 +78,7 @@ function RouteComponent() {
   const [draftConversationTitle, setDraftConversationTitle] =
     useState<string>("");
   const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const nav = Route.useNavigate();
 
   const regenerateMutations = useMutationState({
     filters: {
@@ -278,19 +282,45 @@ function RouteComponent() {
               setSystemMessagesAreVisible(event.currentTarget.checked)
             }
           />
-          <ActionIcon
-            variant="subtle"
-            color="gray"
-            disabled={isGenerating || conversation?.messages?.length === 0}
-            onClick={() => {
-              download(
-                JSON.stringify(getConversationQuery.data),
-                `${slugify(conversation?.title)}-conversation_${conversation?.id}.json`,
-              );
-            }}
-          >
-            <IconDownload />
-          </ActionIcon>
+          <ActionIcon.Group>
+            <ActionIcon
+              variant="subtle"
+              color="gray"
+              disabled={isGenerating || conversation?.messages?.length === 0}
+              onClick={() => {
+                if (!conversation) return;
+
+                forkConversationMutation.mutate(
+                  { conversationId: conversation.id },
+                  {
+                    onSuccess(newConversation) {
+                      nav({
+                        to: "/conversations/$conversationId",
+                        params: {
+                          conversationId: newConversation.id,
+                        },
+                      });
+                    },
+                  },
+                );
+              }}
+            >
+              <IconGitFork />
+            </ActionIcon>
+            <ActionIcon
+              variant="subtle"
+              color="gray"
+              disabled={isGenerating || conversation?.messages?.length === 0}
+              onClick={() => {
+                download(
+                  JSON.stringify(getConversationQuery.data),
+                  `${slugify(conversation?.title)}-conversation_${conversation?.id}.json`,
+                );
+              }}
+            >
+              <IconDownload />
+            </ActionIcon>
+          </ActionIcon.Group>
         </Group>
 
         {isUserTurn ? (

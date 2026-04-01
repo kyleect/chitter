@@ -30,6 +30,14 @@ pub struct Conversation {
 }
 
 impl Conversation {
+    pub fn fork(&self) -> Self {
+        let mut new = self.clone();
+
+        new.id = uuid::Uuid::new_v4().to_string();
+
+        new
+    }
+
     pub fn from_template(
         template: &ConversationTemplate,
         _variant_id: Option<String>,

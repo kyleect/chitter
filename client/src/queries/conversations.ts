@@ -174,3 +174,47 @@ export const useUpdateConversationMutation = () => {
     },
   });
 };
+
+export const useForkConversationByIdMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      conversationId,
+      at,
+    }: {
+      conversationId: Conversation["id"];
+      at?: number;
+    }) => {
+      let url = `/api/conversations/${conversationId}/fork`;
+
+      if (at) {
+        url = `${url}?at=${at}`;
+      }
+
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+        },
+      });
+
+      const responseBody = await response.text();
+
+      if (!response.ok) {
+        throw Error(`Error updating conversation: ${responseBody}`);
+      }
+
+      const data = JSON.parse(responseBody) as Conversation;
+
+      return data ?? null;
+    },
+    async onSuccess(_) {
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: [CONSERVATION_KEYS.all],
+        }),
+      ]);
+    },
+  });
+};

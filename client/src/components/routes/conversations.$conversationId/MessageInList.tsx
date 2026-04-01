@@ -23,6 +23,7 @@ import { useHover } from "@mantine/hooks";
 import { modals } from "@mantine/modals";
 import {
   IconEdit,
+  IconGitFork,
   IconPencilPlus,
   IconRefresh,
   IconWritingSign,
@@ -33,9 +34,13 @@ import {
   useCompletionMutation,
 } from "@/queries/completions";
 import { ConversationContext } from "./ConversationContext";
-import { useUpdateConversationMutation } from "@/queries/conversations";
+import {
+  useForkConversationByIdMutation,
+  useUpdateConversationMutation,
+} from "@/queries/conversations";
 import { produce } from "immer";
 import { useGetSettingsQuery } from "@/queries/settings";
+import { Route } from "@/routes/conversations.$conversationId";
 
 type MessageInListProps = {
   value: Message;
@@ -61,6 +66,9 @@ export const MessageInList: FC<MessageInListProps> = ({
   onClick,
 }) => {
   const getSettingsQuery = useGetSettingsQuery();
+  const forkConversationMutation = useForkConversationByIdMutation();
+
+  const nav = Route.useNavigate();
 
   const { hovered, ref } = useHover();
   let icon = getMesssageAuthorIcon(value);
@@ -128,6 +136,32 @@ export const MessageInList: FC<MessageInListProps> = ({
         >
           {(styles) => (
             <ActionIconGroup style={styles}>
+              <ActionIcon
+                variant="subtle"
+                color="gray"
+                disabled={
+                  context.isGenerating ||
+                  context.conversation.messages.length === 0
+                }
+                onClick={() => {
+                  forkConversationMutation.mutate(
+                    { conversationId: context.conversation.id, at: index },
+                    {
+                      onSuccess(newConversation) {
+                        nav({
+                          to: "/conversations/$conversationId",
+                          params: {
+                            conversationId: newConversation.id,
+                          },
+                        });
+                      },
+                    },
+                  );
+                }}
+              >
+                <IconGitFork stroke={1.5} />
+              </ActionIcon>
+
               <EditMessageButton onClick={onClick} />
 
               <DeleteMessageButton onClick={onDeleteMessage} />

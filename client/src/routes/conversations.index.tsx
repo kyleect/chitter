@@ -4,6 +4,7 @@ import { useStringDownload } from "@/hooks/useDownload";
 import { slugify } from "@/lib/slugify";
 import {
   useDeleteConversationMutation,
+  useForkConversationByIdMutation,
   useGetConservationsQuery,
   useUpdateConversationMutation,
 } from "@/queries/conversations";
@@ -26,7 +27,12 @@ import {
 } from "@mantine/core";
 import { modals } from "@mantine/modals";
 import { notifications } from "@mantine/notifications";
-import { IconDownload, IconUpload, IconX } from "@tabler/icons-react";
+import {
+  IconDownload,
+  IconGitFork,
+  IconUpload,
+  IconX,
+} from "@tabler/icons-react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Conversation } from "server-types";
@@ -39,6 +45,7 @@ function RouteComponent() {
   const [draftName, setDraftName] = useState("");
   const getConversationsQuery = useGetConservationsQuery();
   const getPersonasQuery = useGetPersonasQuery();
+  const forkConversationMutation = useForkConversationByIdMutation();
   const getTemplatesQuery = useGetTemplatesQuery();
   const deleteConversationMutation = useDeleteConversationMutation();
   const updateConversationMutation = useUpdateConversationMutation();
@@ -119,6 +126,29 @@ function RouteComponent() {
                 </Group>
 
                 <ActionIcon.Group>
+                  <ActionIcon
+                    variant="subtle"
+                    color="gray"
+                    onClick={() => {
+                      if (!conversation) return;
+
+                      forkConversationMutation.mutate(
+                        { conversationId: conversation.id },
+                        {
+                          onSuccess(newConversation) {
+                            nav({
+                              to: "/conversations/$conversationId",
+                              params: {
+                                conversationId: newConversation.id,
+                              },
+                            });
+                          },
+                        },
+                      );
+                    }}
+                  >
+                    <IconGitFork />
+                  </ActionIcon>
                   <ActionIcon
                     variant="subtle"
                     color="gray"
