@@ -148,7 +148,7 @@ async fn fork_template(
     new_template.title = template
         .title
         .as_ref()
-        .map(|title| format!("{title} (Clone)"));
+        .map(|title| format!("{title} (Fork)"));
     new_template.id = uuid::Uuid::new_v4().to_string();
 
     state.conversation_templates.push(new_template.clone());

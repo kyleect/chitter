@@ -94,7 +94,7 @@ async fn fork_conversation(
     new_conversation.title = new_conversation
         .title
         .as_ref()
-        .map(|title| format!("{title} (Clone)"));
+        .map(|title| format!("{title} (Fork)"));
     new_conversation.id = uuid::Uuid::new_v4().to_string();
 
     if let Some(at) = params.at {
