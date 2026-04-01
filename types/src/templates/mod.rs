@@ -68,6 +68,14 @@ impl ConversationTemplate {
         }
     }
 
+    pub fn fork(&self) -> Self {
+        let mut new = self.clone();
+
+        new.id = uuid::Uuid::new_v4().to_string();
+
+        new
+    }
+
     pub fn if_eq(self: &mut Self, var_name: &VariableKey, expected: &VariableValue) {
         self.blocks
             .push(TemplateBlock::IfEq(var_name.clone(), expected.clone()));

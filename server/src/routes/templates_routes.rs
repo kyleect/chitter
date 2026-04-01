@@ -27,6 +27,7 @@ pub fn templates_routes(state: AsyncAppState) -> Router<AsyncAppState> {
         )
         .route("/{template_id}/preview", get(preview_conversation))
         .route("/{template_id}/chat", post(start_conversation))
+        .route("/{template_id}/fork", post(fork_template))
         .with_state(state)
 }
 
@@ -128,6 +129,31 @@ async fn update_template(
             Json(body)
         }
     }
+}
+
+async fn fork_template(
+    State(state): State<AsyncAppState>,
+    Path(template_id): Path<String>,
+) -> Json<ConversationTemplate> {
+    let state = state.clone();
+    let mut state = state.lock().await;
+
+    let template = state
+        .conversation_templates
+        .iter()
+        .find(|t| t.id == template_id)
+        .expect("should find template by id");
+
+    let mut new_template = template.fork();
+    new_template.title = template
+        .title
+        .as_ref()
+        .map(|title| format!("{title} (Clone)"));
+    new_template.id = uuid::Uuid::new_v4().to_string();
+
+    state.conversation_templates.push(new_template.clone());
+
+    Json(new_template)
 }
 
 async fn delete_template(State(state): State<AsyncAppState>, Path(template_id): Path<String>) {

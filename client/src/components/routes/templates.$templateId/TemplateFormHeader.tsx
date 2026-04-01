@@ -1,17 +1,19 @@
 import { ActionIcon, Button, Group, Text, TextInput } from "@mantine/core";
 import { TemplateActionButtons } from "./TemplateActionButtons";
-import { IconDownload } from "@tabler/icons-react";
+import { IconDownload, IconGitFork } from "@tabler/icons-react";
 import { useContext } from "react";
 import { TemplateContext } from "./TemplateContext";
 import { useStringDownload } from "@/hooks/useDownload";
 import { useStartConversationMutation } from "@/queries/conversations";
 import { Route } from "@/routes/templates.$templateId";
 import { slugify } from "@/lib/slugify";
+import { useForkTemplateByIdMutation } from "@/queries/templates";
 
 export const TemplateFormHeader = () => {
   const context = useContext(TemplateContext)!;
   const download = useStringDownload();
   const startConversationMutation = useStartConversationMutation();
+  const forkTemplateMutation = useForkTemplateByIdMutation();
   const nav = Route.useNavigate();
 
   const { draftTitleState, template, isEditingState } = context;
@@ -90,6 +92,25 @@ export const TemplateFormHeader = () => {
           }}
         >
           <IconDownload />
+        </ActionIcon>
+
+        <ActionIcon
+          variant="subtle"
+          color="gray"
+          onClick={() => {
+            forkTemplateMutation.mutate(template.id, {
+              onSuccess(newTemplate) {
+                nav({
+                  to: "/templates/$templateId",
+                  params: {
+                    templateId: newTemplate.id,
+                  },
+                });
+              },
+            });
+          }}
+        >
+          <IconGitFork />
         </ActionIcon>
       </Group>
     </Group>

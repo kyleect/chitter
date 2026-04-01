@@ -5,6 +5,7 @@ import { useGetPersonasQuery } from "@/queries/personas";
 import {
   useCreateTemplateMutation,
   useDeleteTemplateMutation,
+  useForkTemplateByIdMutation,
   useGetTemplatesQuery,
   useUpdateTemplateByIdMutation,
 } from "@/queries/templates";
@@ -24,7 +25,12 @@ import {
 } from "@mantine/core";
 import { modals } from "@mantine/modals";
 import { notifications } from "@mantine/notifications";
-import { IconDownload, IconUpload, IconX } from "@tabler/icons-react";
+import {
+  IconDownload,
+  IconGitFork,
+  IconUpload,
+  IconX,
+} from "@tabler/icons-react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { ConversationTemplate } from "server-types";
@@ -37,6 +43,7 @@ function RouteComponent() {
   const templatesQuery = useGetTemplatesQuery();
   const [draftName, setDraftName] = useState("");
   const createTemplateMutation = useCreateTemplateMutation();
+  const forkTemplateMutation = useForkTemplateByIdMutation();
   const updateTemplateMutation = useUpdateTemplateByIdMutation();
   const getPersonasQuery = useGetPersonasQuery();
   const nav = Route.useNavigate();
@@ -140,6 +147,24 @@ function RouteComponent() {
                     }}
                   >
                     <IconDownload />
+                  </ActionIcon>
+                  <ActionIcon
+                    variant="subtle"
+                    color="gray"
+                    onClick={() => {
+                      forkTemplateMutation.mutate(template.id, {
+                        onSuccess(newTemplate) {
+                          nav({
+                            to: "/templates/$templateId",
+                            params: {
+                              templateId: newTemplate.id,
+                            },
+                          });
+                        },
+                      });
+                    }}
+                  >
+                    <IconGitFork />
                   </ActionIcon>
                   <ActionIcon
                     variant="subtle"

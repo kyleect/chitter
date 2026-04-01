@@ -126,6 +126,42 @@ export const useUpdateTemplateByIdMutation = () => {
   });
 };
 
+export const useForkTemplateByIdMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (templateId: ConversationTemplate["id"]) => {
+      const response = await fetch(`/api/templates/${templateId}/fork`, {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+        },
+      });
+
+      const responseBody = await response.text();
+
+      if (!response.ok) {
+        throw Error(`Error updating template: ${responseBody}`);
+      }
+
+      const data = JSON.parse(responseBody) as ConversationTemplate;
+
+      return data ?? null;
+    },
+    async onSuccess(_) {
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: [TEMPLATE_KEYS.all],
+        }),
+
+        queryClient.invalidateQueries({
+          queryKey: [PERSONA_KEYS.all],
+        }),
+      ]);
+    },
+  });
+};
+
 export function isPersonaId(persona: unknown): persona is {
   type: "Id";
   data: string;
