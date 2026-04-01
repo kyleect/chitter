@@ -92,7 +92,9 @@ async fn chat_completion(
                 .build(),
         );
 
-        if let Some(system_message_after_prompt) = &body.system_message_after_prompt {
+        if let Some(system_message_after_prompt) = &body.system_message_after_prompt
+            && !system_message_after_prompt.is_empty()
+        {
             conversation.messages.push(
                 types::message::Message::builder()
                     .role(Role::System)

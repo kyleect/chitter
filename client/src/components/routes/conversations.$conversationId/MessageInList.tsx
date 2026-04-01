@@ -200,7 +200,7 @@ export const MessageInList: FC<MessageInListProps> = ({
                             size: "xl",
                             children: (
                               <>
-                                <Text>{response}</Text>
+                                <TextToParagraphs text={response} />
                               </>
                             ),
                             labels: { confirm: "Replace", cancel: "Cancel" },
