@@ -17,6 +17,7 @@ type ContextType = {
   isEditingState: StatePair<boolean>;
   draftTitleState: StatePair<string>;
   draftInsertablesState: StatePair<[string, string][]>;
+  showChatLinksState: StatePair<boolean>;
 
   draftAssistantPersonaState: StatePair<TemplatePersona | null>;
   assistantPersonaResolved: Persona | null;

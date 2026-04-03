@@ -17,6 +17,7 @@ export const TemplateFormHeader = () => {
   const nav = Route.useNavigate();
 
   const { draftTitleState, template, isEditingState } = context;
+  const [_, setShowChatLinks] = context.showChatLinksState;
 
   const [draftTitle, setDraftTitle] = draftTitleState;
   const [isEditing] = isEditingState;
@@ -79,6 +80,17 @@ export const TemplateFormHeader = () => {
         )}
       </Group>
       <Group>
+        <Button.Group>
+          <Button
+            variant="subtle"
+            onClick={() => {
+              setShowChatLinks(true);
+            }}
+          >
+            Chats
+          </Button>
+        </Button.Group>
+
         <TemplateActionButtons />
 
         <ActionIcon

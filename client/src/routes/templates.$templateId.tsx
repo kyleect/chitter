@@ -2,7 +2,7 @@ import {
   useGetTemplateByIdPreviewQuery,
   useGetTemplateByIdQuery,
 } from "@/queries/templates";
-import { Alert, Divider, Loader, Stack } from "@mantine/core";
+import { Alert, Divider, Drawer, Loader, Stack, Text } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
@@ -22,6 +22,8 @@ import { TemplateFormAffix } from "@/components/routes/templates.$templateId/Tem
 import { TemplateFormBlocks } from "@/components/routes/templates.$templateId/TemplateFormBlocks";
 import { TemplateFormInsertable } from "@/components/routes/templates.$templateId/TemplateFormInsertable";
 import { TemplateVariants } from "@/components/routes/templates.$templateId/TemplateVariants";
+import { useGetConservationsQuery } from "@/queries/conversations";
+import { LinkToConversation } from "@/components/common/LinkToConversation";
 
 type Search = {
   at?: number;
@@ -38,6 +40,7 @@ function RouteComponent() {
   const params = Route.useParams();
   const [previewConversationAtIndex, setPreviewConversationAtIndexState] =
     useState<number | undefined>();
+  const [showChatLinks, setShowChatLink] = useState(false);
   const getTemplateByIdQuery = useGetTemplateByIdQuery(params.templateId);
   const [selectedFirstMessageIndex, setSelectdFirstMessageIndex] =
     useState<number>(-1);
@@ -61,6 +64,7 @@ function RouteComponent() {
   );
 
   const getSettingsQuery = useGetSettingsQuery();
+  const getConversationsQuery = useGetConservationsQuery();
   const [draftUserPersona, setDraftUserPersona] =
     useState<TemplatePersona | null>(null);
   const [draftAssistantPersona, setDraftAssistantPersona] =
@@ -95,10 +99,11 @@ function RouteComponent() {
   }, [getTemplateByIdQuery.data]);
 
   if (
-    getTemplateByIdQuery.isPending &&
-    getTemplateByIdPreviewQuery.isPending &&
-    getPersonasQuery.isPending &&
-    getSettingsQuery.isPending
+    getTemplateByIdQuery.isPending ||
+    getTemplateByIdPreviewQuery.isPending ||
+    getPersonasQuery.isPending ||
+    getSettingsQuery.isPending ||
+    getConversationsQuery.isPending
   ) {
     return <Loader />;
   }
@@ -132,6 +137,15 @@ function RouteComponent() {
     return (
       <Alert color="red">
         Failed to load settings: {JSON.stringify(getSettingsQuery.error)}
+      </Alert>
+    );
+  }
+
+  if (getConversationsQuery.isError) {
+    return (
+      <Alert color="red">
+        Failed to load conversations:{" "}
+        {JSON.stringify(getConversationsQuery.error)}
       </Alert>
     );
   }
@@ -179,6 +193,7 @@ function RouteComponent() {
           draftAssistantPersona,
           setDraftAssistantPersona,
         ],
+        showChatLinksState: [showChatLinks, setShowChatLink],
         assistantPersonaResolved: assistantPersonaResolved ?? null,
         draftInsertablesState: [draftInsertables, setDraftInsertables],
         draftTemplateBlocksState: [draftTemplateItems, setDraftTemplateItems],
@@ -234,6 +249,22 @@ function RouteComponent() {
         />
 
         <TemplateFormAffix />
+
+        <Drawer
+          opened={showChatLinks}
+          onClose={() => {
+            setShowChatLink(false);
+          }}
+        >
+          <Stack>
+            <Text fw="bold">Conversations</Text>
+            {getConversationsQuery.data
+              .filter(({ templateId }) => templateId === template.id)
+              .map(({ id }) => (
+                <LinkToConversation conversationId={id} />
+              ))}
+          </Stack>
+        </Drawer>
       </Stack>
     </TemplateContext>
   );
