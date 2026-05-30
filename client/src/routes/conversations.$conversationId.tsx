@@ -43,7 +43,7 @@ import {
 import { createFileRoute } from "@tanstack/react-router";
 import { produce } from "immer";
 import { useEffect, useState } from "react";
-import { Message } from "server-types";
+import { Conversation, Message } from "server-types";
 import { useStringDownload } from "@/hooks/useDownload";
 import { slugify } from "@/lib/slugify";
 import { TextToParagraphs } from "@/components/common/TextToParagraphs";
@@ -248,7 +248,7 @@ function RouteComponent() {
     chatImpersonationCompletionMutations.length > 0 ||
     generateResponseMutation.isPending;
 
-  const isUserTurn = conversation?.messages.at(-1)?.role.kind !== "user";
+  const isTheUsersTurn = conversation && getIsItUserTurn(conversation);
 
   return (
     <Stack gap="xs">
@@ -325,7 +325,7 @@ function RouteComponent() {
           </ActionIcon.Group>
         </Group>
 
-        {isUserTurn ? (
+        {isTheUsersTurn ? (
           <UserReplyForm
             ref={targetRef}
             isLoading={isGenerating}
@@ -483,7 +483,7 @@ function RouteComponent() {
 
         <Divider label="Insertables" />
 
-        {isUserTurn && (
+        {isTheUsersTurn && (
           <Group align="flex-start">
             <Switch
               flex={1}
@@ -647,5 +647,13 @@ function RouteComponent() {
         )}
       </ConversationContext>
     </Stack>
+  );
+}
+
+function getIsItUserTurn(conversation: Conversation) {
+  return (
+    conversation?.messages
+      .filter((message) => message.role.kind != "system")
+      .at(-1)?.role.kind === "assistant"
   );
 }
