@@ -7,7 +7,7 @@ use crate::{
     templates::{
         blocks::TemplateBlock,
         personas::TemplatePersona,
-        variables::{VariableKey, VariableValue},
+        variables::{VariableKey, VariableType, VariableValue},
     },
 };
 
@@ -27,6 +27,16 @@ pub struct ConversationTemplate {
     pub insertable_system_prompts: Vec<(String, String)>,
     pub variants: Vec<TemplateVariant>,
     pub active_variant: Option<String>,
+    pub prompts: Option<Vec<TemplatePrompt>>,
+}
+
+#[derive(TS, Clone, Debug, PartialEq, Serialize, Deserialize, Builder)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct TemplatePrompt {
+    pub key: VariableKey,
+    pub prompt: String,
+    pub value_type: VariableType,
 }
 
 #[derive(TS, Clone, Debug, PartialEq, Serialize, Deserialize, Builder)]
@@ -65,6 +75,7 @@ impl ConversationTemplate {
             insertable_system_prompts: Default::default(),
             variants: vec![],
             active_variant: None,
+            prompts: None,
         }
     }
 
@@ -153,6 +164,8 @@ impl ConversationTemplate {
 #[cfg(test)]
 mod conversation_template_tests {
 
+    use std::vec;
+
     use crate::{message::Role, persona::Persona, templates::variables::VariableValue};
 
     use super::*;
@@ -213,7 +226,8 @@ mod conversation_template_tests {
                 ],
                 insertable_system_prompts: Default::default(),
                 variants: vec![],
-                active_variant: None
+                active_variant: None,
+                prompts: None
             },
             conversation
         );

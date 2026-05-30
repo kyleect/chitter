@@ -12,7 +12,7 @@ use axum::{
 };
 use serde::{Deserialize, Serialize};
 use types::{
-    conversation::Conversation,
+    conversation::{Conversation, StartConversationRequest},
     templates::{ConversationTemplate, personas::TemplatePersona},
 };
 
@@ -240,6 +240,7 @@ async fn preview_conversation(
     let conversation: Conversation = Conversation::from_template(
         &template_for_preview,
         None,
+        None,
         assistant_persona_from_id,
         user_persona_from_id,
         None,
@@ -259,6 +260,7 @@ async fn start_conversation(
     State(state): State<AsyncAppState>,
     Path(template_id): Path<String>,
     Query(query): Query<StartConversationQuery>,
+    Json(body): Json<StartConversationRequest>,
 ) -> Json<Conversation> {
     let state = state.clone();
     let mut state = state.lock().await;
@@ -304,6 +306,7 @@ async fn start_conversation(
     let mut conversation: Conversation = Conversation::from_template(
         &template,
         None,
+        body.prompt_values,
         assistant_persona_from_id,
         user_persona_from_id,
         query.first_message_index,
@@ -359,6 +362,7 @@ mod tests {
             insertable_system_prompts: vec![],
             variants: vec![],
             active_variant: None,
+            prompts: None,
         };
 
         let mut state = AppState::default();
@@ -421,6 +425,7 @@ mod tests {
                     .build(),
             ],
             active_variant: Some("expected-variant-id".to_string()),
+            prompts: None,
         };
 
         let mut state = AppState::default();

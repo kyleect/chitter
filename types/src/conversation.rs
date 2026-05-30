@@ -18,6 +18,13 @@ use crate::{
 #[derive(TS, Clone, Debug, PartialEq, Serialize, Deserialize, Default, Builder)]
 #[serde(rename_all = "camelCase")]
 #[ts(export)]
+pub struct StartConversationRequest {
+    pub prompt_values: Option<HashMap<String, String>>,
+}
+
+#[derive(TS, Clone, Debug, PartialEq, Serialize, Deserialize, Default, Builder)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
 pub struct Conversation {
     pub id: String,
     pub title: Option<String>,
@@ -27,6 +34,7 @@ pub struct Conversation {
     pub messages: Vec<Message>,
     pub variables: HashMap<VariableKey, VariableValue>,
     pub insertable_system_prompts: Vec<(String, String)>,
+    pub prompts: Option<HashMap<String, String>>,
 }
 
 impl Conversation {
@@ -41,6 +49,7 @@ impl Conversation {
     pub fn from_template(
         template: &ConversationTemplate,
         _variant_id: Option<String>,
+        prompt_values: Option<HashMap<String, String>>,
         assistant_persona_from_id: Option<&Persona>,
         user_persona_from_id: Option<&Persona>,
         first_message_index: Option<usize>,
@@ -147,6 +156,8 @@ impl Conversation {
             })
             .expect("should have an user persona attached to conversation");
 
+        dbg!(&prompt_values);
+
         Self {
             id: uuid::Uuid::new_v4().to_string(),
             title: template.title.clone(),
@@ -156,6 +167,7 @@ impl Conversation {
             messages,
             variables,
             insertable_system_prompts: template.insertable_system_prompts.clone(),
+            prompts: prompt_values,
         }
     }
 }
@@ -209,6 +221,7 @@ mod conversation_tests {
         let mut conservation: Conversation = Conversation::from_template(
             &template,
             Some("expected-variant-id".to_string()),
+            None,
             Some(&assistant),
             Some(&user),
             None,
@@ -238,7 +251,8 @@ mod conversation_tests {
                     }
                 ],
                 variables: HashMap::from([(summarize_as_list_var, false.into())]),
-                insertable_system_prompts: vec![("Test".to_string(), "Test Message".to_string())]
+                insertable_system_prompts: vec![("Test".to_string(), "Test Message".to_string())],
+                prompts: None
             },
             conservation
         );

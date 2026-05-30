@@ -115,36 +115,48 @@ async fn chat_completion(
     let user_persona = &conversation.user_persona;
 
     if let Some(client) = &state.llm {
+        let messages = conversation
+            .messages
+            .iter()
+            .map(|message| {
+                let mut new_message_string = message.content.clone();
+
+                if let Some(propmpt_values) = &conversation.prompts {
+                    for (key, value) in propmpt_values.iter() {
+                        new_message_string =
+                            new_message_string.replace(&format!("{{{key}}}"), value);
+
+                        dbg!(&new_message_string);
+                    }
+                }
+
+                // Update message.message if is Some
+                new_message_string = new_message_string
+                    .replace("{{char}}", &assistant_persona.name)
+                    .replace("{{CHAR_DESCRIPTION}}", &assistant_persona.description)
+                    .replace("{{user}}", &assistant_persona.name)
+                    .replace("{{USER_DESCRIPTION}}", &user_persona.description);
+
+                let mut new_message = message.clone();
+
+                new_message.content = new_message_string;
+
+                let m: ChatCompletionRequestMessage = new_message.try_into().unwrap();
+
+                dbg!(&m);
+
+                m
+            })
+            .collect::<Vec<_>>();
+
+        dbg!(&messages);
+
         let request = CreateChatCompletionRequestArgs::default()
             .frequency_penalty(1.0)
             .temperature(state.settings.params.temperature.clone().unwrap_or(0.8f32))
             .max_tokens(state.settings.params.max_tokens.clone().unwrap_or(500))
             .top_p(state.settings.params.top_p.clone().unwrap_or(0.95))
-            .messages(
-                conversation
-                    .messages
-                    .iter()
-                    .map(|message| {
-                        // Update message.message if is Some
-                        let new_message_string = message
-                            .content
-                            .replace("{{char}}", &assistant_persona.name)
-                            .replace("{{CHAR_DESCRIPTION}}", &assistant_persona.description)
-                            .replace("{{user}}", &assistant_persona.name)
-                            .replace("{{USER_DESCRIPTION}}", &user_persona.description);
-
-                        let mut new_message = message.clone();
-
-                        new_message.content = new_message_string;
-
-                        let m: ChatCompletionRequestMessage = new_message.try_into().unwrap();
-
-                        dbg!(&m);
-
-                        m
-                    })
-                    .collect::<Vec<_>>(),
-            )
+            .messages(messages)
             .build()
             .expect("should build chat completion request");
 

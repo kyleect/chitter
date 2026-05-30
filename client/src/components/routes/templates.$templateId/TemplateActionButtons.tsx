@@ -3,6 +3,7 @@ import { useContext } from "react";
 import { TemplateContext } from "./TemplateContext";
 import { useUpdateTemplateByIdMutation } from "@/queries/templates";
 import { ConversationTemplate } from "server-types";
+import { notifications } from "@mantine/notifications";
 
 export const TemplateActionButtons = () => {
   const updateTemplateMutation = useUpdateTemplateByIdMutation();
@@ -24,9 +25,23 @@ export const TemplateActionButtons = () => {
   const [draftAssistantPersona] = draftAssistantPersonaState;
   const [draftUserPersona] = draftUserPersonaState;
   const [draftInsertables, setDraftInsertables] = draftInsertablesState;
+  const [draftPrompts, setDraftPrompts] = context.draftPromptsState;
 
   const handleSave = () => {
     template.blocks = draftTemplateItems;
+
+    const promptsAreComplete = draftPrompts.every(
+      (prompt) => prompt.key.length > 0 && prompt.prompt.length > 0,
+    );
+
+    if (!promptsAreComplete) {
+      notifications.show({
+        color: "red",
+        message: "Some prompts are incomplete",
+      });
+
+      return;
+    }
 
     let updatedTemplate: ConversationTemplate = Object.assign({}, template, {
       title: draftTitle,
@@ -34,6 +49,7 @@ export const TemplateActionButtons = () => {
       userPersona: draftUserPersona,
       blocks: draftTemplateItems,
       insertableSystemPrompts: draftInsertables,
+      prompts: draftPrompts,
     } as ConversationTemplate);
 
     console.log(updatedTemplate);
@@ -48,6 +64,7 @@ export const TemplateActionButtons = () => {
   const handleCancel = () => {
     setDraftTemplateItems(template.blocks);
     setDraftInsertables(template.insertableSystemPrompts);
+    setDraftPrompts(template.prompts ?? []);
     setIsEditing(false);
   };
 

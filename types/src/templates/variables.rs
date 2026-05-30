@@ -6,6 +6,25 @@ use ts_rs::TS;
 #[derive(TS, Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 #[ts(export)]
+pub enum VariableType {
+    String,
+    Boolean,
+    Number,
+}
+
+impl From<VariableValue> for VariableType {
+    fn from(value: VariableValue) -> Self {
+        match value {
+            VariableValue::String(_) => VariableType::String,
+            VariableValue::Boolean(_) => VariableType::Boolean,
+            VariableValue::Number(_) => VariableType::Number,
+        }
+    }
+}
+
+#[derive(TS, Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
 pub enum VariableValue {
     String(String),
     Boolean(bool),

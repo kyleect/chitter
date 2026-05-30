@@ -4,6 +4,7 @@ import {
   ConversationTemplate,
   Persona,
   TemplatePersona,
+  TemplatePrompt,
   TemplateVariant,
 } from "server-types";
 
@@ -18,6 +19,7 @@ type ContextType = {
   draftTitleState: StatePair<string>;
   draftInsertablesState: StatePair<[string, string][]>;
   showChatLinksState: StatePair<boolean>;
+  draftPromptsState: StatePair<TemplatePrompt[]>;
 
   draftAssistantPersonaState: StatePair<TemplatePersona | null>;
   assistantPersonaResolved: Persona | null;

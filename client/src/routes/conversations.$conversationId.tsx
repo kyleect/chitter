@@ -17,12 +17,14 @@ import {
   ActionIcon,
   Alert,
   Button,
+  Code,
   Divider,
   Group,
   HoverCard,
   Loader,
   Stack,
   Switch,
+  Table,
   Text,
   Textarea,
   TextInput,
@@ -610,6 +612,39 @@ function RouteComponent() {
             </Group>
           </Stack>
         </Group>
+
+        {conversation?.prompts && (
+          <Stack mt="xl">
+            <Divider label="Prompts" />
+
+            <Table withColumnBorders>
+              <Table.Thead>
+                <Table.Tr>
+                  <Table.Th>Prompt</Table.Th>
+                  <Table.Th>Value</Table.Th>
+                </Table.Tr>
+              </Table.Thead>
+              <Table.Tbody>
+                {Object.entries(conversation.prompts).map((value) => {
+                  return (
+                    <Table.Tr>
+                      <Table.Td>
+                        <Code>
+                          {"{{"}
+                          {value[0]}
+                          {"}}"}
+                        </Code>
+                      </Table.Td>
+                      <Table.Td>
+                        <Code>{JSON.stringify(value[1])}</Code>
+                      </Table.Td>
+                    </Table.Tr>
+                  );
+                })}
+              </Table.Tbody>
+            </Table>
+          </Stack>
+        )}
       </ConversationContext>
     </Stack>
   );

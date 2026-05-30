@@ -27,7 +27,7 @@ export const UserReplyForm: FC<Props> = ({
   const isEditingMessage = !!editingMessageIndex;
 
   return (
-    <Group align="flex-end" mt="md">
+    <>
       <Textarea
         size="md"
         value={value}
@@ -39,40 +39,42 @@ export const UserReplyForm: FC<Props> = ({
         disabled={isLoading || isEditingMessage}
         ref={ref}
       />
-      <ButtonGroup>
-        <Button
-          size="md"
-          variant="gradient"
-          loading={isLoading}
-          disabled={isEditingMessage || value.length === 0}
-          leftSection={
-            <ThemeIcon size="xs">
-              <IconSend />
-            </ThemeIcon>
-          }
-          onClick={() => {
-            onSubmit?.(value);
-          }}
-        >
-          Reply
-        </Button>
-        <Button
-          size="md"
-          variant="subtle"
-          loading={isLoading}
-          disabled={isEditingMessage || value.length > 0}
-          leftSection={
-            <ThemeIcon size="xs" variant="subtle">
-              <IconBubbleText stroke={1.5} />
-            </ThemeIcon>
-          }
-          onClick={() => {
-            chatImpersonationCompletionMutation.mutate();
-          }}
-        >
-          Impersonate
-        </Button>
-      </ButtonGroup>
-    </Group>
+      <Group align="flex-end" mt="md">
+        <ButtonGroup>
+          <Button
+            size="md"
+            variant="gradient"
+            loading={isLoading}
+            disabled={isEditingMessage || value.length === 0}
+            leftSection={
+              <ThemeIcon size="xs">
+                <IconSend />
+              </ThemeIcon>
+            }
+            onClick={() => {
+              onSubmit?.(value);
+            }}
+          >
+            Reply
+          </Button>
+          <Button
+            size="md"
+            variant="subtle"
+            loading={isLoading}
+            disabled={isEditingMessage || value.length > 0}
+            leftSection={
+              <ThemeIcon size="xs" variant="subtle">
+                <IconBubbleText stroke={1.5} />
+              </ThemeIcon>
+            }
+            onClick={() => {
+              chatImpersonationCompletionMutation.mutate();
+            }}
+          >
+            Impersonate
+          </Button>
+        </ButtonGroup>
+      </Group>
+    </>
   );
 };

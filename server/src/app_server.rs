@@ -165,7 +165,7 @@ pub async fn init_server(options: InitServerOptions) -> Result<AppServer, Server
         Arc::new(Mutex::new(state))
     };
 
-    let listener = tokio::net::TcpListener::bind(format!("localhost:{}", port)).await?;
+    let listener = tokio::net::TcpListener::bind(format!("0.0.0.0:{}", port)).await?;
     let addr = listener.local_addr()?;
     let url = format!("http://{addr}");
 

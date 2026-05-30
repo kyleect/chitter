@@ -2,7 +2,21 @@ import {
   useGetTemplateByIdPreviewQuery,
   useGetTemplateByIdQuery,
 } from "@/queries/templates";
-import { Alert, Divider, Drawer, Loader, Stack, Text } from "@mantine/core";
+import {
+  ActionIcon,
+  Alert,
+  Badge,
+  Code,
+  Divider,
+  Drawer,
+  Group,
+  Loader,
+  Select,
+  Stack,
+  Table,
+  Text,
+  TextInput,
+} from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
@@ -10,6 +24,7 @@ import {
   ConversationTemplate,
   Persona,
   TemplatePersona,
+  TemplatePrompt,
   TemplateVariant,
 } from "server-types";
 import { ConversationPreviewDrawer } from "@/components/routes/templates.$templateId/ConversationPreviewDrawer";
@@ -24,6 +39,14 @@ import { TemplateFormInsertable } from "@/components/routes/templates.$templateI
 import { TemplateVariants } from "@/components/routes/templates.$templateId/TemplateVariants";
 import { useGetConservationsQuery } from "@/queries/conversations";
 import { LinkToConversation } from "@/components/common/LinkToConversation";
+import {
+  IconArrowDown,
+  IconArrowUp,
+  IconPlus,
+  IconTrash,
+} from "@tabler/icons-react";
+import { produce } from "immer";
+import { swapArrayItemsInPlace } from "@/lib/swapArrayItems";
 
 type Search = {
   at?: number;
@@ -48,6 +71,7 @@ function RouteComponent() {
   const [isEditing, setIsEditing] = useState(false);
   const [currentVariant, setCurrentVariant] = useState<string | null>(null);
   const [draftTitle, setDraftTitle] = useState("");
+  const [draftPrompts, setDraftPrompts] = useState<TemplatePrompt[]>([]);
   const [draftTemplateItems, setDraftTemplateItems] = useState<
     ConversationTemplate["blocks"]
   >([]);
@@ -95,6 +119,7 @@ function RouteComponent() {
       setDraftInsertables(
         getTemplateByIdQuery.data.insertableSystemPrompts ?? [],
       );
+      setDraftPrompts(getTemplateByIdQuery.data.prompts ?? []);
     }
   }, [getTemplateByIdQuery.data]);
 
@@ -189,6 +214,7 @@ function RouteComponent() {
         isEditingState: [isEditing, setIsEditing],
         draftTitleState: [draftTitle, setDraftTitle],
         draftUserPersonaState: [draftUserPersona, setDraftUserPersona],
+        draftPromptsState: [draftPrompts, setDraftPrompts],
         draftAssistantPersonaState: [
           draftAssistantPersona,
           setDraftAssistantPersona,
@@ -213,6 +239,177 @@ function RouteComponent() {
         <Stack>
           <TemplateFormHeader />
 
+          <Divider label={"Personas"} labelPosition="left" mt="md" mb="md" />
+
+          <TemplateFormPersonas />
+
+          <Divider label={"Prompts"} labelPosition="left" mt="md" mb="md" />
+
+          <Stack>
+            {draftPrompts.length > 0 && (
+              <Table>
+                <Table.Thead>
+                  <Table.Tr>
+                    <Table.Th>Prompt</Table.Th>
+                    <Table.Th>Type</Table.Th>
+                    <Table.Th>Key</Table.Th>
+                    <Table.Th></Table.Th>
+                  </Table.Tr>
+                </Table.Thead>
+
+                <Table.Tbody>
+                  {draftPrompts.map(({ prompt, valueType, key }, index) => {
+                    return (
+                      <Table.Tr>
+                        {isEditing ? (
+                          <>
+                            <Table.Td>
+                              <TextInput
+                                required
+                                value={draftPrompts[index].prompt}
+                                onChange={(e) => {
+                                  setDraftPrompts(
+                                    produce((draft) => {
+                                      draft[index].prompt = e.target.value;
+                                    }),
+                                  );
+                                }}
+                              />
+                            </Table.Td>
+                            <Table.Td>
+                              <Select
+                                required
+                                renderOption={(item) => {
+                                  return (
+                                    <Badge variant="transparent" color="gray">
+                                      {item.option.label}
+                                    </Badge>
+                                  );
+                                }}
+                                data={["string", "number", "boolean"]}
+                                value={draftPrompts[index].valueType}
+                                onChange={(e) => {
+                                  setDraftPrompts(
+                                    produce((draft) => {
+                                      draft[index].valueType =
+                                        (e as any) ?? "string";
+                                    }),
+                                  );
+                                }}
+                              />
+                            </Table.Td>
+                            <Table.Td>
+                              <TextInput
+                                required
+                                value={draftPrompts[index].key}
+                                onChange={(e) => {
+                                  setDraftPrompts(
+                                    produce((draft) => {
+                                      draft[index].key = e.target.value;
+                                    }),
+                                  );
+                                }}
+                              />
+                            </Table.Td>
+                            <Table.Td>
+                              <Group>
+                                <ActionIcon.Group>
+                                  <ActionIcon
+                                    variant="light"
+                                    disabled={index === draftPrompts.length - 1}
+                                    onClick={() => {
+                                      setDraftPrompts(
+                                        produce((draft) => {
+                                          swapArrayItemsInPlace(
+                                            draft,
+                                            index,
+                                            index + 1,
+                                          );
+                                        }),
+                                      );
+                                    }}
+                                  >
+                                    <IconArrowDown />
+                                  </ActionIcon>
+                                  <ActionIcon
+                                    variant="light"
+                                    disabled={index === 0}
+                                    onClick={() => {
+                                      setDraftPrompts(
+                                        produce((draft) => {
+                                          swapArrayItemsInPlace(
+                                            draft,
+                                            index,
+                                            index - 1,
+                                          );
+                                        }),
+                                      );
+                                    }}
+                                  >
+                                    <IconArrowUp />
+                                  </ActionIcon>
+                                </ActionIcon.Group>
+                                <ActionIcon
+                                  variant="subtle"
+                                  color="red"
+                                  onClick={() => {
+                                    setDraftPrompts(
+                                      produce((draft) => {
+                                        draft.splice(index, 1);
+                                      }),
+                                    );
+                                  }}
+                                >
+                                  <IconTrash />
+                                </ActionIcon>
+                              </Group>
+                            </Table.Td>
+                          </>
+                        ) : (
+                          <>
+                            <Table.Td>{prompt}</Table.Td>
+                            <Table.Td>
+                              <Badge
+                                radius="sm"
+                                variant="transparent"
+                                color="gray"
+                              >
+                                {valueType}
+                              </Badge>
+                            </Table.Td>
+                            <Table.Td>
+                              <Code>{key}</Code>
+                            </Table.Td>
+                            <Table.Td></Table.Td>
+                          </>
+                        )}
+                      </Table.Tr>
+                    );
+                  })}
+                </Table.Tbody>
+              </Table>
+            )}
+            <ActionIcon.Group>
+              <ActionIcon
+                size="sm"
+                onClick={() => {
+                  setDraftPrompts(
+                    produce((draft) => {
+                      draft.push({
+                        key: "",
+                        prompt: "",
+                        valueType: "string",
+                      });
+                    }),
+                  );
+                  setIsEditing(true);
+                }}
+              >
+                <IconPlus stroke={1.5} />
+              </ActionIcon>
+            </ActionIcon.Group>
+          </Stack>
+
           {hasVariants && (
             <>
               <Divider
@@ -225,10 +422,6 @@ function RouteComponent() {
               <TemplateVariants />
             </>
           )}
-
-          <Divider label={"Personas"} labelPosition="left" mt="md" mb="md" />
-
-          <TemplateFormPersonas />
 
           <Divider label={"Blocks"} labelPosition="left" mt="md" mb="md" />
 

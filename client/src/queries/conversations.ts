@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Conversation,
   Message,
+  StartConversationRequest,
   TemplateBlock,
   VariableKey,
   VariableValue,
@@ -45,10 +46,12 @@ export const useStartConversationMutation = () =>
     mutationFn: async ({
       templateId,
       variantId,
+      promptValues = {},
       firstMessageIndex,
     }: {
       templateId: string;
       variantId?: string;
+      promptValues?: Record<string, string>;
       firstMessageIndex?: number;
     }) => {
       const firstMessageIndexQuery =
@@ -60,6 +63,12 @@ export const useStartConversationMutation = () =>
         `/api/templates/${templateId}/chat?variantId=${variantId}&${firstMessageIndexQuery}`,
         {
           method: "POST",
+          headers: {
+            "content-type": "application/json",
+          },
+          body: JSON.stringify({
+            promptValues,
+          } as StartConversationRequest),
         },
       );
       const data = (await response.json()) as Conversation;

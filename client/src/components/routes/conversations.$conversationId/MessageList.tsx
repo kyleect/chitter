@@ -42,7 +42,6 @@ export const MessageList: FC<Props> = ({
         value={message}
         index={messageIndex}
         onChange={(updatedMessage) => {
-          debugger;
           onMessageChange?.(messageIndex, updatedMessage);
           setEditingMessageIndex(null);
         }}

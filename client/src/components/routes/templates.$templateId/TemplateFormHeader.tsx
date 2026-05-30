@@ -8,6 +8,8 @@ import { useStartConversationMutation } from "@/queries/conversations";
 import { Route } from "@/routes/templates.$templateId";
 import { slugify } from "@/lib/slugify";
 import { useForkTemplateByIdMutation } from "@/queries/templates";
+import { modals } from "@mantine/modals";
+import { StartChatModal } from "@/components/common/StartChatModal";
 
 export const TemplateFormHeader = () => {
   const context = useContext(TemplateContext)!;
@@ -36,25 +38,42 @@ export const TemplateFormHeader = () => {
             variant="gradient"
             disabled={personasMissing}
             onClick={() => {
-              debugger;
-              startConversationMutation.mutate(
-                {
-                  templateId: template.id,
-                  variantId: currentVariant ?? undefined,
-                  firstMessageIndex:
-                    firstMessageIndex === -1 ? undefined : firstMessageIndex,
-                },
-                {
-                  onSuccess(data) {
-                    nav({
-                      to: "/conversations/$conversationId",
-                      params: {
-                        conversationId: data.id,
-                      },
-                    });
-                  },
-                },
-              );
+              modals.open({
+                title: `Start A New Chat`,
+                id: "start-new-chat",
+                children: (
+                  <StartChatModal
+                    prompts={template.prompts ?? []}
+                    key={JSON.stringify(template.prompts)}
+                    onSubmit={(promptValues) => {
+                      startConversationMutation.mutate(
+                        {
+                          templateId: template.id,
+                          promptValues,
+                          variantId: currentVariant ?? undefined,
+                          firstMessageIndex:
+                            firstMessageIndex === -1
+                              ? undefined
+                              : firstMessageIndex,
+                        },
+                        {
+                          onSuccess(data) {
+                            modals.closeAll();
+
+                            nav({
+                              to: "/conversations/$conversationId",
+                              params: {
+                                conversationId: data.id,
+                              },
+                            });
+                          },
+                        },
+                      );
+                    }}
+                  />
+                ),
+                size: "xl",
+              });
             }}
           >
             Chat

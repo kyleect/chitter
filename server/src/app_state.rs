@@ -10,7 +10,10 @@ use types::{
     persona::Persona,
     settings::{AppSettings, ConversationSettings, LLMConnection, LLMParameters},
     templates::{
-        ConversationTemplate, TemplateVariant, blocks::TemplateBlock, personas::TemplatePersona,
+        ConversationTemplate, TemplatePrompt, TemplateVariant,
+        blocks::TemplateBlock,
+        personas::TemplatePersona,
+        variables::{VariableKey, VariableType},
     },
 };
 
@@ -75,9 +78,15 @@ impl Default for AppState {
                 "Another test insertable system prompt".to_string(),
             ));
 
+            template.prompts = Some(vec![TemplatePrompt {
+                key: VariableKey("test-prompt".to_string()),
+                prompt: "Test prompt".to_string(),
+                value_type: VariableType::String,
+            }]);
+
             let summarize_as_list_var = template.set_var("summaryAsList", true.into());
 
-            template.add_system_message("You are a helpful AI assistant.");
+            template.add_system_message("You are a helpful AI assistant. {{test-prompt}}");
 
             template.add_assistant_message("Hello, I'm here to help! What can I do for you today?");
 
