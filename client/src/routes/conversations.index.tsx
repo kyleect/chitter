@@ -4,6 +4,7 @@ import { useStringDownload } from "@/hooks/useDownload";
 import { slugify } from "@/lib/slugify";
 import {
   useDeleteConversationMutation,
+  useForkConversationAsTemplateByIdMutation,
   useForkConversationByIdMutation,
   useGetConservationsQuery,
   useUpdateConversationMutation,
@@ -24,12 +25,14 @@ import {
   Text,
   TextInput,
   ThemeIcon,
+  Tooltip,
 } from "@mantine/core";
 import { modals } from "@mantine/modals";
 import { notifications } from "@mantine/notifications";
 import {
   IconDownload,
   IconGitFork,
+  IconShape3,
   IconUpload,
   IconX,
 } from "@tabler/icons-react";
@@ -46,6 +49,8 @@ function RouteComponent() {
   const getConversationsQuery = useGetConservationsQuery();
   const getPersonasQuery = useGetPersonasQuery();
   const forkConversationMutation = useForkConversationByIdMutation();
+  const forkConversationAsTemplateMutation =
+    useForkConversationAsTemplateByIdMutation();
   const getTemplatesQuery = useGetTemplatesQuery();
   const deleteConversationMutation = useDeleteConversationMutation();
   const updateConversationMutation = useUpdateConversationMutation();
@@ -149,6 +154,32 @@ function RouteComponent() {
                   >
                     <IconGitFork />
                   </ActionIcon>
+                  <Tooltip label="Fork conversation as a new template">
+                    <ActionIcon
+                      variant="subtle"
+                      color="gray"
+                      disabled={conversation.messages.length === 0}
+                      onClick={() => {
+                        forkConversationAsTemplateMutation.mutate(
+                          {
+                            conversationId: conversation.id,
+                          },
+                          {
+                            onSuccess(newTemplate) {
+                              nav({
+                                to: "/templates/$templateId",
+                                params: {
+                                  templateId: newTemplate.id,
+                                },
+                              });
+                            },
+                          },
+                        );
+                      }}
+                    >
+                      <IconShape3 stroke={1.5} />
+                    </ActionIcon>
+                  </Tooltip>
                   <ActionIcon
                     variant="subtle"
                     color="gray"

@@ -1,12 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Conversation,
+  ConversationTemplate,
   Message,
   StartConversationRequest,
   TemplateBlock,
   VariableKey,
   VariableValue,
 } from "server-types";
+import { TEMPLATE_KEYS } from "./templates";
 
 export const CONSERVATION_KEYS = {
   all: ["conversations"] as const,
@@ -222,6 +224,50 @@ export const useForkConversationByIdMutation = () => {
       await Promise.all([
         queryClient.invalidateQueries({
           queryKey: [CONSERVATION_KEYS.all],
+        }),
+      ]);
+    },
+  });
+};
+
+export const useForkConversationAsTemplateByIdMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      conversationId,
+      at,
+    }: {
+      conversationId: Conversation["id"];
+      at?: number;
+    }) => {
+      let url = `/api/conversations/${conversationId}/fork_as_template`;
+
+      if (at) {
+        url = `${url}?at=${at}`;
+      }
+
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+        },
+      });
+
+      const responseBody = await response.text();
+
+      if (!response.ok) {
+        throw Error(`Error forking conversation as template: ${responseBody}`);
+      }
+
+      const data = JSON.parse(responseBody) as ConversationTemplate;
+
+      return data ?? null;
+    },
+    async onSuccess(_) {
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: [TEMPLATE_KEYS.all],
         }),
       ]);
     },

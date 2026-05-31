@@ -26,6 +26,7 @@ import {
   IconGitFork,
   IconPencilPlus,
   IconRefresh,
+  IconShape3,
   IconWritingSign,
   IconX,
 } from "@tabler/icons-react";
@@ -35,6 +36,7 @@ import {
 } from "@/queries/completions";
 import { ConversationContext } from "./ConversationContext";
 import {
+  useForkConversationAsTemplateByIdMutation,
   useForkConversationByIdMutation,
   useUpdateConversationMutation,
 } from "@/queries/conversations";
@@ -134,6 +136,8 @@ export const MessageInList: FC<MessageInListProps> = ({
           {(styles) => (
             <ActionIconGroup style={styles}>
               <ForkConversationButton index={index} />
+
+              <ForkAsTemplateButton index={index} />
 
               <EditMessageButton onClick={onClick} />
 
@@ -418,5 +422,45 @@ const ForkConversationButton: FC<ForkConversationButtonProps> = ({ index }) => {
     >
       <IconGitFork stroke={1.5} />
     </ActionIcon>
+  );
+};
+
+type ForkAsTemplateButtonProps = {
+  index: number;
+};
+
+const ForkAsTemplateButton: FC<ForkAsTemplateButtonProps> = ({ index }) => {
+  const context = useContext(ConversationContext)!;
+  const forkConversationAsTemplateMutation =
+    useForkConversationAsTemplateByIdMutation();
+  const nav = Route.useNavigate();
+
+  return (
+    <Tooltip label="Fork conversation as a new template">
+      <ActionIcon
+        variant="subtle"
+        color="gray"
+        disabled={
+          context.isGenerating || context.conversation.messages.length === 0
+        }
+        onClick={() => {
+          forkConversationAsTemplateMutation.mutate(
+            { conversationId: context.conversation.id, at: index },
+            {
+              onSuccess(newTemplate) {
+                nav({
+                  to: "/templates/$templateId",
+                  params: {
+                    templateId: newTemplate.id,
+                  },
+                });
+              },
+            },
+          );
+        }}
+      >
+        <IconShape3 stroke={1.5} />
+      </ActionIcon>
+    </Tooltip>
   );
 };
