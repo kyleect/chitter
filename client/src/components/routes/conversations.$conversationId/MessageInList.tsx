@@ -66,9 +66,6 @@ export const MessageInList: FC<MessageInListProps> = ({
   onClick,
 }) => {
   const getSettingsQuery = useGetSettingsQuery();
-  const forkConversationMutation = useForkConversationByIdMutation();
-
-  const nav = Route.useNavigate();
 
   const { hovered, ref } = useHover();
   let icon = getMesssageAuthorIcon(value);
@@ -136,31 +133,7 @@ export const MessageInList: FC<MessageInListProps> = ({
         >
           {(styles) => (
             <ActionIconGroup style={styles}>
-              <ActionIcon
-                variant="subtle"
-                color="gray"
-                disabled={
-                  context.isGenerating ||
-                  context.conversation.messages.length === 0
-                }
-                onClick={() => {
-                  forkConversationMutation.mutate(
-                    { conversationId: context.conversation.id, at: index },
-                    {
-                      onSuccess(newConversation) {
-                        nav({
-                          to: "/conversations/$conversationId",
-                          params: {
-                            conversationId: newConversation.id,
-                          },
-                        });
-                      },
-                    },
-                  );
-                }}
-              >
-                <IconGitFork stroke={1.5} />
-              </ActionIcon>
+              <ForkConversationButton index={index} />
 
               <EditMessageButton onClick={onClick} />
 
@@ -407,6 +380,43 @@ const DeleteMessageButton: FC<DeleteMessageButtonProps> = ({ onClick }) => {
       }}
     >
       <IconX stroke={1} />
+    </ActionIcon>
+  );
+};
+
+type ForkConversationButtonProps = {
+  index: number;
+};
+
+const ForkConversationButton: FC<ForkConversationButtonProps> = ({ index }) => {
+  const context = useContext(ConversationContext)!;
+  const forkConversationMutation = useForkConversationByIdMutation();
+  const nav = Route.useNavigate();
+
+  return (
+    <ActionIcon
+      variant="subtle"
+      color="gray"
+      disabled={
+        context.isGenerating || context.conversation.messages.length === 0
+      }
+      onClick={() => {
+        forkConversationMutation.mutate(
+          { conversationId: context.conversation.id, at: index },
+          {
+            onSuccess(newConversation) {
+              nav({
+                to: "/conversations/$conversationId",
+                params: {
+                  conversationId: newConversation.id,
+                },
+              });
+            },
+          },
+        );
+      }}
+    >
+      <IconGitFork stroke={1.5} />
     </ActionIcon>
   );
 };

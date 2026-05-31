@@ -81,7 +81,6 @@ export const Route = createRootRoute({
               <ThemeIcon variant="gradient" size="xl" mr="sm" radius="sm">
                 <IconMessageFilled />
               </ThemeIcon>{" "}
-              chitter
             </Title>
           </Group>
         </AppShell.Header>
